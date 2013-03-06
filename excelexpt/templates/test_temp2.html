@@ -1,0 +1,291 @@
+<html>
+<head>
+	<title>pydata</title>
+	<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+
+	<script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+	
+	<link href="http://netdna.bootstrapcdn.com/font-awesome/3.0/css/font-awesome.css" rel="stylesheet">
+
+	<link href="/static/styles.css" rel="stylesheet">
+
+	<script type="text/javascript">
+	$(document).ready(function() {
+
+	$('.delete_item').live('click', function(){
+		$(this).closest('.input_item').remove();
+	});
+	$('.delete_account').live('click', function(){
+		$(this).closest('. account').remove();
+	});
+	$('.new_field').live('click', function(){
+		$fieldname = prompt('Enter Item Name');
+		if ($fieldname != null && $fieldname != '') {
+			$prefix = $(this).attr('id').slice(-2);
+
+			$content = '<div class="input_item"><a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a><label>'+$fieldname+'</label><input type="text" name="'+$prefix+'_'+$fieldname+'"></div>';
+
+			$(this).before($content);
+		}
+	});
+
+	$('.new_debt_account').live('click', function(){
+		$fieldname = prompt('Enter Account Name');
+		if ($fieldname != null && $fieldname != '') {
+
+			$content = '<div class="debt_account account"><a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a><h5 style="text-decoration: underline; display: inline-block">'+$fieldname+'</h5><div class="input_item"><label>Minimum Payment</label><input type="text" name="de_'+$fieldname+'"></div><div class="input_item"><label>Current Balance</label><input type="text" name="ba_'+$fieldname+'_Balance"></div><div class="input_item"><label>APR (as decimal)</label><input type="text" name="ra_'+$fieldname+'"></div></div>';
+
+			$(this).before($content);
+		}
+	});
+
+	$('.new_cash_account').live('click', function(){
+		$fieldname = prompt('Enter Account Name');
+		if ($fieldname != null && $fieldname != '') {
+
+			$content = '<div class="cash_account account">
+				<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
+				<h5 style="text-decoration: underline; display: inline-block">'+$fieldname+'</h5>
+				<div class="input_item">
+					<label>Current Balance</label>
+					<input type="text" name="cb_'+$fieldname+'_Balance">
+				</div>
+				<div class="input_item">
+					<label>Expected Rate of Return (as decimal)</label>
+					<input type="text" name="ra_'+$fieldname+'">
+				</div>
+			</div>';
+
+			$(this).before($content);
+		}
+	});
+
+
+
+
+	});
+
+	function validateForm() {
+		var form = document.forms["input"];
+		for (field in form.slice(0,-1)) {
+			var fieldname = form[field].name.substring(3);
+			var fieldvalue = form[field].value.replace(/,/g, '');
+
+			
+
+			//alert('fieldname: '+fieldname);
+			//needed because it loops over the submit button too
+			if (fieldvname == null || fieldvname == '') {
+				continue;
+			}
+			
+			if (fieldvalue == null || fieldvalue == '') {
+				alert(fieldname+" field requires input\n\nEnter zero if not applicable");
+				return false;
+			}
+
+			fieldvalue = parseInt(form[field].value);
+			if (isNaN(fieldvalue)) {
+				alert(fieldname+" input must be a number");
+				return false;
+			}
+			if (fieldvalue < 0) {
+				alert(fieldname+" field cannot be negative");
+				return false;
+			}
+
+		} 
+
+	}
+
+	</script>
+</head>
+<body>
+	<div style="margin:40px;">
+		<form name="input" action="{{ url_for('submit_pydata')}}" onsubmit="return validateForm()" method="post">
+
+			<h3 style="text-decoration: underline;">Income (monthly figures)</h3>
+			<div class="input_item">
+				<label>Income</label>
+				<input type="text" name="in_Income">
+			</div>
+
+			<h3 style="text-decoration: underline;">Expenses (monthly figures)</h3>
+			<p>
+				(Don't include debt payments here - those go in the next section)
+			</p>
+
+			<h4 style="margin-top:20px;">Basic Expenses</h4>
+			
+			<div class="input_item">
+				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label>Housing</label>
+				<input type="text" name="be_Housing">
+			</div>
+			<div class="input_item">
+				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label>Utilities</label>
+				<input type="text" name="be_Utilities">
+			</div>
+			<div class="input_item">
+				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label>TV/Internet</label>
+				<input type="text" name="be_Cable">
+			</div>
+			<div class="input_item">
+				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label>Phone</label>
+				<input type="text" name="be_Phone">
+			</div>
+			<div class="input_item">
+				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label>Gym</label>
+				<input type="text" name="be_Gym">
+			</div>
+			<div class="input_item">
+				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label>Insurance</label>
+				<input type="text" name="be_Insurance">
+			</div>
+			<div class="input_item">
+				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label>Food</label>
+				<input type="text" name="be_Food">
+			</div>
+		
+			<a id="new_be" class="btn btn-info new_field"><i class="icon-plus-sign"></i>Add New Basic Expense</a>
+
+
+			<h4 style="margin-top:20px;">Misc Expenses</h4>
+
+			<div class="input_item">
+				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label>Social/Entertainment</label>
+				<input type="text" name="me_Social">
+			</div>
+			<div class="input_item">
+				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label>Other</label>
+				<input type="text" name="me_Other">
+			</div>
+			
+			<a id="new_me" class="btn btn-info new_field"><i class="icon-plus-sign"></i>Add New Misc Expense</a>
+			
+
+			<h3 style="text-decoration: underline; margin-top:20px;">Debt Accounts</h3>
+			<div class="debt_account account">
+				<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
+				<h5 style="text-decoration: underline; display: inline-block">Student Loans</h5>
+				<div class="input_item">
+					<label>Minimum Payment</label>
+					<input type="text" name="de_Student">
+				</div>
+				<div class="input_item">
+					<label>Current Balance</label>
+					<input type="text" name="ba_Student_Balance">
+				</div>
+				<div class="input_item">
+					<label>APR (as decimal)</label>
+					<input type="text" name="ra_Student">
+				</div>
+			</div>
+			<div class="debt_account account">
+				<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
+				<h5 style="text-decoration: underline; display: inline-block">Credit Cards</h5>
+				<div class="input_item">
+					<label>Minimum Payment</label>
+					<input type="text" name="de_CC">
+				</div>
+				<div class="input_item">
+					<label>Current Balance</label>
+					<input type="text" name="ba_CC_Balance">
+				</div>
+				<div class="input_item">
+					<label>APR (as decimal)</label>
+					<input type="text" name="ra_CC">
+				</div>
+			</div>
+			<div class="debt_account account">
+				<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
+				<h5 style="text-decoration: underline; display: inline-block">Other Debt</h5>
+				<div class="input_item">
+					<label>Minimum Payment</label>
+					<input type="text" name="de_Other">
+				</div>
+				<div class="input_item">
+					<label>Current Balance</label>
+					<input type="text" name="ba_Other_Balance">
+				</div>
+				<div class="input_item">
+					<label>APR (as decimal)</label>
+					<input type="text" name="ra_Other">
+				</div>
+			</div>
+
+			<a id="new_da" class="btn btn-info new_debt_account"><i class="icon-plus-sign"></i>Add New Debt Account</a>
+
+
+
+
+			<h3 style="text-decoration: underline; margin-top:20px;">Banking/Investment Accounts</h3>
+			<div class="cash_account account">
+				<h5 style="text-decoration: underline; display: inline-block">Checking</h5>
+				<div class="input_item">
+					<label>Current Balance</label>
+					<input type="text" name="cb_Checking_Balance">
+				</div>
+				<div class="input_item">
+					<label>Expected Rate of Return (as decimal)</label>
+					<input type="text" name="ra_Checking">
+				</div>
+			</div>
+			<div class="cash_account account">
+				<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
+				<h5 style="text-decoration: underline; display: inline-block">Savings</h5>
+				<div class="input_item">
+					<label>Current Balance</label>
+					<input type="text" name="cb_Savings_Balance">
+				</div>
+				<div class="input_item">
+					<label>Expected Rate of Return (as decimal)</label>
+					<input type="text" name="ra_Savings">
+				</div>
+			</div>
+			<div class="cash_account account">
+				<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
+				<h5 style="text-decoration: underline; display: inline-block">Investment</h5>
+				<div class="input_item">
+					<label>Current Balance</label>
+					<input type="text" name="cb_Investment_Balance">
+				</div>
+				<div class="input_item">
+					<label>Expected Rate of Return (as decimal)</label>
+					<input type="text" name="ra_Investment">
+				</div>
+			</div>
+
+			<a id="new_ca" class="btn btn-info new_cash_account"><i class="icon-plus-sign"></i>Add New Banking/Investment Account</a>
+
+
+
+			<br>
+			<br>
+
+			<!--
+			<h3 style="text-decoration: underline; margin-top:20px;">Current Balances</h3>
+			<div class="input_item">
+				<label>Cash Balance</label>
+				<input type="text" name="ba_Cash_Balance">
+			</div>
+
+			-->
+
+			<input class="btn btn-info" type="submit" value="Build Model" style="font-size:16pt;margin-top:20px;">
+		</form>
+	</div>
+</body>
+</html>

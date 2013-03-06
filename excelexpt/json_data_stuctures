@@ -1,0 +1,178 @@
+{
+	'income': {
+		'items':{
+			'salary':{
+				0: 2200,
+				1: 2200
+			},
+			'unemployment': {
+				0: 1600,
+				1: 1600
+			}
+		},
+		'total': {
+			0: 3800,
+			1: 3800
+			}
+		}
+
+	
+}
+
+{
+	'expenses': {
+		'sections':{
+			'Basic':{
+				'items':{
+					'Rent':{
+						0: 1600,
+						1: 1600
+					},
+					'Phone': {
+						0: 80,
+						1: 80
+					}
+				},
+				'total': {
+					0: 1680,
+					1: 1680
+				}
+			},
+			'Debt': {
+				'items':{
+					'Student':{
+						0: 1800,
+						1: 1800
+					},
+					'CC': {
+						0: 400,
+						1: 400
+					}
+				},
+				'total': {
+					0: 2200,
+					1: 2200
+				}
+			}
+		},
+		'total': {
+			0: 3880,
+			1: 3880
+		}
+	}	
+}
+	
+{
+	'net_income': {
+		0: 3880,
+		1: 3880
+	}
+}
+
+{
+	'cash_accounts': {
+		'accounts': {
+			'Checking': {
+				'rate': 0.07,
+				'items': {
+					'beginning_balance':{
+						1: 12000,
+						2: 10000
+					},
+					'net_income':{
+						1: -2000,
+						2: -2000
+					},
+					'withdrawal':{
+						1: 0,
+						2: 0
+					},
+					'interest':{
+						1: 5,
+						2: 4
+					},
+					'ending_balance':{
+						0: 12000,
+						1: 10000,
+						2: 8000
+					}
+				}
+			},
+			'Savings': {
+				'rate': 0,
+				'items': {
+					'beginning_balance':{},
+					'withdrawal':{},
+					'interest':{},
+					'ending_balance':{}
+				}
+			}
+		},
+		'total': {
+			0: 3880,
+			1: 3880
+		}
+	}
+}
+
+{
+	'debt_accounts': {
+		'accounts': {
+			'Student': {
+				'rate': 0.07,
+				'items': {
+					'beginning_balance':{
+						1: 12000,
+						2: 10000
+					},
+					'payments':{
+						1: 2000,
+						2: 2000
+					},
+					'interest':{
+						1: 5,
+						2: 4
+					},
+					'ending_balance':{
+						0: 12000,
+						1: 10000,
+						2: 8000
+					}
+				}
+			},
+			'CC': {
+				'rate': 0.17,
+				'items': {
+					'beginning_balance':{},
+					'payments':{},
+					'interest':{},
+					'ending_balance':{}
+				}
+			}
+		},
+		'total_debt': {
+			0: 3880,
+			1: 3880
+		},
+		'debt_expense_summary': {
+			'interest_paid':{
+				0: 2400,
+				1: 2400
+			},
+			'principal_paid':{
+				0: 600,
+				1: 600
+			},
+			'total_expense':{
+				0: 3000,
+				1: 3000
+			},
+			
+		}
+	}
+}
+
+
+
+
+

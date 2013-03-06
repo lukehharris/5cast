@@ -1,0 +1,1038 @@
+{% extends "base.html" %}
+
+	{% block extra_headers %}
+	<script>
+	$(document).ready(function() {
+		
+		
+
+		$('.showNext').live('click', function(){
+			var sourceId = $(this).attr('id').slice(0,-5);
+			var targetId = $('#'+sourceId).closest('tr').next().children('td:last-child').children('a').attr('id');
+			if(targetId != undefined){
+				$.fancybox.close( true );
+				$('#'+targetId).click();
+			}
+			else {
+				//give some indication they're at the end
+			}
+		});
+		$('.showPrev').live('click', function(){
+			var sourceId = $(this).attr('id').slice(0,-5);
+			var targetId = $('#'+sourceId).closest('tr').prev().children('td:last-child').children('a').attr('id');
+			if(targetId != undefined){
+				$.fancybox.close( true );
+				$('#'+targetId).click();
+			}
+			else {
+				//give some indication they're at the beginning
+			}
+		});
+
+
+		
+
+		$('.sendToPriority_open').live('click', function(){
+			var sourceId = $(this).attr('id').slice(0,-5);
+			$target = $('#'+sourceId).closest('tr').children('td:first-child').next().children('button:last-child');
+			if($target != undefined){
+				//alert('sending to priority');
+				$('.showNext').click();
+				$target.click();
+			}
+			else {
+				//error
+			}
+		});
+		$('.sendToArchive_open').live('click', function(){
+			var sourceId = $(this).attr('id').slice(0,-5);
+			$target = $('#'+sourceId).closest('tr').children('td:first-child').next().children('button:first-child');
+			if($target != undefined){
+				//alert('sending to archive');
+				$('.showNext').click();
+				$target.click();
+			}
+			else {
+				//error
+			}
+		});
+
+		/*
+		//ie delete item
+		$('.removeItem').live('click', function () {
+			$idNumber = parseInt($(this).closest('td').next().next().next().next().next().children('a').attr('id').substring('item_'.length));
+
+			//Remove item from the database
+			$.ajax({
+				url: '/removeItem',
+				type: 'post',
+				data: ({
+					itemId: $idNumber,
+				}),
+				success: function(response){
+					//alert("item removed");
+				}
+			});
+
+			$(this).closest('tr').remove();
+		});
+		*/
+		//make a new board manually
+		$('.newBoard').click(function () {
+			$title = prompt("Give this board a title:");
+			if ($title == null) {return;}
+			else if($title == '') { $title='(untitled)';}
+
+			var boardId = null;
+
+			//Save new board to the database
+			$.ajax({
+				url: '/newBoard',
+				type: 'post',
+				data: ({
+					title: $title,
+				}),
+				success: function(response){
+					boardId = response.boardId;
+					addNewBoard(boardId, 'other', $title);
+				}
+			});
+		});
+		/*
+		
+		//for manually adding new items to boards
+		addNewItem = function(id) {
+			$('.widget-header #' + id).popover({
+			    html : true,
+			    title: 'New Item',
+			    content: '<form><label>Sender</label><input type="text" id="newItemSender" placeholder="Sender" /><label>Subject</label><input type="text" id="newItemSubject" placeholder="Subject" /><label>Content</label><textarea type="text" id="newItemContent" placeholder="Content" /></form><button class="btn saveNewItem">Save</button><button class="btn closePopover">Cancel</button>',
+			    placement: 'left'
+			});
+		};
+		$('.closePopover').live('click', function () {
+			$('.newItem').popover('hide');
+		});
+		
+		$('.saveNewItem').live('click', function () {
+			$senderInput = $('#newItemSender').val();
+			$recipient = '[created locally]';
+			$subjectInput = $('#newItemSubject').val();
+			if ($subjectInput == '') {
+				$subjectInput = '[no subject]';
+			}
+			$contentInput = $('#newItemContent').val();
+			if ($contentInput == '') {
+				$contentInput = '[this message has no content]';
+			}
+
+			$parentBoardId = $(this).closest('.board').attr('id');
+			$parentBoardIdNumber = parseInt($parentBoardId.substring('board'.length))
+
+			$d = new Date();
+			$hours = $d.getHours();
+			$minutes = $d.getMinutes();
+			$day = $d.getDate();
+			$month = $d.getMonth() + 1;
+			$year = $d.getFullYear();
+			$dateOutput = $hours+':'+$minutes+' '+$month+'/'+$day+'/'+$year;
+
+			var itemId = null;
+
+			//Save new item to the database
+			$.ajax({
+				url: '/newItem',
+				type: 'post',
+				data: ({
+					parentBoardId: $parentBoardIdNumber, 
+					date: $dateOutput, 
+					sender: $senderInput,
+					subject: $subjectInput, 
+					content: $contentInput
+				}),
+				success: function(response){
+					itemId = response.itemId;
+					createNewItem($parentBoardIdNumber, itemId, $dateOutput, $dateOutput, $senderInput, $recipient, $subjectInput, $contentInput);
+				}
+			});
+
+			$('.newItem').popover('hide');
+		});
+		*/
+
+		$('.removeBoard').live('click', function () {
+			$idNumber = parseInt($(this).attr('id').substring('delete_board'.length));
+
+			$confirm = confirm("Are you sure you want to delete this board? All items on this board will be deleted as well.");
+			if($confirm) { 
+				//Remove board from the database
+				$.ajax({
+					url: '/removeBoard',
+					type: 'post',
+					data: ({
+						boardId: $idNumber,
+					})
+				});
+				$('#'+$id).remove(); 
+			}
+		});
+
+		/*
+		$('.moveItemToBoard').live('change', function () {
+			$optionValue = $(this).attr('value');
+			$itemIdNumber = parseInt($(this).closest('td').next().next().next().next().children('a').attr('id').substring('item_'.length));
+			
+			if ($optionValue == 'todo') {
+				createTodo($itemIdNumber);
+			}
+			else {
+				moveItemToBoard($optionValue, $itemIdNumber);
+			}
+		});
+		*/
+		
+		
+
+		$('#todo_table').sortable({ 
+			forceHelperSize: true, 
+			handle: 'td:first',
+			update: function(event, ui) {
+            	setTodoDisplayOrder();
+			}
+		});
+		setTodoDisplayOrder = function() {
+			var newOrder = $('#todo_table').sortable('toArray').toString();
+            $.post('/todoOrder', {order:newOrder});
+		}
+
+		$('.newTodo').popover({
+			html : true,
+		    title: 'New ToDo',
+		    content: '<form><label>Task</label><input type="text" id="newTodoContent" placeholder="Task" /><label>Notes</label><textarea type="text" id="newTodoNotes"  placeholder="Notes" /></form><button class="btn saveNewTodo">Save</button><button class="btn closeTodoPopover">Cancel</button>',
+		    placement: 'bottom'
+		});
+		initializeNewTodoEmail = function() {
+			$('.newTodo_email').popover({
+				html : true,
+			    title: 'New ToDo',
+			    content: '<form><label>Task</label><input type="text" id="newTodoContent" placeholder="Task" /><label>Notes</label><textarea type="text" id="newTodoNotes"  placeholder="Notes" /></form><button class="btn saveNewTodo_email">Save</button><button class="btn closeTodoPopover">Cancel</button>',
+			    placement: 'bottom'
+			});
+		}
+		$('.closeTodoPopover').live('click', function () {
+			$('.newTodo').popover('hide');
+			$('.newTodo_email').popover('hide');
+			$('.expandTodo').popover('hide');
+		});
+		$('.saveNewTodo').live('click', function () {
+			$content = $('#newTodoContent').val();
+			$notes = $('#newTodoNotes').val();
+
+			//Save new todo to the database
+			$.ajax({
+				url: '/newTodo',
+				type: 'post',
+				data: ({
+					content: $content,
+					notes: $notes
+					/*,
+					itemId: null
+					*/
+				}),
+				success: function(response){
+					createNewTodo(response.todoId, $content, $notes);
+				}
+			});
+
+			$('.newTodo').popover('hide');
+		});
+		$('.saveNewTodo_email').live('click', function () {
+			$content = $('#newTodoContent').val();
+			$notes = $('#newTodoNotes').val();
+			$itemIdNumber = parseInt($(this).closest('.inbox_item').attr('id').substring('item_'.length));
+
+			//Save new todo to the database
+			$.ajax({
+				url: '/newTodo',
+				type: 'post',
+				data: ({
+					content: $content,
+					notes: $notes
+					/*,
+					itemId: $itemIdNumber
+					*/
+				}),
+				success: function(response){
+					createNewTodo(response.todoId, $content, $notes, false, $itemIdNumber);
+				}
+			});
+
+			$('.newTodo_email').popover('hide');
+		});
+
+		
+		createNewTodo = function(id, content, notes, noOrderUpdate_optional, itemId_optional) {
+			$content = '<tr id="todo_orderid_'+id+'"><td class="todo_move"><i class="icon-move"></i></td><td class="todo_checkbox"><a class="mark_todo_completed" title="Mark as Completed"><i class="icon-check-empty"></i></a></td><td class="todo_text">'+content+'</td><td class="todo_expand"><a id="todo_'+id+'"" class="btn btn-success expandTodo" rel="popover"><i class="icon-arrow-right"></i></a></td></tr>'
+
+			$('#todo_table').prepend($content);
+			
+			if (itemId_optional) {
+				todoPopover(id, content, notes, itemId_optional);
+			}
+			else {
+				todoPopover(id, content, notes);
+			}
+
+			if (!noOrderUpdate_optional) {
+				setTodoDisplayOrder();
+			}
+		}
+		todoPopover = function(id, task_content, task_notes, itemId_optional) {
+			if (itemId_optional) {
+				$content = '<form><label>Task</label><input type="text" id="todoContent" value="'+task_content+'" /><label>Notes</label><textarea type="text" id="todoNotes">'+task_notes+'</textarea><label>Attached Email</label><a id="item_'+itemId_optional+'_clickable"><i class="icon-envelope" style="font-size:16pt;"></i></a></form><button class="btn updateTodo">Save</button><button class="btn closeTodoPopover">Cancel</button>';
+			}
+			else {
+				$content = '<form><label>Task</label><input type="text" id="todoContent" value="'+task_content+'" /><label>Notes</label><textarea type="text" id="todoNotes">'+task_notes+'</textarea></form><button class="btn updateTodo">Save</button><button class="btn closeTodoPopover">Cancel</button>';
+			}
+			
+
+			$('#todo_'+id).popover({
+				html : true,
+			    title: 'ToDo Details',
+			    content: $content,
+			    placement: 'right'
+			});	
+		}
+		$('.updateTodo').live('click', function () {
+			$id = $(this).closest('td').children('a').attr('id');
+			$idNumber = parseInt($id.substring('todo_'.length));
+
+			$content = $('#todoContent').val();
+			$notes = $('#todoNotes').val();
+
+			//Update item in the database
+			$.ajax({
+				url: '/updateTodo',
+				type: 'post',
+				data: ({
+					todoId: $idNumber,
+					content: $content,
+					notes: $notes
+				}),
+				success: function(response){
+					$('#'+$id).popover('destroy');
+					todoPopover($idNumber, $content, $notes);
+				}
+			});
+			$todoText = $(this).closest('td').prev().html($content);
+		});
+		$('.mark_todo_completed').live('click', function() {
+			$id = $(this).closest('td').next().next().children('a').attr('id');
+			$idNumber = parseInt($id.substring('todo_'.length));
+
+			$(this).closest('tr').remove();
+
+			$.ajax({
+				url: '/completeTodo',
+				type: 'post',
+				data: ({
+					todoId: $idNumber
+				}),
+				success: function(response){
+					content = response.todoContent;
+					notes = response.todoNotes;
+					createCompletedTodo($idNumber, content, notes);
+					setTodoDisplayOrder();
+				}
+			});	
+		});
+		createCompletedTodo = function(id, content, notes) {
+			$content = '<tr><td class="todo_move"><i class="icon-move"></i></td><td class="todo_checkbox"><a class="mark_todo_new" title="Mark as Not Complete"><i class="icon-check"></i></a></td><td class="todo_text">'+content+'</td><td class="todo_expand"><a id="todo_'+id+'"" class="btn btn-success expandTodo" rel="popover"><i class="icon-arrow-right"></i></a></td></tr>';
+
+			$('#completed_todo_table').prepend($content);
+			todoPopover(id, content, notes);
+		}
+		$('.mark_todo_new').live('click', function() {
+			$id = $(this).closest('td').next().next().children('a').attr('id');
+			$idNumber = parseInt($id.substring('todo_'.length));
+
+			$(this).closest('tr').remove();
+
+			$.ajax({
+				url: '/uncompleteTodo',
+				type: 'post',
+				data: ({
+					todoId: $idNumber
+				}),
+				success: function(response){
+					content = response.todoContent;
+					notes = response.todoNotes;
+					createNewTodo($idNumber, content, notes);
+					setTodoDisplayOrder();
+				}
+			});	
+		});
+		$('#clearTodos').live('click', function() {
+			$confirm = confirm("Are you sure you want to clear all completed items?");
+			if($confirm) { 
+				//Remove board from the database
+				$.ajax({
+					url: '/clearTodos',
+					type: 'get',
+					success: function(response){
+						$('#completed_todo_table').children('tr').remove(); 
+					}
+				});
+			}
+		});
+
+		
+		// For real-time email push:
+		/*
+		var source = new EventSource('/stream');
+		source.onmessage = function (event) {
+		     alert(event.data);
+		};
+		*/
+
+	});
+	</script>
+
+	<script>
+	$(document).ready(function() {
+		$('#inbox').click(function () {
+			$('#inbox_div').removeClass('hidden');
+			$('#priority_div').addClass('hidden');
+			$('#todos_div').addClass('hidden');
+			$('#sent_div').addClass('hidden');
+			$('#archive_div').addClass('hidden');
+		});
+		$('#priority').click(function () {
+			$('#inbox_div').addClass('hidden');
+			$('#priority_div').removeClass('hidden');
+			$('#todos_div').addClass('hidden');
+			$('#sent_div').addClass('hidden');
+			$('#archive_div').addClass('hidden');		
+		});
+		$('#todos').click(function () {
+			$('#inbox_div').addClass('hidden');
+			$('#priority_div').addClass('hidden');
+			$('#todos_div').removeClass('hidden');
+			$('#sent_div').addClass('hidden');
+			$('#archive_div').addClass('hidden');			
+		});
+		$('#sent').click(function () {
+			$('#inbox_div').addClass('hidden');
+			$('#priority_div').addClass('hidden');
+			$('#todos_div').addClass('hidden');
+			$('#archive_div').addClass('hidden');	
+			$('#sent_div').removeClass('hidden');	
+		});
+		$('#archive').click(function () {
+			$('#inbox_div').addClass('hidden');
+			$('#priority_div').addClass('hidden');
+			$('#todos_div').addClass('hidden');
+			$('#sent_div').addClass('hidden');
+			$('#archive_div').removeClass('hidden');		
+		});
+
+
+		$(document).on('keydown', function(event){
+			if ($('body').hasClass('fancybox-lock')){
+				if (event.which == 39) { //right arrow
+					$('.showNext').click();
+				}
+				else if (event.which == 37) { //left arrow
+					$('.showPrev').click();
+				}
+				else if (event.which == 190) {//period key
+					$('.sendToPriority_open').click();
+				}
+				else if (event.which == 188) {//comma key
+					$('.sendToArchive_open').click();
+				}
+				else if (event.which == 40) {//down arrow
+					var y = $('.fancybox-inner').scrollTop();  //current y position on the page
+					$('.fancybox-inner').scrollTop(y+150);
+				}
+				else if (event.which == 38) {//up arrow
+					var y = $('.fancybox-inner').scrollTop();  //current y position on the page
+					$('.fancybox-inner').scrollTop(y-150);
+				}
+				else if (event.which == 34) {//page up
+					var y = $('.fancybox-inner').scrollTop();  //current y position on the page
+					$('.fancybox-inner').scrollTop(y+500);
+				}
+				else if (event.which == 33) {//page down
+					var y = $('.fancybox-inner').scrollTop();  //current y position on the page
+					$('.fancybox-inner').scrollTop(y-500);
+				}
+				else if (event.which == 36) {//home
+					//var y = $('.fancybox-inner').scrollTop();  //current y position on the page
+					$('.fancybox-inner').scrollTop(0);
+				}
+				else if (event.which == 35) {//end
+					//var y = $('.fancybox-inner').scrollTop();  //current y position on the page
+					$('.fancybox-inner').scrollTop($(document).height());
+				}
+			}
+		});
+
+		
+		$('#todo_table').sortable( "refresh" );
+	});
+	</script>
+
+	<script type="text/javascript">
+	$(document).ready(function() {
+		$('#sendToArchive_item').live('click', function() {
+			$itemIdNumber = parseInt($(this).closest('.inbox_obj').attr('id').substring('item_'.length));
+			$archiveIdNumber = parseInt($('#archive_div .inbox_board').attr('id').substring('board'.length));
+			moveItemToBoard($archiveIdNumber, $itemIdNumber);
+		});
+		$('#sendToPriority_item').live('click', function() {
+			$itemIdNumber = parseInt($(this).closest('.inbox_obj').attr('id').substring('item_'.length));
+			$priorityIdNumber = parseInt($('#priority_div .inbox_board').attr('id').substring('board'.length));
+			moveItemToBoard($priorityIdNumber, $itemIdNumber);
+		});
+		$('#sendToArchive_convo').live('click', function() {
+			$convoIdNumber = parseInt($(this).closest('.inbox_obj').attr('id').substring('convo_'.length));
+			$archiveIdNumber = parseInt($('#archive_div .inbox_board').attr('id').substring('board'.length));
+			moveConvoToBoard($archiveIdNumber, $convoIdNumber);
+		});
+		$('#sendToPriority_convo').live('click', function() {
+			$convoIdNumber = parseInt($(this).closest('.inbox_obj').attr('id').substring('convo_'.length));
+			$priorityIdNumber = parseInt($('#priority_div .inbox_board').attr('id').substring('board'.length));
+			moveConvoToBoard($priorityIdNumber, $convoIdNumber);
+		});
+
+		$('.moveToBoard').live('click', function() {
+			$targetBoardIdNumber = $(this).attr('id').substring('targetBoard_'.length);
+			$itemId = $(this).closest('.inbox_obj').attr('id');
+			$itemType = $itemId.slice(0,4);
+			if ($itemType === 'item') {
+				$itemIdNumber = parseInt($itemId.substring('item_'.length));
+				moveItemToBoard($targetBoardIdNumber, $itemIdNumber);
+			}
+			else {
+				$itemIdNumber = parseInt($itemId.substring('convo_'.length));
+				moveConvoToBoard($targetBoardIdNumber, $itemIdNumber);
+			}
+			
+		});
+
+		buildOptionsPopover = function() {
+			$('.priorityOptions').popover({
+				html : true,
+			    title: 'Send This Item to Board:',
+			    content: '<ul>{% for board in boards[4:] %}<li><a id="targetBoard_{{board.id}}" class="moveToBoard">{{board.title}}</a></li>{% endfor %}</ul>',
+			    placement: 'right'
+			});	
+		}
+
+
+		createNewItem = function(parentBoardIdNumber, parentBoardType, itemId, date_full, date_short, sender_name, sender_email, recipient, cc, subject, content, rt) {
+			$archive = '<button id="sendToArchive_item" class="btn btn-danger sendToArchive" title="Send to Archive" style="margin-right: 4px;"><i class="icon-arrow-down"></i></button>';
+			$priority = '<button id="sendToPriority_item" class="btn btn-success sendToPriority" title="Send to Priority Inbox"><i class="icon-arrow-up"></i></button>';
+			$selector = null;
+			{% if current_user.is_active()  %}
+				$selector = '<select class="moveItemToBoard"><option value="0"> </option><option value="todo">Create ToDo</option><option>Send to Board:</option>{% for board in boards[3:] %}<option value="{{ board.id }}">{{ board.subject }}</option>{% endfor %}</select>';
+			{% endif %}
+			$options = '<button class="btn btn-info priorityOptions"><i class="icon-cog"></i></button>';
+
+			$todo = '<a style="float:right;margin:8px;" rel="popover" class="btn btn-small btn-warning newTodo_email">Add ToDo</a>';
+
+			if (parentBoardType == 'inbox') { 
+				$action = $archive + $priority;
+			}
+			else if (parentBoardType == 'archive') { 
+				$action = $priority;
+			}
+			else if (parentBoardType == 'priority') { 
+				//$action = $archive + $todo + $selector;
+				$action = $archive + $options;
+			}
+			else if (parentBoardType == 'sent') { 
+				$action = '';
+			}
+			else {
+				$action = $archive + $options;
+			}
+
+			$extra = '&nbsp;';
+			//<i class="icon-paper-clip"></i>
+
+			$content = '<div id="item_'+itemId+'" class="inbox_item inbox_obj" ><div class="action_buttons">'+$action+'</div><div id="item_'+itemId+'_clickable" class="clickable_item"><div class="sender">'+sender_name+'</div><div class="subject">'+subject+'</div><div class="item_right"><div class="date">'+date_short+'</div><div class="extra">'+$extra+'</div></div></div></div>';
+
+			$('#board' + parentBoardIdNumber +' #inbox_body').append($content);
+
+			buildItem('item_'+itemId+'_clickable', date_full, date_short, sender_name, sender_email, recipient, cc, subject, content, rt);
+
+			buildOptionsPopover();
+		} 
+		buildItem = function(id, date_full, date_short, sender_name, sender_email, recipient, cc, subject, content, rt) {
+			idNumber = id.substring(5,id.length-10);
+			
+			if (content == null) {
+				content = '[this message has no content]';
+			}
+
+			if (cc != '') { 
+				$cc = '<div class="cc"><label>CC:</label> '+cc+'</div>';
+			}
+			else {
+				$cc = '';
+			}
+
+			$archive = '<button id="'+id+'_arch" class="btn btn-danger sendToArchive_open" title="Send to Archive"><i class="icon-arrow-down"></i></button>';
+			$priority = '<button id="'+id+'_prio" class="btn btn-success sendToPriority_open" title="Send to Priority"><i class="icon-arrow-up"></i></button>';
+			$reply = '<button id="'+idNumber+'_reply" class="btn" title="Reply">Reply</button>';
+			$reall = '<button id="'+idNumber+'_reall" class="btn" title="Reply All">Reply All</button>';
+			$fwd = '<button id="'+idNumber+'_fwd" class="btn" title="Forward">Forward</button>';
+
+			if (rt != 'None'){
+				reply_to = rt
+				$reall = '';
+			}
+			else {
+				reply_to = sender_email
+			}
+			
+			var header = '<div class="box-header"><div class="modal-header"><h3 style="display:inline-block">'+subject+'</h3><br />'+$archive+$priority+$reply+$reall+$fwd+'<button id="'+id+'_next" class="btn showNext" style="float:right;">Next</button><button id="'+id+'_prev" class="btn showPrev" style="float:right;">Prev</button></div><div class="modal-subheader"><div class="item_from"><label>From:</label> '+sender_name+' &#60'+sender_email+'&#62;</div><div class="item_to"><label>To:</label>'+recipient+'</div>'+$cc+'<div class="item_date"><label>Date:</label>'+date_full+'</div></div></div>';
+
+			$('#'+id).fancybox({
+				content: header+'<iframe id="iframe_here" style="width:100%;" scrolling="no"></iframe>',
+				openEffect: 'none',
+				closeEffect: 'none',
+				scrollOutside: 'false',
+				//minHeight: '100%',
+				minWidth: '100%',
+				afterShow : function () {
+					var doc = document.getElementById('iframe_here').contentWindow.document;
+					doc.open();
+					doc.write(content);
+					$('iframe a').each(function() {
+					    $(this).attr("target","_blank");
+					});
+					doc.close();
+
+					//resize iframe properly
+					var F = document.getElementById('iframe_here');
+					if(F.contentDocument) {
+						F.height = F.contentDocument.documentElement.scrollHeight+50;
+					} else {
+						F.height = F.contentWindow.document.body.scrollHeight+50;
+					}
+				}
+			});
+
+			$('#'+idNumber+'_reply').fancybox({
+				content: '<form id="send_email_form"><label>To:</label><input type="text" name="to" style="width:90%" value="'+reply_to+'"><label>CC:</label><input type="text" name="cc" style="width:90%"><label>BCC:</label><input type="text" name="bcc" style="width:90%"><label>Subject</label><input type="text" name="subject" style="width:90%" value="Re: '+strip_subject(subject)+'"><label>Message:</label><textarea name="body" style="height:200px;width:90%;">\r\n\r\n---------\r\n'+content+'</textarea></form><button id="send_reply_email" class="btn btn-info" style="float:right;margin-right:20px;" data-parent_id="'+idNumber+'" data-send_type="reply">Send</button>',
+				scrollOutside: 'false',
+				minWidth: '40%',
+			});
+			//reply_all_to_field(recipient, sender_email);
+
+			$('#'+idNumber+'_reall').fancybox({
+				content: '<form id="send_email_form"><label>To:</label><input type="text" name="to" style="width:90%" value="<havent fixed this yet>"><label>CC:</label><input type="text" name="cc" style="width:90%" value="<havent fixed this yet>"><label>BCC:</label><input type="text" name="bcc" style="width:90%"><label>Subject</label><input type="text" name="subject" style="width:90%" value="Re: '+strip_subject(subject)+'"><label>Message:</label><textarea name="body" style="height:200px;width:90%;">\r\n\r\n---------\r\n'+content+'</textarea></form><button id="send_reply_email" class="btn btn-info" style="float:right;margin-right:20px;" data-parent_id="'+idNumber+'" data-send_type="reall">Send</button>',
+				scrollOutside: 'false',
+				minWidth: '40%',
+			});
+
+			$('#'+idNumber+'_fwd').fancybox({
+				content: '<form id="send_email_form"><label>To:</label><input type="text" name="to" style="width:90%"><label>CC:</label><input type="text" name="cc" style="width:90%"><label>BCC:</label><input type="text" name="bcc" style="width:90%"><label>Subject</label><input type="text" name="subject" style="width:90%" value="Fwd: '+strip_subject(subject)+'"><label>Message:</label><textarea name="body" style="height:200px;width:90%;">\r\n\r\n---------\r\n'+content+'</textarea></form><button id="send_reply_email" class="btn btn-info" style="float:right;margin-right:20px;" data-parent_id="'+idNumber+'" data-send_type="fwd">Send</button>',
+				scrollOutside: 'false',
+				minWidth: '40%',
+			});
+
+
+
+		}
+		strip_subject = function(subject) {
+			if (subject.substring(0,4).toLowerCase() == "re: " || subject.substring(0,4).toLowerCase() == "fw: ") {
+				return subject.substring(4,subject.length);
+			}
+			else if (subject.substring(0,5).toLowerCase() == "fwd: ") {
+				return subject.substring(5,subject.length);
+			}
+			else {
+				return subject
+			}
+		}
+		reply_all_to_field = function(parent_to_field, sender) {
+			sender_index = (new RegExp(sender)).test(parent_to_field);
+			alert('parent_to_field: '+parent_to_field)
+			alert('sender: '+sender)
+			alert(sender_index);
+			//if ()
+		}
+		createConversationItemContainer = function(parentBoardIdNumber, parentBoardType, convoId, date_short, subject) {
+			$archive = '<button id="sendToArchive_convo" class="btn btn-danger sendToArchive" title="Send Conversation to Archive" style="margin-right: 4px;"><i class="icon-arrow-down"></i></button>';
+			$priority = '<button id="sendToPriority_convo" class="btn btn-success sendToPriority" title="Send Conversation to Priority Inbox"><i class="icon-arrow-up"></i></button>';
+			$selector = null;
+			{% if current_user.is_active()  %}
+				$selector = '<select class="moveItemToBoard"><option value="0"> </option><option value="todo">Create ToDo</option><option>Send to Board:</option>{% for board in boards[3:] %}<option value="{{ board.id }}">{{ board.subject }}</option>{% endfor %}</select>';
+			{% endif %}
+			$options = '<button class="btn btn-info priorityOptions"><i class="icon-cog"></i></button>';
+
+			$todo = '<a style="float:right;margin:8px;" rel="popover" class="btn btn-small btn-success newTodo_email">Add ToDo</a>';
+
+			if (parentBoardType == 'inbox') { // ie INBOX
+				$action = $archive + $priority;
+			}
+			else if (parentBoardType == 'archive') { // ie ARCHIVE
+				$action = $priority;
+			}
+			else if (parentBoardType == 'priority') { // ie PRIORITY
+				$action = $archive + $options;
+			}
+			else {
+				$action = $archive + $options;
+			}
+
+			$extra = '&nbsp;';
+			//<i class="icon-paper-clip"></i>
+
+			
+
+			$content = '<div id="convo_'+convoId+'" class="conversation inbox_obj" ><div class="action_buttons">'+$action+'</div><a data-toggle="collapse" data-target="#convo'+convoId+'_expand"><div class="clickable_item"><div class="sender"><span class="label label-warning">Conversation</span></div><div class="subject">'+subject+'</div><div class="item_right"><div class="date">'+date_short+'</div><div class="extra">'+$extra+'</div></div></div></a><div id="convo'+convoId+'_expand" class="collapse"><div id="convo_'+convoId+'_items" class="accordion-inner"></div></div></div>';
+
+			$('#board' + parentBoardIdNumber +' #inbox_body').append($content);
+
+			buildOptionsPopover();
+
+			//buildConvoItem('item_'+itemId+'_clickable', date_full, date_short, sender_name, sender_email, recipient, cc, subject, content);
+		} 
+		buildConvoItem = function(target_convo_id, id, date_full, date_short, sender_name, sender_email, recipient, cc, subject, content) {
+
+			$convo_item = '<div id="convo_item_'+id+'" class="inbox_item"><div id="convo_item_'+id+'_clickable" class="clickable_convo_item"><div class="sender">'+sender_name+'</div><div class="subject">'+subject+'</div><div class="item_right"><div class="date">'+date_short+'</div><div class="extra"></div></div></div></div>';
+
+			$('#convo_'+target_convo_id+'_items').append($convo_item);
+
+			if (content == null) {
+				content = '[this message has no content]';
+			}
+
+			if (cc != 'None') { 
+				$cc = '<div class="cc"><label>CC:</label> '+cc+'</div>';
+			}
+			else {
+				$cc = '';
+			}
+
+			$archive = '<button id="'+id+'_arch" class="sendToArchive_open" class="btn btn-danger sendToArchive" title="Send to Archive"><i class="icon-arrow-down"></i></button>';
+			$priority = '<button id="'+id+'_prio" class="sendToPriority_open" class="btn btn-success sendToPriority" title="Send to Priority Inbox"><i class="icon-arrow-up"></i></button>';
+			
+			var header = '<div class="box-header"><div class="modal-header"><h3 style="display:inline-block">'+subject+'</h3>'+$archive+$priority+'<button id="'+id+'_next" class="btn showNext" style="float:right;">Next</button><button id="'+id+'_prev" class="btn showPrev" style="float:right;">Prev</button></div><div class="modal-subheader"><div class="item_from"><label>From:</label> '+sender_name+' &#60'+sender_email+'&#62;</div><div class="item_to"><label>To:</label>'+recipient+'</div>'+$cc+'<div class="item_date"><label>Date:</label>'+date_full+'</div></div></div>';
+
+			$('#convo_item_'+id+'_clickable').fancybox({
+				content: header+'<iframe id="iframe_here" style="width:100%;" scrolling="no"></iframe>',
+				openEffect: 'none',
+				closeEffect: 'none',
+				scrollOutside: 'false',
+				//minHeight: '100%',
+				minWidth: '100%',
+				afterShow : function () {
+					var doc = document.getElementById('iframe_here').contentWindow.document;
+					doc.open();
+					doc.write(content);
+					$('iframe a').each(function() {
+					    $(this).attr("target","_blank");
+					});
+					doc.close();
+
+					//resize iframe properly
+					var F = document.getElementById('iframe_here');
+					if(F.contentDocument) {
+						F.height = F.contentDocument.documentElement.scrollHeight+50;
+					} else {
+						F.height = F.contentWindow.document.body.scrollHeight+50;
+					}
+				}
+			});
+
+		}
+
+
+		addNewBoard = function(boardId, boardType, title) {
+			if (boardType == 'inbox') { 
+				$remove = '<a id="archiveAll"class="btn btn-small btn-danger" style="float:right; margin: 6px;">Archive All</a>';
+			}
+			else if (boardType == 'priority' | boardType == 'archive' | boardType == 'sent'){
+				$remove = '';
+			}
+			else { 
+				$remove = '<a id="delete_board'+boardId+'" class="btn btn-small btn-danger removeBoard"><i class="icon-remove"></i></a>';
+			}
+
+			$content = '<div id="board'+boardId+'" class="board inbox_board" style="margin:40px;"><div id="inbox_header" class="widget-header"><h2>'+title+'</h2>'+$remove+'</div><div id="inbox_body"></div></div>';
+			
+			if (boardType == 'inbox') {
+				$('#inbox_div').append($content);
+			}
+			else if (boardType == 'archive') {
+				$('#archive_div').append($content);
+			}
+			else if (boardType == 'priority') {
+				$('#landingBoardHere').append($content);
+			}
+			else if (boardType == 'sent') {
+				$('#sent_div').append($content);
+			}
+			else {
+				$('#addBoardsHere').append($content);
+			}
+
+			//initialize the popover
+			//addNewItem('newItem'+boardId);
+		}
+		moveItemToBoard = function(targetBoardIdNumber, itemIdNumber) {
+			//remove item from the landing board
+			$('#item_'+itemIdNumber).remove();
+
+			//save the change to the database
+			$.ajax({
+				url: '/moveItem',
+				type: 'post',
+				data: ({
+					itemIdNumber: itemIdNumber,
+					targetBoardIdNumber: targetBoardIdNumber
+				}),
+				success: function(response){
+					targetBoardType = response.targetBoardType;
+					itemDateFull = response.itemDateFull;
+					itemDateShort = response.itemDateShort;
+					itemSenderName = response.itemSenderName;
+					itemSenderEmail = response.itemSenderEmail;
+					itemRecipient = response.itemRecipient;
+					itemCc = response.itemCc;
+					itemSubject = response.itemSubject;
+					itemContent = response.itemContent;
+					itemRt = response.itemRt;
+					//add the item to the target board
+					createNewItem(targetBoardIdNumber, targetBoardType, itemIdNumber, itemDateFull, itemDateShort, htmlEscape(itemSenderName), htmlEscape(itemSenderEmail), htmlEscape(itemRecipient), htmlEscape(itemCc), htmlEscape(itemSubject), itemContent, itemRt);
+
+					if (targetBoardIdNumber == 3) {
+						initializeNewTodoEmail();
+					}
+				}
+			});	
+		}
+		moveConvoToBoard = function(targetBoardIdNumber, convoIdNumber) {
+			//remove item from the landing board
+			$('#convo_'+convoIdNumber).remove();
+
+			//save the change to the database
+			$.ajax({
+				url: '/moveConvo',
+				type: 'post',
+				data: ({
+					convoIdNumber: convoIdNumber,
+					targetBoardIdNumber: targetBoardIdNumber
+				}),
+				success: function(response){
+					targetBoardType = response.targetBoardType;
+					createConversationItemContainer(targetBoardIdNumber, targetBoardType, convoIdNumber, response.convo_date_short, response.convo_subject)
+					items = response.convoItems;
+					for (var i in items) {
+						itemIdNumber = items[i].itemIdNumber;
+						itemDateFull = items[i].itemDateFull;
+						itemDateShort = items[i].itemDateShort;
+						itemSenderName = items[i].itemSenderName;
+						itemSenderEmail = items[i].itemSenderEmail;
+						itemRecipient = items[i].itemRecipient;
+						itemCc = items[i].itemCc;
+						itemSubject = items[i].itemSubject;
+						itemContent = items[i].itemContent;
+						//add the item to the target convo
+						buildConvoItem(convoIdNumber, itemIdNumber, itemDateFull, itemDateShort, htmlEscape(itemSenderName), htmlEscape(itemSenderEmail), htmlEscape(itemRecipient), htmlEscape(itemCc), htmlEscape(itemSubject), itemContent);
+					}
+					
+					/*
+					if (targetBoardIdNumber == 3) {
+						initializeNewTodoEmail();
+					}
+					*/
+				}
+			});	
+		}
+		
+		$('.conversation').live('click', function() {
+			$open = $(this).children('div:last-child').hasClass('in');
+			//the accordion opens before this event fires, so these are opposite of what seems logical
+			if ($open) {
+				$(this).css('height','auto');
+			}
+			else {
+				$(this).css('height','26px');
+			}
+		});
+
+		$('#compose_button').fancybox({
+			content: '<form id="send_email_form"><label>To:</label><input type="text" name="to" style="width:90%"><label>CC:</label><input type="text" name="cc" style="width:90%"><label>BCC:</label><input type="text" name="bcc" style="width:90%"><label>Subject</label><input type="text" name="subject" style="width:90%"><label>Message:</label><textarea name="body" style="height:200px;width:90%;"></textarea></form><button id="send_new_email" class="btn btn-info" style="float:right;margin-right:20px;">Send</button>',
+			//openEffect: 'none',
+			//closeEffect: 'none',
+			scrollOutside: 'false',
+			//minHeight: '100%',
+			minWidth: '40%',
+		});
+		
+		$('#send_new_email').live('click', function() {
+			//display loading bar
+			$.ajax({
+				url: '/sendNewEmail',
+				type: 'post',
+				data: $('#send_email_form').serialize(),
+				success: function(response){
+					$.fancybox.close( true );
+				}
+			});
+		});
+		$('#send_reply_email').live('click', function() {
+			//display loading bar
+			$parent_item_id = $(this).attr('data-parent_id');
+			//$parent_item_id_number = parseInt($parent_item_id.substring(5,$parent_item_id.length-11))
+			$send_type = $(this).attr('data-send_type');
+			data = $('#send_email_form').serializeArray();
+			data.push({name:'parent_item_id', value: $parent_item_id});
+			data.push({name: 'send_type', value: $send_type});
+
+			$.ajax({
+				url: '/sendEmailReply',
+				type: 'post',
+				data: data,
+				success: function(response){
+					$.fancybox.close( true );
+				}
+			});
+		});
+
+		/*
+		fix_pt_item = function(body) {
+			result = "<p>" + body + "</p>";
+			result = result.replace(/\r\n\r\n/g, "</p><p>").replace(/\n\n/g, "</p><p>");
+			result = result.replace(/\r\n/g, "<br />").replace(/\n/g, "<br />");
+			return result
+		}
+		*/
+
+	
+		
+
+		{% if current_user.is_active()  %}
+			{% for board in boards %}
+				addNewBoard("{{board.id}}", "{{board.board_type}}", "{{board.title}}");
+				{% for item in item_list[board.id] %}
+
+
+					{% if item['type'] == "convo" %}
+						createConversationItemContainer("{{board.id}}", "{{board.board_type}}", "{{item['obj'].id}}", "{{item['obj'].display_date_short}}", "{{item['obj'].subject}}");
+					{% elif item['type'] == "item" %}
+						createNewItem("{{board.id}}", "{{board.board_type}}", "{{item['obj'].id}}", "{{item['obj'].display_date_full}}", "{{item['obj'].display_date_short}}", "{{item['obj'].sender_name}}", "{{item['obj'].sender_email}}", "{{item['obj'].recipient}}", "{{item.cc}}", "{{item['obj'].subject}}", htmlDecode("{{item['obj'].content}}"), "{{item['obj'].rt}}");
+					{% endif %}
+				{% endfor %}
+				
+			{% endfor %}
+			{% for todo in todos %}
+				{% if todo.is_completed() %}
+					createCompletedTodo("{{todo.id}}", "{{todo.content}}", "{{todo.notes}}");
+				{% else %}
+					createNewTodo("{{todo.id}}", "{{todo.content}}", "{{todo.notes}}", true);
+				{% endif %}
+			{% endfor %}
+			initializeNewTodoEmail();
+		{% endif %}
+
+				
+		
+		{% for convo in convos %}
+			{% for item in sorted_convo_items[convo.id] %}
+				buildConvoItem("{{convo.id}}", "{{item.id}}", "{{item.display_date_full}}", "{{item.display_date_short}}", "{{item.sender_name}}", "{{item.sender_email}}", "{{item.recipient}}", "{{item.cc}}", "{{item.subject}}", htmlDecode("{{item.content}}"));
+			{% endfor %}
+		{% endfor %}
+
+
+
+
+		function htmlDecode(input){
+			var e = document.createElement('div');
+			e.innerHTML = input;
+			return e.childNodes.length === 0 ? "" : e.childNodes[0].nodeValue;
+		}
+		function htmlEscape(str) {
+		    return String(str)
+	            .replace(/&/g, '&amp;')
+	            .replace(/"/g, '&quot;')
+	            .replace(/'/g, '&#39;')
+	            .replace(/</g, '&lt;')
+	            .replace(/>/g, '&gt;');
+		}
+
+
+	});
+	</script>
+	{% endblock %}
+
+
+{% block main %}
+
+	<div class="left_nav">
+		<div id="compose_div"><i title="Compose New Email" id="compose_button" class="icon-pencil" style="margin-left: 10px;"></i></div>
+		<div style="font-size: 24pt; margin: 8px 20px; border: 1px solid black; box-shadow: 0 0 2px gray; "><i class="icon-user" style="margin-left: 10px; text-shadow: 0 0 4px gray;"></i></div>
+		<button id="inbox" class="btn btn-info" >Inbox</button>
+		<button id="priority" class="btn btn-success">Priority</button>
+		<br>
+		<div style="margin-left:20px;cursor:pointer;"><a id="todos">ToDos</a></div>
+		<br />
+		<!--
+		<div style="font-weight:bold;">Boards:</div>
+		{% for board in boards[4:] %}
+			<div style="font-size:10pt;">-</div>
+		{% endfor %}
+		<br />
+		-->
+		<button id="sent" class="btn btn-warning">Sent</button>
+		<button id="archive" class="btn btn-danger">Archive</button>
+	</div>
+
+
+	<div class="content_container">
+		<div id="inbox_div">
+
+		</div>
+
+
+		<div id="priority_div" class="hidden">
+			<br>
+			<button class="btn newBoard">New Board</button>
+			<span id="landingBoardHere"></span><span id="addBoardsHere"></span>
+		</div>
+		<div id="todos_div" class="hidden">
+			<div id="todos_main_panel" class="widget widget-table action-table">
+				<div class="widget-header"><h2>ToDo List</h2><a class="btn btn-small btn-success newTodo" rel="popover" style="float:right;margin:8px;">Add ToDo</a></div>
+				<div class="widget-content">
+					<table class="table table-striped">
+						<tbody id="todo_table">
+							
+							
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<div id="completed_todos" class="widget widget-table action-table">
+				<div class="widget-header"><h2>Completed ToDos</h2><a id="clearTodos" class="btn btn-small btn-danger" style="float:right;margin:8px;">Clear All</a></div>
+				<div class="widget-content">
+					<table class="table table-striped">
+						<tbody id="completed_todo_table">
+							
+							
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+		<div id="sent_div" class="hidden"></div>
+		<div id="archive_div" class="hidden"></div>
+	</div>
+
+{% endblock %}

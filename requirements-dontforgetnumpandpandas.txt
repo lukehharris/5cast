@@ -1,0 +1,9 @@
+Flask==0.9
+Jinja2==2.6
+Werkzeug==0.8.3
+gunicorn==0.17.2
+xlrd==0.9.0
+xlutils==1.5.2
+xlwt==0.7.4
+numpy==1.7.0
+pandas==0.10.1

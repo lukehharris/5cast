@@ -30,7 +30,7 @@ def build_xls_file(income, basic_expenses, debt_expenses, misc_expenses, debt_ba
 
     current_row = calculate_net_worth(s, current_row, total_debt_row, total_cash_row) 
 
-    wb.save('tmp/xlwt_ex.xls')
+    wb.save('excelexpt/tmp/xlwt_ex.xls')
 
     return 'ok'
 

@@ -47,18 +47,7 @@
 		$fieldname = prompt('Enter Account Name');
 		if ($fieldname != null && $fieldname != '') {
 
-			$content = '<div class="cash_account account">
-				<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
-				<h5 style="text-decoration: underline; display: inline-block">'+$fieldname+'</h5>
-				<div class="input_item">
-					<label>Current Balance</label>
-					<input type="text" name="cb_'+$fieldname+'_Balance">
-				</div>
-				<div class="input_item">
-					<label>Expected Rate of Return (as decimal)</label>
-					<input type="text" name="ra_'+$fieldname+'">
-				</div>
-			</div>';
+			$content = '<div class="cash_account account"><a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a><h5 style="text-decoration: underline; display: inline-block">'+$fieldname+'</h5><div class="input_item"><label>Current Balance</label><input type="text" name="cb_'+$fieldname+'_Balance"></div><div class="input_item"><label>Expected Rate of Return (as decimal)</label><input type="text" name="ra_'+$fieldname+'"></div></div>';
 
 			$(this).before($content);
 		}

@@ -14,6 +14,10 @@ from xlwt.Utils import rowcol_to_cell
 def index():
     return render_template('test_temp.html')
 
+@app.route('/demo')
+def demo():
+    return render_template('demo.html')
+
 @app.route('/pydata')
 def pydata():
     return render_template('test_temp2.html')

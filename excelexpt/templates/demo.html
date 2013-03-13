@@ -29,7 +29,7 @@
 		$fieldname = prompt('Enter Account Name');
 		if ($fieldname != null && $fieldname != '') {
 
-			$content = '<div class="debt_account account"><a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a><h5 class="form_account_label">'+$fieldname+'</h5><div class="input_item"><label>Current Payment</label>$<input type="text" name="de_'+$fieldname+'"> per month</div><div class="input_item"><label>Current Balance</label>$<input type="text" name="ba_'+$fieldname+'_Balance"></div><div class="input_item"><label>APR (as decimal)</label>&nbsp;&nbsp;<input type="text" name="ra_'+$fieldname+'"></div></div>';
+			$content = '<div class="debt_account account"><a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a><h5 class="form_account_label">'+$fieldname+'</h5><div class="input_item"><label>Current Payment</label>$<input type="text" name="de_'+$fieldname+'"> per month</div><div class="input_item"><label>Current Balance</label>$<input type="text" name="ba_'+$fieldname+'_Balance"></div><div class="input_item"><label>APR</label>%<input type="text" name="ra_'+$fieldname+'"></div></div>';
 
 			$(this).before($content);
 		}
@@ -39,7 +39,7 @@
 		$fieldname = prompt('Enter Account Name');
 		if ($fieldname != null && $fieldname != '') {
 
-			$content = '<div class="cash_account account"><a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a><h5 style="text-decoration: underline; display: inline-block">'+$fieldname+'</h5><div class="input_item"><label>Current Balance</label>$<input type="text" name="cb_'+$fieldname+'_Balance"></div><div class="input_item"><label>Expected Rate of Return (as decimal)</label>&nbsp;&nbsp;<input type="text" name="ra_'+$fieldname+'"></div></div>';
+			$content = '<div class="cash_account account"><a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a><h5 style="text-decoration: underline; display: inline-block">'+$fieldname+'</h5><div class="input_item"><label>Current Balance</label>$<input type="text" name="cb_'+$fieldname+'_Balance"></div><div class="input_item"><label>Expected Rate of Return</label>%<input type="text" name="ra_'+$fieldname+'"></div></div>';
 
 			$(this).before($content);
 		}
@@ -65,7 +65,7 @@
 				continue;
 			}
 
-			fieldvalue_int = parseInt(fieldvalue);
+			fieldvalue_int = parseFloat(fieldvalue);
 			if (isNaN(fieldvalue_int)) {
 				alert(fieldname+" input must be a number");
 				return false;
@@ -207,8 +207,8 @@
 								$<input type="text" name="ba_Student_Balance">
 							</div>
 							<div class="input_item">
-								<label>APR (as decimal)</label>
-								&nbsp;&nbsp;<input type="text" name="ra_Student">
+								<label>APR</label>
+								%<input type="text" name="ra_Student">
 							</div>
 						</div>
 						<div class="debt_account account">
@@ -223,8 +223,8 @@
 								$<input type="text" name="ba_CC_Balance">
 							</div>
 							<div class="input_item">
-								<label>APR (as decimal)</label>
-								&nbsp;&nbsp;<input type="text" name="ra_CC">
+								<label>APR</label>
+								%<input type="text" name="ra_CC">
 							</div>
 						</div>
 						<div class="debt_account account">
@@ -239,8 +239,8 @@
 								$<input type="text" name="ba_Other_Balance">
 							</div>
 							<div class="input_item">
-								<label>APR (as decimal)</label>
-								&nbsp;&nbsp;<input type="text" name="ra_Other">
+								<label>APR</label>
+								%<input type="text" name="ra_Other">
 							</div>
 						</div>
 
@@ -260,8 +260,8 @@
 								$<input type="text" name="cb_Checking_Balance">
 							</div>
 							<div class="input_item">
-								<label>Expected Rate of Return (as decimal)</label>
-								&nbsp;&nbsp;<input type="text" name="ra_Checking">
+								<label>Expected Rate of Return</label>
+								%<input type="text" name="ra_Checking">
 							</div>
 						</div>
 
@@ -273,8 +273,8 @@
 								$<input type="text" name="cb_Savings_Balance">
 							</div>
 							<div class="input_item">
-								<label>Expected Rate of Return (as decimal)</label>
-								&nbsp;&nbsp;<input type="text" name="ra_Savings">
+								<label>Expected Rate of Return</label>
+								%<input type="text" name="ra_Savings">
 							</div>
 						</div>
 
@@ -286,8 +286,8 @@
 								$<input type="text" name="cb_Investment_Balance">
 							</div>
 							<div class="input_item">
-								<label>Expected Rate of Return (as decimal)</label>
-								&nbsp;&nbsp;<input type="text" name="ra_Investment">
+								<label>Expected Rate of Return</label>
+								%<input type="text" name="ra_Investment">
 							</div>
 						</div>
 

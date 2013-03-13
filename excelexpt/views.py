@@ -53,7 +53,7 @@ def submit():
         elif prefix == "cb_":
             cash_balances.update({item[3:]: item_value})
         elif prefix == "ra_":
-            rates.update({item[3:]: item_value})
+            rates.update({item[3:]: float(item_value)/100.0})
     print rates
 
     util_fxns.build_xls_file(income, basic_expenses, debt_expenses, misc_expenses, debt_balances, cash_balances, rates)

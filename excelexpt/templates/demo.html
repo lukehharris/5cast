@@ -8,20 +8,42 @@
 	<script type="text/javascript">
 	$(document).ready(function() {
 
+	$global_fieldnames = ['salary', 'housing', 'utilities', 'tv/internet', 'phone', 'gym', 'food', 'social/entertainment', 'other', 'student loans', 'credit cards', 'other debt', 'checking','savings','investment'];
+
+
 	$('.delete_item').live('click', function(){
+		$name = $(this).next().html().toLowerCase();
+		//alert($name);
 		$(this).closest('.input_item').remove();
+		$global_fieldnames.splice($global_fieldnames.indexOf($name), 1);
+		//alert($global_fieldnames);		
 	});
 	$('.delete_account').live('click', function(){
 		$(this).closest('.account').remove();
 	});
 	$('.new_field').live('click', function(){
-		$fieldname = prompt('Enter Item Name');
-		if ($fieldname != null && $fieldname != '') {
-			$prefix = $(this).attr('id').slice(-2);
+		while (true) {
+			$fieldname = prompt('Enter Item Name');
+			if ($fieldname != null && $fieldname != '') {
+				//alert($global_fieldnames.indexOf($fieldname));
+				if($global_fieldnames.indexOf($fieldname.toLowerCase()) == -1) {
+					$prefix = $(this).attr('id').slice(-2);
 
-			$content = '<div class="input_item"><a class="btn btn-danger delete_item" title="Delete This Item" style="margin-right: 17px;"><i class="icon-remove"></i></a><label>'+$fieldname+'</label>$<input type="text" name="'+$prefix+'_'+$fieldname+'"> per month</div>';
+					$content = '<div class="input_item"><a class="btn btn-danger delete_item" title="Delete This Item" style="margin-right: 17px;"><i class="icon-remove"></i></a><label>'+$fieldname+'</label>$<input type="text" name="'+$prefix+'_'+$fieldname+'"> per month</div>';
 
-			$(this).before($content);
+					$(this).before($content);
+
+					$global_fieldnames.push($fieldname.toLowerCase());
+					//alert($global_fieldnames);
+					break;
+				}
+				else {
+					alert('You already have an item with the name \"'+$fieldname+'\".\r\nPlease use a new, unique name.');
+				}
+			}
+			else {
+				break;
+			}	
 		}
 	});
 

@@ -1,0 +1,41 @@
+
+label {
+	display: inline-block;
+	width: 120px;
+	font-size: 11pt;
+}
+
+.input_item {
+	margin: 12px 8px;
+}
+.input_item input {
+	margin:0 16px;
+}
+
+.new_field,
+.new_debt_account,
+.new_cash_account {
+	margin-left: 186px;
+}
+
+.icon-plus-sign {
+	font-size: 16pt;
+	margin-right: 8px;
+	position: relative;
+	top: 2px;
+}
+.icon-remove {
+	margin-right: 8px;
+	position: relative;
+	top: 6px;
+	left: 4px;
+}
+
+.delete_item,
+.delete_account {
+	border-radius: 20px;
+	height: 20px;
+	width: 20px;
+	padding: 0;
+	margin-right: 10px;
+}

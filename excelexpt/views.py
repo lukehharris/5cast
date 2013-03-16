@@ -104,6 +104,18 @@ def submit_pydata():
 
         #, basic_expenses=basic_expenses, debt_expenses=debt_expenses, misc_expenses=misc_expenses, balances=balances)
 
+@app.route('/cannon', methods=['GET', 'POST'])
+def cannon():
+    return render_template('cannon.html')
+
+@app.route('/cannon/cad', methods=['GET', 'POST'])
+def cad():
+    return send_from_directory('static/cannon/','Brian Coffey - Pneumatic Cannon Provisional Patent Figures.pdf',as_attachment=True)
+
+@app.route('/cannon/patent', methods=['GET', 'POST'])
+def patent():
+    return send_from_directory('static/cannon/','Brian Coffey - Pneumatic Cannon Provisional Patent.pdf',as_attachment=True)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

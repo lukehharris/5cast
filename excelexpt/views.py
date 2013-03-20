@@ -104,6 +104,10 @@ def submit_pydata():
 
         #, basic_expenses=basic_expenses, debt_expenses=debt_expenses, misc_expenses=misc_expenses, balances=balances)
 
+@app.route('/president')
+def president():
+    return render_template('president.html')
+
 @app.route('/cannon', methods=['GET', 'POST'])
 def cannon():
     return render_template('cannon.html')

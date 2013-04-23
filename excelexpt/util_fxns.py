@@ -1,6 +1,7 @@
 from xlrd import open_workbook
 from xlwt import Workbook, easyxf, Formula
 from xlwt.Utils import rowcol_to_cell
+from models import User
 
 def build_xls_file(income, basic_expenses, debt_expenses, misc_expenses, debt_balances, cash_balances, rates):
     wb = Workbook()
@@ -345,3 +346,12 @@ def calculate_net_worth(s, current_row, total_debt_row, total_cash_row):
         s.write(current_row,2+x,Formula(rowcol_to_cell(total_cash_row,2+x)+'-'+rowcol_to_cell(total_debt_row,2+x)),easyxf('font: bold True;'))
 
     return current_row + 2
+
+
+
+def authenticate(email, password):
+    user = User.query.filter_by(email=email).first()
+    if user:
+        if user.check_password(password):
+            return user
+    return False

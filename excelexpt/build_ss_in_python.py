@@ -91,12 +91,19 @@ def build_cash_section(s, cash_balances, rates):
 
 def build_cash_sub_section(s, name):
     if name == 'Checking':
-        s['cash_accounts']['accounts'][name]['items'].update({'net_income':{0:''}})
+        #s['cash_accounts']['accounts'][name]['items'].update({'net_income':{0:''}})
+        s['cash_accounts']['accounts'][name]['items'].update({'net_income':{0:0}})
 
     rate = s['cash_accounts']['accounts'][name]['rate']
-    s['cash_accounts']['accounts'][name]['items']['beginning_balance'][0] = ''
-    s['cash_accounts']['accounts'][name]['items']['withdrawal'][0] = ''
-    s['cash_accounts']['accounts'][name]['items']['interest'][0] = ''
+    
+    #s['cash_accounts']['accounts'][name]['items']['beginning_balance'][0] = ''
+    #s['cash_accounts']['accounts'][name]['items']['withdrawal'][0] = ''
+    #s['cash_accounts']['accounts'][name]['items']['interest'][0] = ''
+    
+    s['cash_accounts']['accounts'][name]['items']['beginning_balance'][0] = 0
+    s['cash_accounts']['accounts'][name]['items']['withdrawal'][0] = 0
+    s['cash_accounts']['accounts'][name]['items']['interest'][0] = 0
+
     for x in range(1,13):
         prev_ending_balance = s['cash_accounts']['accounts'][name]['items']['ending_balance'][x-1]
         s['cash_accounts']['accounts'][name]['items']['beginning_balance'][x] = prev_ending_balance

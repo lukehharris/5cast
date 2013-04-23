@@ -6,20 +6,35 @@
 	<table>
 		<thead>
 			<th></th>
-			{% for k,v in s['income']['items']['Income'].iteritems() %}
+			{% for k,v in s['income']['items']['Salary'].iteritems() %}
 				<th style="border: 1px solid black">
 					{{k}}
 				</th>
 			{% endfor %}
 		</thead>
-		<tr>
-			<td>Income</td>
-			{% for k,v in s['income']['items']['Income'].iteritems() %}
-				<td style="border: 1px solid black">
+
+		<tr><td><strong>Income</strong></td></tr>
+		
+			
+			{% for k,v in s['income']['items'].iteritems() %}
+				<tr>
+					<td>{{k}}</td>
+					{% for k2,v2 in v.iteritems() %}
+						<td style="border: 1px solid black">
+							{{v2}}
+						</td>
+					{% endfor %}
+				</tr>
+			{% endfor %}
+			<tr>
+				<td><strong>Total Income</strong></td>
+			{% for k,v in s['income']['total'].iteritems() %}
+				<td style="border: 1px solid black;font-weight:bold;">
 					{{v}}
 				</td>
 			{% endfor %}
-		</tr>
+			</tr>
+
 		{% for section in s['expenses']['sections'] %}
 		<tr><td>&nbsp;</td></tr>
 		<tr><td><strong>{{section}} Expenses</strong></td></tr>

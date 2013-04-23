@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head>
+	<title>TabStash - Login</title>
+	
+</head>
+<body>
+	<form method="POST">
+		<label>Email</label>
+		<input type="text" name="email" />
+		<label>Password</label>
+		<input type="password" name="password" />
+		<button class="btn" type="Submit">Login</button>
+
+		<p>
+			Don't have an account yet? <a href="{{url_for('create_account')}}">Create one</a>
+		</p>
+
+</body>
+</html>

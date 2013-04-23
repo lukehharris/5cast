@@ -42,7 +42,7 @@ from excelexpt import app
 ## ADMIN ##
 class MyModelView(ModelView):
     def is_accessible(self):
-        return current_user.email == "lukehharris@gmail.com"
+        return current_user.email == "lhh@admin"
 
 admin = Admin(app)
 admin.add_view(MyModelView(User, db.session))

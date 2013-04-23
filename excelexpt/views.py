@@ -10,6 +10,7 @@ from xlrd import open_workbook
 from xlwt import Workbook, easyxf, Formula
 from xlwt.Utils import rowcol_to_cell
 
+
 @app.route('/')
 def index():
     return render_template('test_temp.html')
@@ -64,8 +65,8 @@ def submit():
     
 import build_ss_in_python
 
-@app.route('/submit_pydata', methods=['POST'])
-def submit_pydata():
+@app.route('/submit_demo2', methods=['POST'])
+def submit_demo2():
     income  = {}
     basic_expenses = {}
     debt_expenses = {}
@@ -94,15 +95,44 @@ def submit_pydata():
         elif prefix == "cb_":
             cash_balances.update({item[3:]: item_value})
         elif prefix == "ra_":
-            rates.update({item[3:]: item_value})
+            rates.update({item[3:]: float(item_value)/100.0})
     print rates
 
     s = build_ss_in_python.build_ss(income, basic_expenses, debt_expenses, misc_expenses, debt_balances, cash_balances, rates)
     print s
 
-    return render_template('submission_received.html', s=s)
+    if current_user.is_active():
+        current_user.data = s
+        db.session.add(current_user)
+        db.session.commit()
 
-        #, basic_expenses=basic_expenses, debt_expenses=debt_expenses, misc_expenses=misc_expenses, balances=balances)
+    return redirect(url_for('demo2_output'))
+    
+
+@app.route('/demo2_output')
+def demo2_output():
+    s = current_user.data
+
+    try:
+        survival_months = "{0:0.1f}".format(s['cash_accounts']['total'][0] / s['expenses']['total'][0])
+    except ZeroDivisionError:
+        survival_months = 0.0
+
+    if s['net_income'][0] < 0:
+        debt_free_months = 'NEVER'
+    else:
+        debt_free_months = 'X'
+
+    return render_template('demo2_output.html', s=s, survival_months=survival_months, debt_free_months=debt_free_months)
+
+@app.route('/demo2')
+def demo2():
+    if current_user.is_active():
+        return render_template('demo2.html')
+    else:
+        return redirect(url_for('login'))
+
+
 
 @app.route('/president')
 def president():
@@ -128,12 +158,12 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        user = utility_fxns.authenticate(email, password)
+        user = util_fxns.authenticate(email, password)
         if user:
             if login_user(user):
                 #do stuff
-                return redirect(url_for('index'))
-        error = "Login failed"
+                return redirect(url_for('demo2'))
+        #error = "Login failed"
     return render_template('login.html', login=True, email=email, password=password)
 
 @app.route('/create_account', methods=['GET', 'POST'])
@@ -146,11 +176,10 @@ def create_account():
         password = request.form['password']
         user = User(email,password)
 
- 
         db.session.add(user)
         db.session.commit()
 
-        this_user = utility_fxns.authenticate(email, password)
+        this_user = util_fxns.authenticate(email, password)
         if this_user:
             if login_user(this_user):
                 #do stuff

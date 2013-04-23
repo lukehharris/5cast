@@ -32,6 +32,11 @@
 				<a href="">Contact</a>
 			</div>
 		</div-->
+		{% if current_user.is_active() %}
+			<div style="float: right; margin-top: 20px; margin-right: 20px; font-size:10pt;">
+				Logged in as: {{ current_user.email }}
+			</div>
+		{% endif %}
 	</div>
 	
 

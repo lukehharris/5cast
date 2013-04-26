@@ -62,7 +62,7 @@ $(document).ready(function() {
 	<div class="content_box">
 	
 		<ul class="nav nav-tabs" id="tabs">
-			<li class="active"><a href="#tab_main">Main</a></li>
+			<li class="active"><a href="#tab_main">Detail</a></li>
 			<li><a href="#tab_summary">Summary</a></li>
 			<li><a href="#tab_solvency">Solvency</a></li>
 			<li><a href="#tab_debt">Debt</a></li>
@@ -322,7 +322,67 @@ $(document).ready(function() {
 			</div>
 			<div class="tab-pane" id="tab_debt">
 				<p>
-					Your current Total Cash/Investment Assets balance is: <strong>{{ '{:20,.0f}'.format(s['debt_accounts']['total_debt'][0]) }}</strong>
+					Your current Total Debt balance is: <strong>{{ '{:20,.0f}'.format(s['debt_accounts']['total_debt'][0]) }}</strong>
+				</p>
+				<h3>Debt Summary</h3>
+				<table>
+					<thead>
+						<th>Account</th>
+						<th>Balance</th>
+						<th>APR</th>
+						<th>Current Payment</th>
+					</thead>
+					<tbody>
+						{% for section in s['debt_accounts']['accounts'] %}
+						<tr>
+							<td>{{section}} Debt</td>
+							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(s['debt_accounts']['accounts'][section]['items']['beginning_balance'][1])}}</td>
+							<td style="border: 1px solid black;">{{s['debt_accounts']['accounts'][section]['rate'] * 100}}%</td>
+							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(s['debt_accounts']['accounts'][section]['items']['payments'][1] * -1)}}</td>
+						</tr>
+						{% endfor %}
+						<tr>
+							<td><strong>Total</strong></td>
+							<td style="border: 1px solid black;font-weight:bold;">{{'{:20,.0f}'.format(s['debt_accounts']['total_debt'][0])}}</td>
+							<td style="border: 1px solid black;font-weight:bold;">{{ WA_rate }}%</td>
+							<td style="border: 1px solid black;font-weight:bold;">{{'{:20,.0f}'.format(s['debt_accounts']['debt_expense_summary']['total_expense'][1])}}</td>
+						</tr>
+
+
+
+					</tbody>
+				</table>
+				<br />
+				<br />
+				<br />
+				<table>
+
+					<tr><td><strong>Debt Expense Summary</strong></td></tr>
+					<tr><td>Interest Paid</td>
+						{% for k,v in s['debt_accounts']['debt_expense_summary']['interest_paid'].iteritems() %}
+							<td style="border: 1px solid black;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+					<tr><td>Prinipal Paid</td>
+						{% for k,v in s['debt_accounts']['debt_expense_summary']['principal_paid'].iteritems() %}
+							<td style="border: 1px solid black;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+					<tr><td><strong>Total Debt Expense</strong></td>
+						{% for k,v in s['debt_accounts']['debt_expense_summary']['total_expense'].iteritems() %}
+							<td style="border: 1px solid black;font-weight:bold;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+				</table>
+				<br />
+				<p>
+					Over the next year, your total debt balance is expected to be reduced by <strong>${{'{:20,.0f}'.format(s['debt_accounts']['total_debt'][0] - s['debt_accounts']['total_debt'][12])}}</strong>
 				</p>
 				<p>
 					Your total current net income is: <strong>{{ '{:20,.0f}'.format(s['net_income'][0]) }}</strong>

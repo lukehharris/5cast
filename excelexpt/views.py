@@ -123,7 +123,14 @@ def demo2_output():
     else:
         debt_free_months = 'X'
 
-    return render_template('demo2_output.html', s=s, survival_months=survival_months, debt_free_months=debt_free_months)
+    total_debt = s['debt_accounts']['total_debt'][0]
+    WA_rate = 0
+    for section in s['debt_accounts']['accounts']:
+        WA_rate += (s['debt_accounts']['accounts'][section]['items']['beginning_balance'][1] / total_debt) * s['debt_accounts']['accounts'][section]['rate']
+    WA_rate = round(WA_rate * 100, 1)
+
+
+    return render_template('demo2_output.html', s=s, survival_months=survival_months, debt_free_months=debt_free_months, WA_rate=WA_rate)
 
 @app.route('/demo2')
 def demo2():

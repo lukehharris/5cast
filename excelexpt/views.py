@@ -136,11 +136,17 @@ def demo2_output():
     print 'checkpoint 3'
     for section in s['debt_accounts']['accounts']:
         beg_balance = s['debt_accounts']['accounts'][section]['items']['beginning_balance'][1]
+        print 'beg_balance ', beg_balance
         rate = s['debt_accounts']['accounts'][section]['rate']
+        print 'rate ', rate
         payment = -1 * s['debt_accounts']['accounts'][section]['items']['payments'][1]
+        print 'payment ',payment
         WA_rate += (beg_balance / total_debt) * rate
+        print 'WA_rate ',WA_rate
         pmnts_remaining[section] = math.ceil( math.log(1 / (1 - ( (beg_balance * (rate / 12.0) ) / payment) ) ) / math.log(1 + (rate / 12.0) ) )
+        print 'pmnts_remaining ', pmnts_remaining
         total_paid[section] = payment * float(pmnts_remaining[section])
+        print 'total_paid ', total_paid
         print 'checkpoint 4'
         if first_iter:
             first_iter = False

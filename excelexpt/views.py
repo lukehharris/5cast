@@ -141,8 +141,11 @@ def demo2_output():
         print 'rate ', rate
         payment = -1 * s['debt_accounts']['accounts'][section]['items']['payments'][1]
         print 'payment ',payment
-        WA_rate += (beg_balance / total_debt) * rate
-        print 'WA_rate ',WA_rate
+        try:
+            WA_rate += (beg_balance / total_debt) * rate
+            print 'WA_rate ',WA_ratefrom
+        except ZeroDivisionError:
+            WA_rate = 0
         try:
             pmnts_remaining[section] = math.ceil( math.log(1 / (1 - ( (beg_balance * (rate / 12.0) ) / payment) ) ) / math.log(1 + (rate / 12.0) ) )
         except ZeroDivisionError:
@@ -156,7 +159,10 @@ def demo2_output():
             first_sec = section
             new_sec = 'First +100'
             payment += 100.0
-            pmnts_remaining[new_sec] = math.ceil( math.log(1 / (1 - ( (beg_balance * (rate / 12.0) ) / payment) ) ) / math.log(1 + (rate / 12.0) ) )
+            try:
+                pmnts_remaining[new_sec] = math.ceil( math.log(1 / (1 - ( (beg_balance * (rate / 12.0) ) / payment) ) ) / math.log(1 + (rate / 12.0) ) )
+            except ZeroDivisionError:
+                pmnts_remaining[new_sec] = 0
             total_paid[new_sec] = payment * float(pmnts_remaining[new_sec])
 
     WA_rate = round(WA_rate * 100, 1)

@@ -113,6 +113,8 @@ def submit_demo2():
 def demo2_output():
     s = current_user.data
 
+    print 'checkpoint 1'
+
     try:
         survival_months = "{0:0.1f}".format(s['cash_accounts']['total'][0] / s['expenses']['total'][0])
     except ZeroDivisionError:
@@ -123,12 +125,15 @@ def demo2_output():
     else:
         debt_free_months = 'X'
 
+    print 'checkpoint 2'
+
     total_debt = s['debt_accounts']['total_debt'][0]
     WA_rate = 0
     pmnts_remaining = {}
     total_paid = {}
     first_iter = True
     first_sec = ''
+    print 'checkpoint 3'
     for section in s['debt_accounts']['accounts']:
         beg_balance = s['debt_accounts']['accounts'][section]['items']['beginning_balance'][1]
         rate = s['debt_accounts']['accounts'][section]['rate']
@@ -136,6 +141,7 @@ def demo2_output():
         WA_rate += (beg_balance / total_debt) * rate
         pmnts_remaining[section] = math.ceil( math.log(1 / (1 - ( (beg_balance * (rate / 12.0) ) / payment) ) ) / math.log(1 + (rate / 12.0) ) )
         total_paid[section] = payment * float(pmnts_remaining[section])
+        print 'checkpoint 4'
         if first_iter:
             first_iter = False
             first_sec = section
@@ -148,7 +154,7 @@ def demo2_output():
     
     
 
-
+    print 'checkpoint 5'
 
 
 

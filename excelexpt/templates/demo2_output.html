@@ -331,6 +331,9 @@ $(document).ready(function() {
 						<th>Balance</th>
 						<th>APR</th>
 						<th>Current Payment</th>
+						<th>Payments Remaining</th>
+						<th>Total to be Paid</th>
+						<th>Interest to be Paid</th>
 					</thead>
 					<tbody>
 						{% for section in s['debt_accounts']['accounts'] %}
@@ -339,6 +342,9 @@ $(document).ready(function() {
 							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(s['debt_accounts']['accounts'][section]['items']['beginning_balance'][1])}}</td>
 							<td style="border: 1px solid black;">{{s['debt_accounts']['accounts'][section]['rate'] * 100}}%</td>
 							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(s['debt_accounts']['accounts'][section]['items']['payments'][1] * -1)}}</td>
+							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(pmnts_remaining[section])}}</td>
+							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(total_paid[section])}}</td>
+							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(total_paid[section] - s['debt_accounts']['accounts'][section]['items']['beginning_balance'][1])}}</td>
 						</tr>
 						{% endfor %}
 						<tr>
@@ -347,11 +353,26 @@ $(document).ready(function() {
 							<td style="border: 1px solid black;font-weight:bold;">{{ WA_rate }}%</td>
 							<td style="border: 1px solid black;font-weight:bold;">{{'{:20,.0f}'.format(s['debt_accounts']['debt_expense_summary']['total_expense'][1])}}</td>
 						</tr>
-
-
-
+						<tr><td>&nbsp;</td></tr>
+						<tr>
+							<td>First +100</td>
+							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(s['debt_accounts']['accounts'][first_sec]['items']['beginning_balance'][1])}}</td>
+							<td style="border: 1px solid black;">{{s['debt_accounts']['accounts'][first_sec]['rate'] * 100}}%</td>
+							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(s['debt_accounts']['accounts'][first_sec]['items']['payments'][1] * -1 + 100)}}</td>
+							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(pmnts_remaining['First +100'])}}</td>
+							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(total_paid['First +100'])}}</td>
+							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(total_paid['First +100'] - s['debt_accounts']['accounts'][first_sec]['items']['beginning_balance'][1])}}</td>
+						</tr>
 					</tbody>
 				</table>
+				<p>
+					<br />
+					Total extra payments made: <strong>${{'{:20,.0f}'.format(pmnts_remaining['First +100'] * 100)}}</strong>
+					<br />
+					Interest savings due to extra payments: <strong>${{'{:20,.0f}'.format((total_paid[first_sec] - s['debt_accounts']['accounts'][first_sec]['items']['beginning_balance'][1]) - (total_paid['First +100'] - s['debt_accounts']['accounts'][first_sec]['items']['beginning_balance'][1]))}}</strong>
+					<br />
+					Months reduction in debt term: <strong>{{'{:20,.0f}'.format(pmnts_remaining[first_sec] - pmnts_remaining['First +100'])}}</strong>
+				</p>
 				<br />
 				<br />
 				<br />

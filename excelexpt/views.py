@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, flash, url_for, jso
 from excelexpt import app, db, login_manager
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user, UserMixin, AnonymousUser, confirm_login, fresh_login_required
 from models import User
-import json
+import json, math
 
 from xlrd import open_workbook
 from xlwt import Workbook, easyxf, Formula
@@ -125,12 +125,35 @@ def demo2_output():
 
     total_debt = s['debt_accounts']['total_debt'][0]
     WA_rate = 0
+    pmnts_remaining = {}
+    total_paid = {}
+    first_iter = True
+    first_sec = ''
     for section in s['debt_accounts']['accounts']:
-        WA_rate += (s['debt_accounts']['accounts'][section]['items']['beginning_balance'][1] / total_debt) * s['debt_accounts']['accounts'][section]['rate']
+        beg_balance = s['debt_accounts']['accounts'][section]['items']['beginning_balance'][1]
+        rate = s['debt_accounts']['accounts'][section]['rate']
+        payment = -1 * s['debt_accounts']['accounts'][section]['items']['payments'][1]
+        WA_rate += (beg_balance / total_debt) * rate
+        pmnts_remaining[section] = math.ceil( math.log(1 / (1 - ( (beg_balance * (rate / 12.0) ) / payment) ) ) / math.log(1 + (rate / 12.0) ) )
+        total_paid[section] = payment * float(pmnts_remaining[section])
+        if first_iter:
+            first_iter = False
+            first_sec = section
+            new_sec = 'First +100'
+            payment += 100.0
+            pmnts_remaining[new_sec] = math.ceil( math.log(1 / (1 - ( (beg_balance * (rate / 12.0) ) / payment) ) ) / math.log(1 + (rate / 12.0) ) )
+            total_paid[new_sec] = payment * float(pmnts_remaining[new_sec])
+
     WA_rate = round(WA_rate * 100, 1)
+    
+    
 
 
-    return render_template('demo2_output.html', s=s, survival_months=survival_months, debt_free_months=debt_free_months, WA_rate=WA_rate)
+
+
+
+
+    return render_template('demo2_output.html', s=s, survival_months=survival_months, debt_free_months=debt_free_months, WA_rate=WA_rate, pmnts_remaining=pmnts_remaining, total_paid=total_paid, first_sec=first_sec)
 
 @app.route('/demo2')
 def demo2():

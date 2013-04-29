@@ -143,7 +143,10 @@ def demo2_output():
         print 'payment ',payment
         WA_rate += (beg_balance / total_debt) * rate
         print 'WA_rate ',WA_rate
-        pmnts_remaining[section] = math.ceil( math.log(1 / (1 - ( (beg_balance * (rate / 12.0) ) / payment) ) ) / math.log(1 + (rate / 12.0) ) )
+        try:
+            pmnts_remaining[section] = math.ceil( math.log(1 / (1 - ( (beg_balance * (rate / 12.0) ) / payment) ) ) / math.log(1 + (rate / 12.0) ) )
+        except ZeroDivisionError:
+            pmnts_remaining[section] = 0
         print 'pmnts_remaining ', pmnts_remaining
         total_paid[section] = payment * float(pmnts_remaining[section])
         print 'total_paid ', total_paid

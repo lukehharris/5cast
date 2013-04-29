@@ -143,7 +143,7 @@ def demo2_output():
         print 'payment ',payment
         try:
             WA_rate += (beg_balance / total_debt) * rate
-            print 'WA_rate ',WA_ratefrom
+            print 'WA_rate ',WA_rate
         except ZeroDivisionError:
             WA_rate = 0
         try:

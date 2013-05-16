@@ -5,6 +5,9 @@
 {% block extra_headers %}
 <script src="/static/Chart.min.js"></script>
 
+<script src="/static/underscore-min.js"></script>
+<script src="/static/backbone-min.js"></script>
+
 <script type="text/javascript">
 $(document).ready(function() {
 	Number.prototype.formatMoney = function(c, d, t){
@@ -53,6 +56,70 @@ $(document).ready(function() {
 	new Chart(ctx).Line(NW_Chart_data);
 
 });
+</script>
+
+<script type="text/template" id="debt_scenario_template">
+	/*
+	<tr>
+		<td>First +100</td>
+		<td style="border: 1px solid black;">{{'{:20,.0f}'.format(s['debt_accounts']['accounts'][first_sec]['items']['beginning_balance'][1])}}</td>
+		<td style="border: 1px solid black;">{{s['debt_accounts']['accounts'][first_sec]['rate'] * 100}}%</td>
+		<td style="border: 1px solid black;">{{'{:20,.0f}'.format(s['debt_accounts']['accounts'][first_sec]['items']['payments'][1] * -1 + 100)}}</td>
+		<td style="border: 1px solid black;">{{'{:20,.0f}'.format(pmnts_remaining['First +100'])}}</td>
+		<td style="border: 1px solid black;">{{'{:20,.0f}'.format(total_paid['First +100'])}}</td>
+		<td style="border: 1px solid black;">{{'{:20,.0f}'.format(total_paid['First +100'] - s['debt_accounts']['accounts'][first_sec]['items']['beginning_balance'][1])}}</td>
+	</tr>
+	*/
+	<tr>
+		<td>First +<%= amnt %></td>
+		<td style="border: 1px solid black;">beginning_balance</td>
+		<td style="border: 1px solid black;">rate%</td>
+		<td style="border: 1px solid black;"><%= amnt %></td>
+		<td style="border: 1px solid black;">pmnts_remaining</td>
+		<td style="border: 1px solid black;">total_paid</td>
+		<td style="border: 1px solid black;">total_int_paid</td>
+	</tr>
+</script>
+
+<script type="text/template" id="new_debt_scenario_button_template">
+	<a class="btn btn-info" id="new_debt_scenario"><i class="icon-plus"></i>Add Payment Scenario</a>
+</script>
+
+<script type="text/javascript">
+	NewDebtScenarioView = Backbone.View.extend({
+        initialize: function(){
+            this.render();
+        },
+        render: function(){
+            var template = _.template( $("#new_debt_scenario_button_template").html(), {} );
+            this.$el.html( template );
+        },
+        events: {
+            "click #new_debt_scenario": "addScenario"
+        },
+        addScenario: function( event ){
+            var amnt = prompt("How much would you like to pay?");
+            var template = _.template( $("#debt_scenario_template").html(), {amnt:amnt} );
+            $("#debt_scenarios").html( template );
+        }
+    });
+
+    $(document).ready(function() {
+		var newdebtscenarioview = new NewDebtScenarioView({ el: $("#new_debt_scenario_button") });
+	});
+
+	/*
+	DebtScenarioView = Backbone.View.extend({
+		el: $("#debt_scenarios"),
+		events: {
+			"click #new_debt_scenario": "showPrompt",
+		},
+		showPrompt: function() {
+			var amnt = prompt("How much would you like to pay?");
+		}
+	});
+	*/
+	
 </script>
 
 {% endblock %}
@@ -327,7 +394,7 @@ $(document).ready(function() {
 				<h3>Debt Summary</h3>
 				<table>
 					<thead>
-						<th>Account</th>
+						<th style="width:90px;">Account</th>
 						<th>Balance</th>
 						<th>APR</th>
 						<th>Current Payment</th>
@@ -354,6 +421,25 @@ $(document).ready(function() {
 							<td style="border: 1px solid black;font-weight:bold;">{{'{:20,.0f}'.format(s['debt_accounts']['debt_expense_summary']['total_expense'][1])}}</td>
 						</tr>
 						<tr><td>&nbsp;</td></tr>
+					</tbody>
+				</table>
+
+
+
+				<div id="new_debt_scenario_button"></div>
+				
+
+				<table>
+					<thead style="color:white">
+						<th style="width:90px;">Account</th>
+						<th>Balance</th>
+						<th>APR</th>
+						<th>Current Payment</th>
+						<th>Payments Remaining</th>
+						<th>Total to be Paid</th>
+						<th>Interest to be Paid</th>
+					</thead>
+					<tbody id="debt_scenarios">
 						<tr>
 							<td>First +100</td>
 							<td style="border: 1px solid black;">{{'{:20,.0f}'.format(s['debt_accounts']['accounts'][first_sec]['items']['beginning_balance'][1])}}</td>
@@ -365,6 +451,11 @@ $(document).ready(function() {
 						</tr>
 					</tbody>
 				</table>
+
+
+
+
+
 				<p>
 					<br />
 					Total extra payments made: <strong>${{'{:20,.0f}'.format(pmnts_remaining['First +100'] * 100)}}</strong>

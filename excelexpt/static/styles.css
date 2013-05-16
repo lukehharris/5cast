@@ -27,7 +27,7 @@ html, body {
     width: 2px;
     float: left;
     display: inline;
-    height: 2800px;
+    height: 2600px;
 }
 .form_first_divider {
 	background: rgba(204, 218, 227, 0.74);
@@ -134,9 +134,10 @@ html, body {
 	display: inline-block;
 	font-size: 12pt;
 }
-.account > .input_item {
+.account > .input_type1 {
 	margin-left: 36px;
 }
+
 
 
 label {
@@ -151,7 +152,7 @@ label {
 }
 .input_item input {
 	margin:0 16px;
-	width: inherit;
+	width: 80px;
 }
 
 .new_field,
@@ -188,4 +189,46 @@ label {
     margin: 40px;
     min-height: 250px;
     padding: 20px 30px;
+}
+
+.scenario_column {
+     width: 152px; 
+     border-right: 2px solid black; 
+     float:left;
+}
+
+
+input.input_percentage {
+     margin: 0 12px;
+}
+
+#new_scenario:hover {
+    background: gray;
+    cursor: pointer;
+}
+.case_tag{
+     width: 148px; 
+     border: 1px solid black; 
+     border-bottom: 0; 
+     border-radius: 12px 12px 0 0; 
+     height: 50px; 
+     text-align: center; 
+     box-shadow: 0 0 1px 1px #888888; 
+     display: inline-block;
+}
+.case_tag h4 {
+     margin-top: 16px;
+     text-shadow: 0 1px 1px #888888;
+}
+#case0_tag {
+    margin-left:180px; 
+}
+
+#output_grid1 table td,
+#output_grid2 table td {
+    border: 1px solid black;
+    padding: 5px 10px;
+}
+.table_y_axis {
+    font-weight: bold;
 }

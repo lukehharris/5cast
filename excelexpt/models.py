@@ -8,7 +8,8 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(100))
-    data = db.Column(db.PickleType)
+    #data = db.Column(db.PickleType)
+    scenarios = db.relationship('Scenario', backref='user', cascade="all,delete", lazy='dynamic')
   
     def __init__(self, email, password):
         self.email = email
@@ -34,6 +35,25 @@ class User(db.Model):
         return True
 
 
+class Scenario(db.Model):
+    __tablename__ = 'scenarios'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    data = db.Column(db.PickleType)
+    #name = db.Column(db.String)
+    is_base = db.Column(db.Boolean)
+
+    def __init__(self, data):
+        self.data = data
+        self.is_base = False
+
+    def __repr__(self):
+        return '<Scenario %r>' % self.id
+
+    def is_base_case(self):
+        return self.is_base
+
+
 from flask_admin import Admin, BaseView, expose
 from flask_admin.contrib.sqlamodel import ModelView
 from excelexpt import app
@@ -46,4 +66,5 @@ class MyModelView(ModelView):
 
 admin = Admin(app)
 admin.add_view(MyModelView(User, db.session))
+admin.add_view(MyModelView(Scenario, db.session))
 ## /ADMIN ##

@@ -18,6 +18,7 @@ login_manager.setup_app(app)
 app.secret_key = "DS53DFS3DF\SDF5SDF658DS5F2SD1F\2SD1F32SD1"
 
 
+##set this up with sendgrid. example here: https://github.com/jbalogh/github-notifications/blob/master/app.py
 ADMINS = ['lukehharris@gmail.com']
 if not app.debug:
     import logging

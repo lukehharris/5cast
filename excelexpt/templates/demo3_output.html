@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Model Builder Demo{% endblock %}
+
+{% block extra_headers %}
+<script src="/static/Chart.min.js"></script>
+
+<script src="/static/underscore-min.js"></script>
+<script src="/static/backbone-min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+	Number.prototype.formatMoney = function(c, d, t){
+	var n = this, c = isNaN(c = Math.abs(c)) ? 2 : c, d = d == undefined ? "," : d, t = t == undefined ? "." : t, s = n < 0 ? "-" : "", i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + "", j = (j = i.length) > 3 ? j % 3 : 0;
+	   return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
+	 };
+
+
+	function build_head() {
+		$content = '<th></th>'; 
+		{% for x in range(0,121) %}
+			$content += '<th style="border: 1px solid black">{{x}}</th>';
+		{% endfor %}
+		$('.table_head').append($content);
+	}
+
+	build_head();
+	
+
+	$('#tabs a').click(function (e) {
+		e.preventDefault();
+		$(this).tab('show');
+	})
+
+
+
+});
+</script>
+
+<script type="text/template" id="debt_scenario_template">
+
+	<tr>
+		<td>First +<%= amnt %></td>
+		<td style="border: 1px solid black;">beginning_balance</td>
+		<td style="border: 1px solid black;">rate%</td>
+		<td style="border: 1px solid black;"><%= amnt %></td>
+		<td style="border: 1px solid black;">pmnts_remaining</td>
+		<td style="border: 1px solid black;">total_paid</td>
+		<td style="border: 1px solid black;">total_int_paid</td>
+	</tr>
+</script>
+
+<script type="text/template" id="new_debt_scenario_button_template">
+	<a class="btn btn-info" id="new_debt_scenario"><i class="icon-plus"></i>Add Payment Scenario</a>
+</script>
+
+<script type="text/javascript">
+	NewDebtScenarioView = Backbone.View.extend({
+        initialize: function(){
+            this.render();
+        },
+        render: function(){
+            var template = _.template( $("#new_debt_scenario_button_template").html(), {} );
+            this.$el.html( template );
+        },
+        events: {
+            "click #new_debt_scenario": "addScenario"
+        },
+        addScenario: function( event ){
+            var amnt = prompt("How much would you like to pay?");
+            var template = _.template( $("#debt_scenario_template").html(), {amnt:amnt} );
+            $("#debt_scenarios").html( template );
+        }
+    });
+
+    $(document).ready(function() {
+		var newdebtscenarioview = new NewDebtScenarioView({ el: $("#new_debt_scenario_button") });
+	});
+
+	/*
+	DebtScenarioView = Backbone.View.extend({
+		el: $("#debt_scenarios"),
+		events: {
+			"click #new_debt_scenario": "showPrompt",
+		},
+		showPrompt: function() {
+			var amnt = prompt("How much would you like to pay?");
+		}
+	});
+	*/
+	
+</script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+	var ctx = $("#chart1").get(0).getContext("2d");
+
+	var Chart1_data = {
+		//labels : ["Today","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May"],
+		labels: {{Chart1_labels}},
+		datasets : [
+			{
+				fillColor : "rgba(151,187,205,0.5)",
+				strokeColor : "rgba(151,187,205,1)",
+				pointColor : "rgba(151,187,205,1)",
+				pointStrokeColor : "#fff",
+				data : {{Chart1_data_pts[0]}}
+			},
+			{
+				fillColor : "rgba(220,220,220,0.5)",
+				strokeColor : "rgba(220,220,220,1)",
+				pointColor : "rgba(220,220,220,1)",
+				pointStrokeColor : "#fff",
+				data : {{Chart1_data_pts[1]}}
+			}
+		]
+	};
+
+	new Chart(ctx).Line(Chart1_data,{bezierCurve : false});
+
+});
+
+</script>
+
+{% endblock %}
+
+{% block main %}
+
+	<div class="content_box">
+		<div id="output_grid1">
+			<div><strong>Net Worth</strong></div>
+			<div>
+				<table>
+					<thead>
+						<th>&nbsp;</th>
+						<th>6 mon</th>
+						<th>1 yr</th>
+						<th>2 yr</th>
+						<th>5 yr</th>
+						<th>10 yr</th>
+					</thead>
+					<tbody>
+						{% for scenario in s %}
+						<tr>
+							<td class="table_y_axis">{{scenario['name']}}</td>
+							<td>{{scenario['net_worth'][6]}}</td>
+							<td>{{scenario['net_worth'][12]}}</td>
+							<td>{{scenario['net_worth'][24]}}</td>
+							<td>{{scenario['net_worth'][60]}}</td>
+							<td>{{scenario['net_worth'][120]}}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<div id="output_chart1">
+			<canvas id="chart1" width="800" height="400"></canvas>
+			<div class="chart_legend">
+				<div class="legend_item" style="display:inline-block;">
+					<div style="width:20px;height:20px;display:inline-block;background:rgba(151,187,205,1)">&nbsp;</div>
+					<div style="font-weight:bold;display:inline-block;">{{s[0]['name']}}</div>
+				</div>
+				<div class="legend_item" style="display:inline-block;">
+					<div style="width:20px;height:20px;display:inline-block;background:rgba(220,220,220,1);">&nbsp;</div>
+					<div style="font-weight:bold;display:inline-block;">{{s[1]['name']}}</div>
+				</div>
+			</div>
+		</div>
+
+
+		<div id="output_grid2" style="margin-top:60px;">
+			<div><strong>1 Year</strong></div>
+			<div>
+				<table>
+					<thead>
+						<th>&nbsp;</th>
+						<th>Net Worth</th>
+						<th>Assets</th>
+						<th>Debts</th>
+						<th>&nbsp;</th>
+						<th>Net Income</th>
+						<th>Income</th>
+						<th>Expenses</th>
+					</thead>
+					<tbody>
+						{% for scenario in s %}
+						<tr>
+							<td class="table_y_axis">{{scenario['name']}}</td>
+							<td>{{scenario['net_worth'][12]}}</td>
+							<td>{{scenario['cash_accounts']['total'][12]}}</td>
+							<td>{{scenario['debt_accounts']['total_debt'][12]}}</td>
+							<td>&nbsp;</td>
+							<td>{{scenario['net_income'][12]}}</td>
+							<td>{{scenario['income']['total'][12]}}</td>
+							<td>{{scenario['expenses']['total'][12]}}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+	</div>
+
+	
+
+{% endblock %}

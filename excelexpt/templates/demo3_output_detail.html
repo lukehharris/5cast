@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Model Builder Demo{% endblock %}
+
+{% block extra_headers %}
+<script src="/static/Chart.min.js"></script>
+
+<script src="/static/underscore-min.js"></script>
+<script src="/static/backbone-min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+	Number.prototype.formatMoney = function(c, d, t){
+	var n = this, c = isNaN(c = Math.abs(c)) ? 2 : c, d = d == undefined ? "," : d, t = t == undefined ? "." : t, s = n < 0 ? "-" : "", i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + "", j = (j = i.length) > 3 ? j % 3 : 0;
+	   return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
+	 };
+
+
+	function build_head() {
+		$content = '<th></th>'; 
+		{% for x in range(0,121) %}
+			$content += '<th style="border: 1px solid black">{{x}}</th>';
+		{% endfor %}
+		$('.table_head').append($content);
+	}
+
+	build_head();
+	
+
+	$('#tabs a').click(function (e) {
+		e.preventDefault();
+		$(this).tab('show');
+	})
+
+	var ctx = $("#NW_Chart").get(0).getContext("2d");
+
+	var NW_data = []
+	{% for k,v in s[0]['net_worth'].iteritems() %}
+		NW_data.push({{v}})
+	{% endfor %}
+
+
+	var NW_Chart_data = {
+		labels : ["Today","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr"],
+		datasets : [
+			{
+				fillColor : "rgba(151,187,205,0.5)",
+				strokeColor : "rgba(151,187,205,1)",
+				pointColor : "rgba(151,187,205,1)",
+				pointStrokeColor : "#fff",
+				data : NW_data
+			},
+		]
+	}
+
+	new Chart(ctx).Line(NW_Chart_data);
+
+});
+</script>
+
+
+{% endblock %}
+
+{% block main %}
+
+	<div class="content_box">
+	
+		<ul class="nav nav-tabs" id="tabs">
+			<li class="active"><a href="#tab_main">Detail</a></li>
+			<li><a href="#tab_summary">Summary</a></li>
+		</ul>
+
+		<div class="tab-content">
+			<div class="tab-pane active" id="tab_main">
+
+				<table style="margin-top: 40px;">
+					<thead class="table_head">
+						
+						
+					</thead>
+
+					<tr><td><strong>Income</strong></td></tr>
+					
+						
+						{% for k,v in s[0]['income']['items'].iteritems() %}
+							<tr>
+								<td>{{k}}</td>
+								{% for k2,v2 in v.iteritems() %}
+									<td style="border: 1px solid black">
+										{{'{:20,.0f}'.format(v2)}}
+									</td>
+								{% endfor %}
+							</tr>
+						{% endfor %}
+						<tr>
+							<td><strong>Total Income</strong></td>
+						{% for k,v in s[0]['income']['total'].iteritems() %}
+							<td style="border: 1px solid black;font-weight:bold;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+						</tr>
+
+					{% for section in s[0]['expenses']['sections'] %}
+					<tr><td>&nbsp;</td></tr>
+					<tr><td><strong>{{section}} Expenses</strong></td></tr>
+					
+						
+						{% for k,v in s[0]['expenses']['sections'][section]['items'].iteritems() %}
+							<tr>
+								<td>{{k}}</td>
+								{% for k2,v2 in v.iteritems() %}
+									<td style="border: 1px solid black">
+										{{'{:20,.0f}'.format(v2)}}
+									</td>
+								{% endfor %}
+							</tr>
+						{% endfor %}
+						<tr>
+							<td><strong>Total {{section}} Expenses</strong></td>
+						{% for k,v in s[0]['expenses']['sections'][section]['total'].iteritems() %}
+							<td style="border: 1px solid black;font-weight:bold;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+						</tr>
+					{% endfor %}
+					<tr><td>&nbsp;</td></tr>
+					<tr>
+						<td><strong>Total Expenses</strong></td>
+						{% for k,v in s[0]['expenses']['total'].iteritems() %}
+							<td style="border: 1px solid black;font-weight:bold;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+					<tr><td>&nbsp;</td></tr>
+					<tr>
+						<td><strong>Net Income</strong></td>
+						{% for k,v in s[0]['net_income'].iteritems() %}
+							<td style="border: 1px solid black;font-weight:bold;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+					<tr><td>&nbsp;</td></tr>
+					<tr>
+						<td><strong>Raw Net Income</strong></td>
+						{% for k,v in s[0]['net_income_raw'].iteritems() %}
+							<td style="border: 1px solid black;font-weight:bold;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+					<tr><td>&nbsp;</td></tr>
+					<tr><td>&nbsp;</td></tr>
+					<tr><td><strong>Cash and Investments</strong></td></tr>
+
+
+					{% for section in s[0]['cash_accounts']['accounts'] %}
+					<tr><td>&nbsp;</td></tr>
+					<tr><td><strong>{{section}} Account</strong></td></tr>
+					
+						
+						{% for k,v in s[0]['cash_accounts']['accounts'][section]['items'].iteritems() %}
+							<tr>
+								<td>{{k}}</td>
+								{% for k2,v2 in v.iteritems() %}
+									<td style="border: 1px solid black">
+										{{'{:20,.0f}'.format(v2)}}
+									</td>
+								{% endfor %}
+							</tr>
+						{% endfor %}
+					{% endfor %}
+					<tr><td>&nbsp;</td></tr>
+					<tr>
+						<td><strong>Total Cash/Investment Assets</strong></td>
+						{% for k,v in s[0]['cash_accounts']['total'].iteritems() %}
+							<td style="border: 1px solid black;font-weight:bold;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+					<tr><td>&nbsp;</td></tr>
+					<tr><td>&nbsp;</td></tr>
+					<tr><td><strong>Debt</strong></td></tr>
+
+					{% for section in s[0]['debt_accounts']['accounts'] %}
+					<tr><td>&nbsp;</td></tr>
+					<tr><td><strong>{{section}} Debt</strong></td></tr>
+					
+						
+						{% for k,v in s[0]['debt_accounts']['accounts'][section]['items'].iteritems() %}
+							<tr>
+								<td>{{k}}</td>
+								{% for k2,v2 in v.iteritems() %}
+									<td style="border: 1px solid black">
+										{{'{:20,.0f}'.format(v2)}}
+									</td>
+								{% endfor %}
+							</tr>
+						{% endfor %}
+					{% endfor %}
+					<tr><td>&nbsp;</td></tr>
+					<tr>
+						<td><strong>Total Debt Outstanding</strong></td>
+						{% for k,v in s[0]['debt_accounts']['total_debt'].iteritems() %}
+							<td style="border: 1px solid black;font-weight:bold;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+					<tr><td><strong>Debt Expense Summary</strong></td></tr>
+					<tr><td>Interest Paid</td>
+						{% for k,v in s[0]['debt_accounts']['debt_expense_summary']['interest_paid'].iteritems() %}
+							<td style="border: 1px solid black;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+					<tr><td>Prinipal Paid</td>
+						{% for k,v in s[0]['debt_accounts']['debt_expense_summary']['principal_paid'].iteritems() %}
+							<td style="border: 1px solid black;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+					<tr><td><strong>Total Debt Expense</strong></td>
+						{% for k,v in s[0]['debt_accounts']['debt_expense_summary']['total_expense'].iteritems() %}
+							<td style="border: 1px solid black;font-weight:bold;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+					<tr><td>&nbsp;</td></tr>
+					<tr><td>&nbsp;</td></tr>
+					<tr><td><strong>Net Worth</strong></td>
+						{% for k,v in s[0]['net_worth'].iteritems() %}
+							<td style="border: 1px solid black;font-weight:bold;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+					</tr>
+
+				</table>
+
+
+			</div>
+
+			<div class="tab-pane" id="tab_summary">
+
+				<table>
+					<thead class="table_head">
+						
+						
+					</thead>
+					<tr><td>&nbsp;</td></tr>
+						<tr><td>Total Income</td>
+						{% for k,v in s[0]['income']['total'].iteritems() %}
+							<td style="border: 1px solid black;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+						</tr>
+						<tr><td>Total Expenses</td>
+						{% for k,v in s[0]['expenses']['total'].iteritems() %}
+							<td style="border: 1px solid black;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+						</tr>
+						<tr>
+							<td><strong>Net Income</strong></td>
+							{% for k,v in s[0]['net_income'].iteritems() %}
+								<td style="border: 1px solid black;font-weight:bold;">
+									{{'{:20,.0f}'.format(v)}}
+								</td>
+							{% endfor %}
+						</tr>
+
+						<tr><td>&nbsp;</td></tr>
+
+						<tr><td>Total Cash/Investment Assets</td>
+						{% for k,v in s[0]['cash_accounts']['total'].iteritems() %}
+							<td style="border: 1px solid black;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+						</tr>
+						<tr><td>Total Debt Outstanding</td>
+						{% for k,v in s[0]['debt_accounts']['total_debt'].iteritems() %}
+							<td style="border: 1px solid black;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+						</tr>
+						<tr><td><strong>Net Worth</strong></td>
+						{% for k,v in s[0]['net_worth'].iteritems() %}
+							<td style="border: 1px solid black;font-weight:bold;">
+								{{'{:20,.0f}'.format(v)}}
+							</td>
+						{% endfor %}
+						</tr>
+				</table>
+
+				<div class="chart" style="margin:40px;">
+					<canvas id="NW_Chart" width="800" height="400"></canvas>
+
+				</div>
+
+			</div>
+
+		</div>
+	</div>
+
+	
+
+{% endblock %}

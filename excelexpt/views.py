@@ -258,6 +258,7 @@ def submit_demo3():
 
 
         for scenario in range(0,scenario_count):
+        #for scenario in range(0,1):
             new_scenario = Scenario(d[scenario])
             if scenario == 0:
                 new_scenario.is_base = True
@@ -266,7 +267,7 @@ def submit_demo3():
         db.session.add(current_user)
         db.session.commit()
 
-    return redirect(url_for('demo3_output'))
+    return redirect(url_for('demo3_output_detail'))
 
 
 
@@ -293,15 +294,22 @@ def demo3_output():
     for x in range(0,len(scenarios[0]['net_worth']),12):
         Chart1_labels.append(x)
 
-    print Chart1_data_pts
-    print Chart1_labels
+
     ## / Chart Data and Labels ##
 
     #return render_template('demo3_output.html', s=scenarios_query[1].data)
     return render_template('demo3_output.html', s=scenarios,Chart1_data_pts=Chart1_data_pts,Chart1_labels=Chart1_labels)
 
 
-
+@app.route('/demo3_output_detail')
+def demo3_output_detail():
+    if current_user.is_anonymous():
+        return redirect(url_for('login'))
+    scenarios_query = current_user.scenarios.all()
+    scenarios = []
+    for scenario in scenarios_query:
+        scenarios.append(scenario.data)
+    return render_template('demo3_output_detail.html', s=scenarios)
 
 
 @app.route('/president')

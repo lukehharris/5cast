@@ -15,16 +15,6 @@ $(document).ready(function() {
 	   return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
 	 };
 
-
-	function build_head() {
-		$content = '<th></th>'; 
-		{% for x in range(0,121) %}
-			$content += '<th style="border: 1px solid black">{{x}}</th>';
-		{% endfor %}
-		$('.table_head').append($content);
-	}
-
-	build_head();
 	
 
 	$('#tabs a').click(function (e) {
@@ -37,44 +27,124 @@ $(document).ready(function() {
 });
 </script>
 
-<script type="text/template" id="debt_scenario_template">
-
-	<tr>
-		<td>First +<%= amnt %></td>
-		<td style="border: 1px solid black;">beginning_balance</td>
-		<td style="border: 1px solid black;">rate%</td>
-		<td style="border: 1px solid black;"><%= amnt %></td>
-		<td style="border: 1px solid black;">pmnts_remaining</td>
-		<td style="border: 1px solid black;">total_paid</td>
-		<td style="border: 1px solid black;">total_int_paid</td>
-	</tr>
+<script type="text/template" id="chart_1_net_worth_template">
+	<select id="chart_1_menu">
+		<option value="net_worth" selected>Net Worth</option>
+		<option value="net_income">Net Income</option>
+	</select>
+	<div>
+		<table>
+			<thead>
+				<th>&nbsp;</th>
+				<th>6 mon</th>
+				<th>1 yr</th>
+				<th>2 yr</th>
+				<th>5 yr</th>
+				<th>10 yr</th>
+			</thead>
+			<tbody>
+				{% for scenario in s %}
+				<tr>
+					<td class="table_y_axis">{{scenario['name']}}</td>
+					<td>{{'{:20,.0f}'.format(scenario['net_worth'][6])}}</td>
+					<td>{{'{:20,.0f}'.format(scenario['net_worth'][12])}}</td>
+					<td>{{'{:20,.0f}'.format(scenario['net_worth'][24])}}</td>
+					<td>{{'{:20,.0f}'.format(scenario['net_worth'][60])}}</td>
+					<td>{{'{:20,.0f}'.format(scenario['net_worth'][120])}}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
 </script>
 
-<script type="text/template" id="new_debt_scenario_button_template">
-	<a class="btn btn-info" id="new_debt_scenario"><i class="icon-plus"></i>Add Payment Scenario</a>
+<script type="text/template" id="chart_1_net_income_template">
+	<select id="chart_1_menu">
+		<option value="net_worth">Net Worth</option>
+		<option value="net_income" selected>Net Income</option>
+	</select>
+	<div>
+		<table>
+			<thead>
+				<th>&nbsp;</th>
+				<th>6 mon</th>
+				<th>1 yr</th>
+				<th>2 yr</th>
+				<th>5 yr</th>
+				<th>10 yr</th>
+			</thead>
+			<tbody>
+				{% for scenario in s %}
+				<tr>
+					<td class="table_y_axis">{{scenario['name']}}</td>
+					<td>{{'{:20,.0f}'.format(scenario['net_income_raw'][6])}}</td>
+					<td>{{'{:20,.0f}'.format(scenario['net_income_raw'][12])}}</td>
+					<td>{{'{:20,.0f}'.format(scenario['net_income_raw'][24])}}</td>
+					<td>{{'{:20,.0f}'.format(scenario['net_income_raw'][60])}}</td>
+					<td>{{'{:20,.0f}'.format(scenario['net_income_raw'][120])}}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
 </script>
+
 
 <script type="text/javascript">
-	NewDebtScenarioView = Backbone.View.extend({
+	Case = Backbone.Model.extend({
+        initialize: function(){
+            
+        }
+    });
+
+
+	NewChart1NetWorthView = Backbone.View.extend({
         initialize: function(){
             this.render();
         },
         render: function(){
-            var template = _.template( $("#new_debt_scenario_button_template").html(), {} );
+            var template = _.template( $("#chart_1_net_worth_template").html(), {} );
             this.$el.html( template );
         },
         events: {
-            "click #new_debt_scenario": "addScenario"
+            "change #chart_1_menu": "go"
         },
-        addScenario: function( event ){
-            var amnt = prompt("How much would you like to pay?");
-            var template = _.template( $("#debt_scenario_template").html(), {amnt:amnt} );
-            $("#debt_scenarios").html( template );
+        go: function( event ){
+        	var value = event.currentTarget.value;
+            if(value === 'net_worth') {
+            	var template = _.template( $("#chart_1_net_worth_template").html() );
+            }
+            else if(value === 'net_income'){
+            	var template = _.template( $("#chart_1_net_income_template").html() );
+            }
+            $("#output_grid1").html( template );
         }
     });
 
+	/*
+    NewChart1NetIncomeView = Backbone.View.extend({
+        initialize: function(){
+            //this.render();
+        },
+        /*
+        render: function(){
+            var template = _.template( $("#chart_1_net_income_template").html(), {} );
+            this.$el.html( template );
+        },
+        
+        events: {
+            "change #chart_1_menu": "go"
+        },
+        go: function( event ){
+            var template = _.template( $("#chart_1_net_income_template").html() );
+            $("#output_grid1").html( template );
+        }
+    });
+	*/
+
     $(document).ready(function() {
-		var newdebtscenarioview = new NewDebtScenarioView({ el: $("#new_debt_scenario_button") });
+		var newchart1networthview = new NewChart1NetWorthView({ el: $("#output_grid1") });
+		//var newchart1netincomeview = new NewChart1NetIncomeView({ el: $("#output_grid1") });
 	});
 
 	/*
@@ -107,9 +177,14 @@ $(document).ready(function() {
 				data : {{Chart1_data_pts[0]}}
 			},
 			{
+				/*
 				fillColor : "rgba(220,220,220,0.5)",
 				strokeColor : "rgba(220,220,220,1)",
 				pointColor : "rgba(220,220,220,1)",
+				*/
+				fillColor : "rgba(153,230,153, 0.5)",
+				strokeColor : "rgba(153,230,153,1)",
+				pointColor : "rgba(153,230,153,1)",
 				pointStrokeColor : "#fff",
 				data : {{Chart1_data_pts[1]}}
 			}
@@ -117,6 +192,14 @@ $(document).ready(function() {
 	};
 
 	new Chart(ctx).Line(Chart1_data,{bezierCurve : false});
+
+
+	var q = {{s|tojson|safe}}
+
+	$('#test').live('click', function(){
+		$content = q[0]['name'];
+		$('#test_target').html($content);
+	});
 
 });
 
@@ -127,32 +210,11 @@ $(document).ready(function() {
 {% block main %}
 
 	<div class="content_box">
+		
+		<div id="test_target"></div>
+
 		<div id="output_grid1">
-			<div><strong>Net Worth</strong></div>
-			<div>
-				<table>
-					<thead>
-						<th>&nbsp;</th>
-						<th>6 mon</th>
-						<th>1 yr</th>
-						<th>2 yr</th>
-						<th>5 yr</th>
-						<th>10 yr</th>
-					</thead>
-					<tbody>
-						{% for scenario in s %}
-						<tr>
-							<td class="table_y_axis">{{scenario['name']}}</td>
-							<td>{{scenario['net_worth'][6]}}</td>
-							<td>{{scenario['net_worth'][12]}}</td>
-							<td>{{scenario['net_worth'][24]}}</td>
-							<td>{{scenario['net_worth'][60]}}</td>
-							<td>{{scenario['net_worth'][120]}}</td>
-						</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-			</div>
+			
 		</div>
 
 		<div id="output_chart1">
@@ -163,7 +225,7 @@ $(document).ready(function() {
 					<div style="font-weight:bold;display:inline-block;">{{s[0]['name']}}</div>
 				</div>
 				<div class="legend_item" style="display:inline-block;">
-					<div style="width:20px;height:20px;display:inline-block;background:rgba(220,220,220,1);">&nbsp;</div>
+					<div style="width:20px;height:20px;display:inline-block;background:rgba(153,230,153,0.5);">&nbsp;</div>
 					<div style="font-weight:bold;display:inline-block;">{{s[1]['name']}}</div>
 				</div>
 			</div>
@@ -188,13 +250,13 @@ $(document).ready(function() {
 						{% for scenario in s %}
 						<tr>
 							<td class="table_y_axis">{{scenario['name']}}</td>
-							<td>{{scenario['net_worth'][12]}}</td>
-							<td>{{scenario['cash_accounts']['total'][12]}}</td>
-							<td>{{scenario['debt_accounts']['total_debt'][12]}}</td>
+							<td>{{'{:20,.0f}'.format(scenario['net_worth'][12])}}</td>
+							<td>{{'{:20,.0f}'.format(scenario['cash_accounts']['total'][12])}}</td>
+							<td>{{'{:20,.0f}'.format(scenario['debt_accounts']['total_debt'][12])}}</td>
 							<td>&nbsp;</td>
-							<td>{{scenario['net_income'][12]}}</td>
-							<td>{{scenario['income']['total'][12]}}</td>
-							<td>{{scenario['expenses']['total'][12]}}</td>
+							<td>{{'{:20,.0f}'.format(scenario['net_income_raw'][12])}}</td>
+							<td>{{'{:20,.0f}'.format(scenario['income']['total'][12])}}</td>
+							<td>{{'{:20,.0f}'.format(scenario['expenses']['total'][12])}}</td>
 						</tr>
 						{% endfor %}
 					</tbody>

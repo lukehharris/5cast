@@ -193,7 +193,17 @@ import build_demo3
 @app.route('/demo3')
 def demo3():
     if current_user.is_active():
-        return render_template('demo3.html')
+        scenarios_query = current_user.scenarios.all()
+        
+        if scenarios_query == []:
+            scenarios = None
+            data_exists = False
+        else:
+            scenarios = []
+            for scenario in scenarios_query:
+                scenarios.append(scenario.data)
+            data_exists = True
+        return render_template('demo3.html',data_exists=data_exists,s=scenarios)
     else:
         return redirect(url_for('login'))
 
@@ -246,9 +256,9 @@ def submit_demo3():
             rates[scenario].update({item_name: float(item_value)/100.0})
     #print rates
 
-    scenario_count = len(scenarios)
+    #scenario_count = len(scenarios)
 
-    d = build_demo3.build_demo3_data(names, income, basic_expenses, debt_expenses, misc_expenses, debt_balances, cash_balances, rates, scenario_count)
+    d = build_demo3.build_demo3_data(names, income, basic_expenses, debt_expenses, misc_expenses, debt_balances, cash_balances, rates, scenarios)
 
     if current_user.is_active():
         #remove existing scenarios
@@ -257,7 +267,7 @@ def submit_demo3():
             db.session.delete(scenario)
 
 
-        for scenario in range(0,scenario_count):
+        for scenario in range(0,len(scenarios)):
         #for scenario in range(0,1):
             new_scenario = Scenario(d[scenario])
             if scenario == 0:
@@ -310,6 +320,55 @@ def demo3_output_detail():
     for scenario in scenarios_query:
         scenarios.append(scenario.data)
     return render_template('demo3_output_detail.html', s=scenarios)
+
+
+
+@app.route('/demo4')
+def demo4():
+    return render_template('demo4.html')
+
+
+@app.route('/case', methods=['GET','POST']) #this is where new cases are POSTed, or collections are GET..tten
+def case():
+    if request.method == 'POST':
+        print 'POSTed'
+        """ json available through request.json """
+        #run all the code in the demo3_submit section, but now it's json instead of form data
+        #return the full object, including new id, with jsonify
+        response = {}
+        for item in request.json:
+            print item,request.json[item] 
+            response.update({item:request.json[item]})
+        #run through the model builder
+        #save to db
+        #get id, append that to response, append data to response
+        data = {'ok':'heres some data'}
+        return json.dumps({'id':78,'data':data}),200
+
+@app.route('/case/<id_input>', methods=['GET','PUT','DELETE']) #this is where existing cases are saved/deleted to
+def case2(id_input):
+    if request.method == 'GET':
+        #get the object with corresponding id and return it as json
+        #for item in request.json:
+        #    print item,request.json[item]
+
+        data = {'id':id_input,'name':"Case 2",'income' : 5000,'expenses' : 4000}
+        return jsonify(**data),200
+
+    if request.method == 'PUT':
+        #overwrite the existing case with corresponding id. return 200 status
+        for item in request.json:
+            print item,request.json[item]
+        return '200'
+    
+    if request.method == 'DELETE':
+        #delete the object with corresponding id. return 200 status
+        print 'DELETED CASE NUMBER ',id_input
+        return '200'
+    
+
+
+
 
 
 @app.route('/president')

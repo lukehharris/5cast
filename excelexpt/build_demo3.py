@@ -1,7 +1,7 @@
 
-def build_demo3_data(names, income, basic_expenses, debt_expenses, misc_expenses, debt_balances, cash_balances, rates, scenario_count):
+def build_demo3_data(names, income, basic_expenses, debt_expenses, misc_expenses, debt_balances, cash_balances, rates, scenarios):
     d = []
-    for scenario in range(0,scenario_count):
+    for scenario in scenarios:
     #for scenario in range(0,1):
         s = {'name': names[scenario]}
         #for column indicies, 0 = today, 1 = 1 month from today,...,n=n months from today
@@ -20,11 +20,13 @@ def build_demo3_data(names, income, basic_expenses, debt_expenses, misc_expenses
 
         s = calculate_totals(s)
         
-        NI_order = [{'type':'debt_accounts','name':'CC'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
-
+        
+        
         if s['net_income'][0] > 0:
-            s = allocate_NI(s, NI_order)
+            NI_order = [{'type':'debt_accounts','name':'CC'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
         else:
+            NI_order = [{'type':'cash_accounts','name':'Checking','max_balance':False}]
+        """
             print 'NEGATIVE NI'
             s['debt_accounts']['accounts'].update({'NET INCOME SHORTFALL':{'rate':0.0,'items': {'beginning_balance':{},'payments':{},'interest':{},'ending_balance':{0:0} } } } )
             s['expenses']['sections']['Debt']['items'].update({'NET INCOME SHORTFALL':{0:0}})
@@ -32,7 +34,9 @@ def build_demo3_data(names, income, basic_expenses, debt_expenses, misc_expenses
                 s['expenses']['sections']['Debt']['items']['NET INCOME SHORTFALL'][x] = 0
             s = build_debt_sub_section(s, 'NET INCOME SHORTFALL')
             s = allocate_NI(s, [{'type':'debt_accounts','name':'NET INCOME SHORTFALL'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}])
+        """
 
+        s = allocate_NI(s, NI_order)
         s = calc_net_income_raw(s)
 
         d.append(s)
@@ -366,6 +370,7 @@ def calculate_net_income(s):
 
 def build_cash_section(s, cash_balances, rates):
     s['cash_accounts'] = {'accounts':{},'total':{}}
+    print cash_balances
     for k,balance in cash_balances.iteritems():
         name = k[:-8]
         s['cash_accounts']['accounts'].update({name:{'rate':float(rates[name]),'items': {'beginning_balance':{},'withdrawal':{},'interest':{},'ending_balance':{0:float(balance)} } } } )

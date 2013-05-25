@@ -5,24 +5,264 @@
 {% block extra_headers %}
 	
 
-	<script type="text/javascript">
-	$(document).ready(function() {
+<script type="text/javascript">
+$(document).ready(function() {
+	$global_case_count = 0;
 
+{% if data_exists == True %}
+	var q = {{s|tojson|safe}}
+	$global_fieldnames = []
+	//build base case -> populate $global_fieldnames (in lower case)
+	buildBaseCase(q[0]);
+	//build existing cases -> populate $global_case_count
+	for (var i=1; i < q.length; i++) {
+		buildExistingCase(q[i]);
+	}
+
+	
+{% else %}
+	//show empty base case with prebuilt (ie suggested fields)
 	$global_fieldnames = ['salary', 'housing', 'utilities', 'tv/internet', 'phone', 'gym', 'food', 'social/entertainment', 'other', 'student loans', 'credit cards', 'other debt', 'checking','savings','investment'];
 
-	$global_case_count = 1;
+
+	
+
+{% endif %}
+
+	function buildExistingCase(s) {
+		$global_case_count += 1;
+		$case_name = s['name'];
+		$case_tag = '<div class="case_tag" id="case'+$global_case_count+'_tag"><h4>'+$case_name+'</h4><a class="btn btn-danger delete_case" id="delete_case'+$global_case_count+'" title="Delete This Scenario"><i class="icon-remove"></i></a><input type="name" value="'+$case_name+'" style="display:none;" name="na_'+$global_case_count+'"></div>';
+		$('#case'+($global_case_count - 1)+'_tag').after($case_tag);
+
+		$case_column_p1 = '<div class="scenario_column" id="case'+$global_case_count+'">\
+					<div class="form_section">\
+						<h3 class="form_section_header">&nbsp;</h3>\
+						<h4 class="form_section_subheader">&nbsp;</h4>';
+
+
+		$in_items_html = '';
+		for (var key in s['income']['items']) {
+			$in_items_html += '<div class="input_item input_type2">\
+							$<input type="text" name="in_'+key+'_'+$global_case_count+'" value="'+s['income']['items'][key][0]+'"> \
+						</div>';
+		}
+		$be_items_html = '';
+		for (var key in s['expenses']['sections']['Basic']['items']) {
+			$be_items_html += '<div class="input_item input_type2">\
+							$<input type="text" name="be_'+key+'_'+$global_case_count+'" value="'+s['expenses']['sections']['Basic']['items'][key][0]+'"> \
+						</div>';
+		}
+		$me_items_html = '';
+		for (var key in s['expenses']['sections']['Misc']['items']) {
+			$me_items_html += '<div class="input_item input_type2">\
+							$<input type="text" name="me_'+key+'_'+$global_case_count+'" value="'+s['expenses']['sections']['Misc']['items'][key][0]+'"> \
+						</div>';
+		}
+		$debt_accounts_html = '';
+		for (var key in s['debt_accounts']['accounts']) {
+			$debt_accounts_html += '<div class="debt_account account">\
+							<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>\
+							<div class="input_item input_type2">\
+								$<input type="text" name="de_'+key+'_'+$global_case_count+'" value="'+(-1)*s['debt_accounts']['accounts'][key]['items']['payments'][1]+'"> \
+							</div>\
+							<div class="input_item input_type2">\
+								$<input type="text" name="ba_'+key+'_Balance_'+$global_case_count+'" value="'+s['debt_accounts']['accounts'][key]['items']['ending_balance'][0]+'">\
+							</div>\
+							<div class="input_item input_type2">\
+								%<input type="text" name="ra_'+key+'_'+$global_case_count+'" value="'+Math.round(100*s['debt_accounts']['accounts'][key]['rate']).toFixed(3)+'" class="input_percentage">\
+							</div>\
+						</div>';
+		}
+		$cash_accounts_html = '';
+		for (var key in s['cash_accounts']['accounts']) {
+			$cash_accounts_html += '<div class="cash_account account">\
+							<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>\
+							<div class="input_item input_type2">\
+								$<input type="text" name="cb_'+key+'_Balance_'+$global_case_count+'" value="'+s['cash_accounts']['accounts'][key]['items']['ending_balance'][0]+'">\
+							</div>\
+							<div class="input_item input_type2">\
+								%<input type="text" name="ra_'+key+'_'+$global_case_count+'" value="'+Math.round(100*s['cash_accounts']['accounts'][key]['rate']).toFixed(3)+'" class="input_percentage">\
+							</div>\
+						</div>';
+		}
+
+		
+
+		$case_column_p2 = $in_items_html + '\
+						<a id="new_in_'+$global_case_count+'" class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
+					</div>\
+					<div class="form_section_divider"></div>\
+					<div class="form_section">\
+						<h3 class="form_section_header">&nbsp;</h3>\
+						<h4 class="form_section_subheader">&nbsp;</h4>'+$be_items_html+'\
+						<a id="new_be_'+$global_case_count+'" class="btn btn-info" style="margin-top:20px; visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
+					</div>\
+					<div class="form_section_divider"></div>\
+					<div class="form_section">\
+						<h3 class="form_section_header">&nbsp;</h3>\
+						<h4 class="form_section_subheader">&nbsp;</h4>'+$me_items_html+'\
+						<a id="new_me_'+$global_case_count+'" class="btn btn-info" style="margin-top:20px; visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
+					</div>\
+					<h2 class="form_heading" style="background:none;">&nbsp;</h2>\
+					<div class="form_section">\
+						<h3 class="form_section_header">&nbsp;</h3>\
+						<h4 class="form_section_subheader">&nbsp;</h4>'+$debt_accounts_html+'\
+						<a id="new_da_'+$global_case_count+'" class="btn btn-info" style="margin-top:20px; visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
+					</div>\
+					<div class="form_section_divider"></div>\
+					<div class="form_section">\
+						<h3 class="form_section_header">&nbsp;</h3>\
+						<h4 class="form_section_subheader">&nbsp;</h4>'+$cash_accounts_html+'\
+						<a id="new_ca_'+$global_case_count+'" class="btn btn-info" style="margin-top:20px; visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
+					</div>\
+				</div>';
+
+		$case_column = $case_column_p1 + $case_column_p2;
+
+		//$('#case'+($global_case_count-1)).after($case_column);
+		$('#case_target').before($case_column);
+	}
+
+	function buildBaseCase(s) {
+		$case_name = 'Base Case';
+
+		$case_column_p1 = '<div class="form_section">\
+						<h3 class="form_section_header">1. Income:</h3>\
+						<h4 class="form_section_subheader">After tax and other deductions</h4>';
+
+
+		$in_items_html = '';
+		for (var key in s['income']['items']) {
+			$in_items_html += '<div class="input_item input_type1">\
+							<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>\
+							<label>'+key+'</label>\
+							$<input type="text" name="in_'+key+'_'+$global_case_count+'" value="'+s['income']['items'][key][0]+'">  \
+						</div>';
+			$global_fieldnames.push(key.toLowerCase());
+		}
+		$be_items_html = '';
+		for (var key in s['expenses']['sections']['Basic']['items']) {
+			$be_items_html += '<div class="input_item input_type1">\
+							<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>\
+							<label>'+key+'</label>\
+							$<input type="text" name="be_'+key+'_'+$global_case_count+'" value="'+s['expenses']['sections']['Basic']['items'][key][0]+'"> \
+						</div>';
+			$global_fieldnames.push(key.toLowerCase());
+		}
+		$me_items_html = '';
+		for (var key in s['expenses']['sections']['Misc']['items']) {
+			$me_items_html += '<div class="input_item input_type1">\
+							<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>\
+							<label>'+key+'</label>\
+							$<input type="text" name="me_'+key+'_'+$global_case_count+'" value="'+s['expenses']['sections']['Misc']['items'][key][0]+'"> \
+						</div>';
+			$global_fieldnames.push(key.toLowerCase());
+		}
+		$debt_accounts_html = '';
+		for (var key in s['debt_accounts']['accounts']) {
+			$debt_accounts_html += '<div class="debt_account account">\
+							<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>\
+							<h5 class="form_account_label">'+key+' Debt</h5>\
+							<div class="input_item input_type1">\
+								<label>Current Payment</label>\
+								$<input type="text" name="de_'+key+'_'+$global_case_count+'" value="'+(-1)*s['debt_accounts']['accounts'][key]['items']['payments'][1]+'"> \
+							</div>\
+							<div class="input_item input_type1">\
+								<label>Current Balance</label>\
+								$<input type="text" name="ba_'+key+'_Balance_'+$global_case_count+'" value="'+s['debt_accounts']['accounts'][key]['items']['ending_balance'][0]+'">\
+							</div>\
+							<div class="input_item input_type1">\
+								<label>APR</label>\
+								%<input type="text" name="ra_'+key+'_'+$global_case_count+'" value="'+Math.round(100*s['debt_accounts']['accounts'][key]['rate']).toFixed(3)+'" class="input_percentage">\
+							</div>\
+						</div>';
+			$global_fieldnames.push(key.toLowerCase());
+		}
+		$cash_accounts_html = '';
+		for (var key in s['cash_accounts']['accounts']) {
+			if(key == 'Checking') {
+				$cash_accounts_html += '<div class="cash_account account">\
+							<h5 class="form_account_label" style="margin-left:34px;">Checking</h5>\
+							<div class="input_item input_type1">\
+								<label>Current Balance</label>\
+								$<input type="text" name="cb_'+key+'_Balance_'+$global_case_count+'" value="'+s['cash_accounts']['accounts'][key]['items']['ending_balance'][0]+'">\
+							</div>\
+							<div class="input_item input_type1">\
+								<label>Expected Return</label>\
+								%<input type="text" name="ra_'+key+'_'+$global_case_count+'" value="'+Math.round(100*s['cash_accounts']['accounts'][key]['rate']).toFixed(3)+'" class="input_percentage">\
+							</div>\
+						</div>';
+			}
+			else {
+				$cash_accounts_html += '<div class="cash_account account">\
+							<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>\
+							<h5 class="form_account_label">'+key+'</h5>\
+							<div class="input_item input_type1">\
+								<label>Current Balance</label>\
+								$<input type="text" name="cb_'+key+'_Balance_'+$global_case_count+'" value="'+s['cash_accounts']['accounts'][key]['items']['ending_balance'][0]+'">\
+							</div>\
+							<div class="input_item input_type1">\
+								<label>Expected Return</label>\
+								%<input type="text" name="ra_'+key+'_'+$global_case_count+'" value="'+Math.round(100*s['cash_accounts']['accounts'][key]['rate']).toFixed(3)+'" class="input_percentage">\
+							</div>\
+						</div>';
+			}
+			$global_fieldnames.push(key.toLowerCase());
+		}
+
+		
+
+		$case_column_p2 = $in_items_html + '\
+						<a id="new_in" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Income Source</a>\
+					</div>\
+					<div class="form_section_divider"></div>\
+					<div class="form_section">\
+						<h3 class="form_section_header">2. Basic Expenses:</h3>\
+						<h4 class="form_section_subheader">Not including debt payments</h4>'+$be_items_html+'\
+						<a id="new_be" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Basic Expense</a>\
+					</div>\
+					<div class="form_section_divider"></div>\
+					<div class="form_section">\
+						<h3 class="form_section_header">3. Misc Expenses:</h3>\
+						<h4 class="form_section_subheader">Not including debt payments</h4>'+$me_items_html+'\
+						<a id="new_me" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Misc Expense</a>\
+					</div>\
+					<h2 class="form_heading">Accounts</h2>\
+					<div class="form_section">\
+						<h3 class="form_section_header">4. Debt Accounts:</h3>\
+						<h4 class="form_section_subheader">&nbsp;</h4>'+$debt_accounts_html+'\
+						<a id="new_da" class="btn btn-info new_debt_account"><i class="icon-plus"></i>Add New Debt Account</a>\
+					</div>\
+					<div class="form_section_divider"></div>\
+					<div class="form_section">\
+						<h3 class="form_section_header">5. Banking/Investment Accounts:</h3>\
+						<h4 class="form_section_subheader">&nbsp;</h4>'+$cash_accounts_html+'\
+						<a id="new_ca" class="btn btn-info new_cash_account"><i class="icon-plus"></i>Add New Banking/Investment Account</a>\
+					</div>\
+				</div>';
+
+		$case_column = $case_column_p1 + $case_column_p2;
+
+
+		$('#case0').html($case_column)
+	}
+
+	
+
+
+
+	
 
 	$('.delete_item').live('click', function(){
 		$name = $(this).next().html().toLowerCase();
 		$raw_item_name = $(this).closest('.input_item').children('input').attr('name');
 		$item_name = $raw_item_name.substring(0,$raw_item_name.length-1);
-		//alert($item_name);
 		$(this).closest('.input_item').remove();
 		$global_fieldnames.splice($global_fieldnames.indexOf($name), 1);
 		
 		for(var i = 0; $global_case_count > i; i++) {
 			$selector = 'input[name="' + $item_name + (i+1) + '"]';
-			//alert($selector);
 			$($selector).closest('.input_item').remove();
 		}
 	});
@@ -34,7 +274,6 @@
 
 		for(var i = 0; $global_case_count > i; i++) {
 			$selector = 'input[name="' + $item_name + (i+1) + '"]';
-			//alert($selector);
 			$($selector).closest('.input_item').closest('.account').remove();
 		}
 	});
@@ -59,7 +298,6 @@
 
 						$('#'+$item_name+'_'+(i+1)).before($content2);
 					}
-
 					$global_fieldnames.push($fieldname.toLowerCase());
 					//alert($global_fieldnames);
 					break;
@@ -75,82 +313,102 @@
 	});
 
 	$('.new_debt_account').live('click', function(){
-		$fieldname = prompt('Enter Account Name');
-		if ($fieldname != null && $fieldname != '') {
+		while (true) {
+			$fieldname = prompt('Enter Account Name');
+			if ($fieldname != null && $fieldname != '') {
+				if($global_fieldnames.indexOf($fieldname.toLowerCase()) == -1) {
 
-			$content = '<div class="debt_account account"><a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a><h5 class="form_account_label">'+$fieldname+'</h5><div class="input_item input_type1"><label>Current Payment</label>$<input type="text" name="de_'+$fieldname+'_0"></div><div class="input_item input_type1"><label>Current Balance</label>$<input type="text" name="ba_'+$fieldname+'_Balance_0"></div><div class="input_item input_type1"><label>APR</label>%<input type="text" name="ra_'+$fieldname+'_0" class="input_percentage"></div></div>';
+					$content = '<div class="debt_account account"><a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a><h5 class="form_account_label">'+$fieldname+'</h5><div class="input_item input_type1"><label>Current Payment</label>$<input type="text" name="de_'+$fieldname+'_0"></div><div class="input_item input_type1"><label>Current Balance</label>$<input type="text" name="ba_'+$fieldname+'_Balance_0"></div><div class="input_item input_type1"><label>APR</label>%<input type="text" name="ra_'+$fieldname+'_0" class="input_percentage"></div></div>';
 
-			$(this).before($content);
+					$(this).before($content);
 
-			$item_name = $(this).attr('id');
+					$item_name = $(this).attr('id');
 
-			for(var i = 0; $global_case_count > i; i++) {
-				$content2 = '<div class="debt_account account">\
-							<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>\
-							<div class="input_item input_type2">\
-								$<input type="text" name="de_'+$fieldname+'_'+$global_case_count+'"> \
-							</div>\
-							<div class="input_item input_type2">\
-								$<input type="text" name="ba_'+$fieldname+'_Balance_'+$global_case_count+'">\
-							</div>\
-							<div class="input_item input_type2">\
-								%<input type="text" name="ra_'+$fieldname+'_'+$global_case_count+'" class="input_percentage">\
-							</div>\
-						</div>';
+					for(var i = 0; $global_case_count > i; i++) {
+						$content2 = '<div class="debt_account account">\
+									<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>\
+									<div class="input_item input_type2">\
+										$<input type="text" name="de_'+$fieldname+'_'+$global_case_count+'"> \
+									</div>\
+									<div class="input_item input_type2">\
+										$<input type="text" name="ba_'+$fieldname+'_Balance_'+$global_case_count+'">\
+									</div>\
+									<div class="input_item input_type2">\
+										%<input type="text" name="ra_'+$fieldname+'_'+$global_case_count+'" class="input_percentage">\
+									</div>\
+								</div>';
 
-				$('#'+$item_name+'_'+(i+1)).before($content2);
+						$('#'+$item_name+'_'+(i+1)).before($content2);
+					}
+					$global_fieldnames.push($fieldname.toLowerCase());
+					break;
+				}
+				else {
+						alert('You already have an item with the name \"'+$fieldname+'\".\r\nPlease use a new, unique name.');
+					}
 			}
+			else {
+				break;
+			}	
 		}
 	});
 
 	$('.new_cash_account').live('click', function(){
-		$fieldname = prompt('Enter Account Name');
-		if ($fieldname != null && $fieldname != '') {
+		while (true) {
+			$fieldname = prompt('Enter Account Name');
+			if ($fieldname != null && $fieldname != '') {
+				if($global_fieldnames.indexOf($fieldname.toLowerCase()) == -1) {
+					$content = '<div class="cash_account account">\
+									<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>\
+									<h5 class="form_account_label">'+$fieldname+'</h5>\
+									<div class="input_item input_type1">\
+										<label>Current Balance</label>\
+										$<input type="text" name="cb_'+$fieldname+'_Balance_0">\
+									</div>\
+									<div class="input_item input_type1">\
+										<label>Expected Return</label>\
+										%<input type="text" name="ra_'+$fieldname+'_0" style="margin:0 12px;">\
+									</div>\
+								</div>';
 
-			//$content = '<div class="cash_account account"><a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a><h5 style="text-decoration: underline; display: inline-block">'+$fieldname+'</h5><div class="input_item input_type1"><label>Current Balance</label>$<input type="text" name="cb_'+$fieldname+'_Balance"></div><div class="input_item input_type1"><label>Expected Return</label>%<input type="text" name="ra_'+$fieldname+'"></div></div>';
+					$(this).before($content);
+
+					$item_name = $(this).attr('id');
 
 
-			$content = '<div class="cash_account account">\
-							<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>\
-							<h5 class="form_account_label">'+$fieldname+'</h5>\
-							<div class="input_item input_type1">\
-								<label>Current Balance</label>\
-								$<input type="text" name="cb_'+$fieldname+'_Balance_0">\
-							</div>\
-							<div class="input_item input_type1">\
-								<label>Expected Return</label>\
-								%<input type="text" name="ra_'+$fieldname+'_0" style="margin:0 12px;">\
-							</div>\
-						</div>';
+					for(var i = 0; $global_case_count > i; i++) {
+						$content2 = '<div class="cash_account account">\
+									<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>\
+									<div class="input_item input_type2">\
+										$<input type="text" name="cb_'+$fieldname+'_Balance_'+$global_case_count+'">\
+									</div>\
+									<div class="input_item input_type2">\
+										%<input type="text" name="ra_'+$fieldname+'_'+$global_case_count+'" class="input_percentage">\
+									</div>\
+								</div>';
 
-			$(this).before($content);
-
-			$item_name = $(this).attr('id');
-
-			for(var i = 0; $global_case_count > i; i++) {
-				$content2 = '<div class="cash_account account">\
-							<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>\
-							<div class="input_item input_type2">\
-								$<input type="text" name="cb_'+$fieldname+'_Balance_'+$global_case_count+'">\
-							</div>\
-							<div class="input_item input_type2">\
-								%<input type="text" name="ra_'+$fieldname+'_'+$global_case_count+'" class="input_percentage">\
-							</div>\
-						</div>';
-
-				$('#'+$item_name+'_'+(i+1)).before($content2);
+						$('#'+$item_name+'_'+(i+1)).before($content2);
+					}
+					$global_fieldnames.push($fieldname.toLowerCase());
+					break;
+				}
+				else {
+						alert('You already have an item with the name \"'+$fieldname+'\".\r\nPlease use a new, unique name.');
+					}
 			}
-
+			else {
+				break;
+			}
 		}
 	});
 
 	$('#new_scenario').live('click', function(){
-		
-
 		$global_case_count += 1;
 		$case_name = prompt('Enter new scenario name: ');
-		$case_tag = '<div class="case_tag" id="case'+$global_case_count+'_tag"><h4>'+$case_name+'</h4></div>';
-		$(this).before($case_tag);
+		$case_tag = '<div class="case_tag" id="case'+$global_case_count+'_tag"><h4>'+$case_name+'</h4><a class="btn btn-danger delete_case" id="delete_case'+$global_case_count+'" title="Delete This Scenario"><i class="icon-remove"></i></a><input type="name" value="'+$case_name+'" style="display:none;" name="na_'+$global_case_count+'"></div>';
+
+		//$('#case'+($global_case_count - 1)+'_tag').after($case_tag);
+		$('.dropdown').before($case_tag);
 
 		$case_column_p1 = '<div class="scenario_column" id="case'+$global_case_count+'">\
 					<div class="form_section">\
@@ -167,60 +425,64 @@
 		$('#case0 .input_item > input').each(function() {
 			$raw_name = $(this).attr('name');
 			$name = $raw_name.substring(0, $raw_name.length - 2);
+			$value = $(this).val()
+			if($value == '') {$value = 0;}
 			$prefix = $name.substring(0,2);
 			if($prefix == 'in') {
-				$in_items.push($name);
+				$in_items.push([$name,$value]);
 			}
 			else if($prefix == 'be') {
-				$be_items.push($name);
+				$be_items.push([$name,$value]);
 			}
 			else if($prefix == 'me') {
-				$me_items.push($name);
+				$me_items.push([$name,$value]);
 			}
 			else if($prefix == 'de') {
-				$de_items.push($name);
+				$de_items.push([$name,$value]);
 			}
 			else if($prefix == 'ba') {
-				$ba_items.push($name);
+				$ba_items.push([$name,$value]);
 			}
 			else if($prefix == 'ra') {
-				$ra_items.push($name);
+				$ra_items.push([$name,$value]);
 			}
 			else if($prefix == 'cb') {
-				$cb_items.push($name);
+				$cb_items.push([$name,$value]);
 			}
 		});
 
 		$in_items_html = '';
 		for (var i = 0; i < $in_items.length; i++) {
 			$in_items_html += '<div class="input_item input_type2">\
-							$<input type="text" name="'+$in_items[i]+'_'+$global_case_count+'"> \
+							$<input type="text" name="'+$in_items[i][0]+'_'+$global_case_count+'" value="'+$in_items[i][1]+'"> \
 						</div>';
 		}
 		$be_items_html = '';
 		for (var i = 0; i < $be_items.length; i++) {
 			$be_items_html += '<div class="input_item input_type2">\
-							$<input type="text" name="'+$be_items[i]+'_'+$global_case_count+'"> \
+							$<input type="text" name="'+$be_items[i][0]+'_'+$global_case_count+'" value="'+$be_items[i][1]+'"> \
 						</div>';
 		}
 		$me_items_html = '';
 		for (var i = 0; i < $me_items.length; i++) {
 			$me_items_html += '<div class="input_item input_type2">\
-							$<input type="text" name="'+$me_items[i]+'_'+$global_case_count+'"> \
+							$<input type="text" name="'+$me_items[i][0]+'_'+$global_case_count+'" value="'+$me_items[i][1]+'"> \
 						</div>';
 		}
 		$debt_accounts_html = '';
 		for (var i = 0; i < $de_items.length; i++) {
+			var balance_info = $ba_items.shift();
+			var rate_info = $ra_items.shift();
 			$debt_accounts_html += '<div class="debt_account account">\
 							<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>\
 							<div class="input_item input_type2">\
-								$<input type="text" name="'+$de_items[i]+'_'+$global_case_count+'"> \
+								$<input type="text" name="'+$de_items[i][0]+'_'+$global_case_count+'" value="'+$de_items[i][1]+'"> \
 							</div>\
 							<div class="input_item input_type2">\
-								$<input type="text" name="'+$ba_items.shift()+'_'+$global_case_count+'">\
+								$<input type="text" name="'+balance_info[0]+'_'+$global_case_count+'" value="'+balance_info[1]+'">\
 							</div>\
 							<div class="input_item input_type2">\
-								%<input type="text" name="'+$ra_items.shift()+'_'+$global_case_count+'" class="input_percentage">\
+								%<input type="text" name="'+rate_info[0]+'_'+$global_case_count+'" value="'+rate_info[1]+'" class="input_percentage">\
 							</div>\
 						</div>';
 		}
@@ -229,55 +491,125 @@
 			$cash_accounts_html += '<div class="cash_account account">\
 							<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>\
 							<div class="input_item input_type2">\
-								$<input type="text" name="'+$cb_items[i]+'_'+$global_case_count+'">\
+								$<input type="text" name="'+$cb_items[i][0]+'_'+$global_case_count+'" value="'+$cb_items[i][1]+'">\
 							</div>\
 							<div class="input_item input_type2">\
-								%<input type="text" name="'+$ra_items[i]+'_'+$global_case_count+'" class="input_percentage">\
+								%<input type="text" name="'+$ra_items[i][0]+'_'+$global_case_count+'" value="'+$ra_items[i][1]+'" class="input_percentage">\
 							</div>\
 						</div>';
-		}
-
-		
+		}		
 
 		$case_column_p2 = $in_items_html + '\
-						<a id="new_in" class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
+						<a id="new_in_'+$global_case_count+'" class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
 					</div>\
 					<div class="form_section_divider"></div>\
 					<div class="form_section">\
 						<h3 class="form_section_header">&nbsp;</h3>\
 						<h4 class="form_section_subheader">&nbsp;</h4>'+$be_items_html+'\
-						<a id="new_be_'+$global_case_count+'" class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
+						<a id="new_be_'+$global_case_count+'" class="btn btn-info" style="margin-top:20px; visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
 					</div>\
 					<div class="form_section_divider"></div>\
 					<div class="form_section">\
 						<h3 class="form_section_header">&nbsp;</h3>\
 						<h4 class="form_section_subheader">&nbsp;</h4>'+$me_items_html+'\
-						<a id="new_me_'+$global_case_count+'" class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
+						<a id="new_me_'+$global_case_count+'" class="btn btn-info" style="margin-top:20px; visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
 					</div>\
 					<h2 class="form_heading" style="background:none;">&nbsp;</h2>\
 					<div class="form_section">\
 						<h3 class="form_section_header">&nbsp;</h3>\
 						<h4 class="form_section_subheader">&nbsp;</h4>'+$debt_accounts_html+'\
-						<a id="new_da_'+$global_case_count+'" class="btn btn-info new_debt_account" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
+						<a id="new_da_'+$global_case_count+'" class="btn btn-info" style="margin-top:20px; visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
 					</div>\
 					<div class="form_section_divider"></div>\
 					<div class="form_section">\
 						<h3 class="form_section_header">&nbsp;</h3>\
 						<h4 class="form_section_subheader">&nbsp;</h4>'+$cash_accounts_html+'\
-						<a id="new_ca_'+$global_case_count+'" class="btn btn-info new_cash_account" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
+						<a id="new_ca_'+$global_case_count+'" class="btn btn-info" style="margin-top:20px; visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>\
 					</div>\
 				</div>';
 
 		$case_column = $case_column_p1 + $case_column_p2;
 
-		$('#case'+($global_case_count-1)).after($case_column);
+		//$('#case'+($global_case_count-1)).after($case_column);
+		$('#case_target').before($case_column);
+		$('.dropdown-toggle').click();
+		return false;
+	});
+
+	$('#new_scenario1').live('click', function(){
+		$('#new_scenario').click();
+		$value = $('input[name="be_Housing_0"]').val();
+		//alert(Math.round(parseInt($value)*0.8));
+		$('input[name="be_Housing_'+($global_case_count)+'"]').val(Math.round(parseInt($value)*0.8));
+		//$('.dropdown-toggle').click();
+		return false;
+	});
+	$('#new_scenario2').live('click', function(){
+		$('#new_scenario').click();
+		$value = $('input[name="in_Salary_0"]').val();
+		//alert(Math.round(parseInt($value)*0.8));
+		$('input[name="in_Salary_'+($global_case_count)+'"]').val(Math.round(parseInt($value)*1.1));
+		//$('.dropdown-toggle').click();
+		return false;
+	});
+	$('#new_scenario3').live('click', function(){
+		$('#new_scenario').click();
+		
+		$fieldname = 'New Inheritance';
+		$content = '<div class="cash_account account">\
+						<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>\
+						<h5 class="form_account_label">'+$fieldname+'</h5>\
+						<div class="input_item input_type1">\
+							<label>Current Balance</label>\
+							$<input type="text" name="cb_'+$fieldname+'_Balance_0">\
+						</div>\
+						<div class="input_item input_type1">\
+							<label>Expected Return</label>\
+							%<input type="text" name="ra_'+$fieldname+'_0" style="margin:0 12px;">\
+						</div>\
+					</div>';
+
+		$('.new_cash_account').before($content);
+
+		//$item_name = $(this).attr('id');
 
 
+		for(var i = 0; $global_case_count > i; i++) {
+			$content2 = '<div class="cash_account account">\
+						<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>\
+						<div class="input_item input_type2">\
+							$<input type="text" name="cb_'+$fieldname+'_Balance_'+(i+1)+'">\
+						</div>\
+						<div class="input_item input_type2">\
+							%<input type="text" name="ra_'+$fieldname+'_'+(i+1)+'" class="input_percentage">\
+						</div>\
+					</div>';
+			$('#new_ca_'+(i+1)).before($content2);
+		}
+		$global_fieldnames.push($fieldname.toLowerCase());
+
+
+		$('input[name="cb_New Inheritance_Balance_'+($global_case_count)+'"]').val(40000);
+		$('input[name="ra_New Inheritance_'+($global_case_count)+'"]').val(5);
+		//$('.dropdown-toggle').click();
+		return false;
+	});
+	$('#new_scenario4').live('click', function(){
+		$('#new_scenario').click();
+		$('#case'+$global_case_count+' .debt_account').each(function(){
+			$(this).children('.input_item').children('input').val(0);
+		});
+		return false;
+	});
+	$('.delete_case').live('click',function() {
+		$case_id = $(this).attr('id').slice(-1);
+		$('#case'+$case_id).remove();
+		$('#case'+$case_id+'_tag').remove();
+		//$global_case_count -= 1;
 	});
 
 
-
-	});
+});
 
 	function validateForm() {
 		var form_items = document.forms["input"].elements;
@@ -302,12 +634,14 @@
 				alert(fieldname+" field cannot be negative");
 				return false;
 			}
-
 		} 
-
 	}
 
-	</script>
+	
+
+</script>
+
+
 {% endblock %}
 
 {% block main %}
@@ -327,19 +661,34 @@
 
 				<div class="case_tags">
 					<div class="case_tag" id="case0_tag"><h4>Base Case</h4><input type="name" name="na_0" style="display:none;" value="Base Case"></div>
-					<div class="case_tag" id="case1_tag"><h4>Case 2</h4><input type="name" name="na_1" style="display:none;" value="Case2"></div>
-					<div class="case_tag" id="new_scenario"><h4>Add Scenario</h4></div>
+					<div class="dropdown" style="display:inline-block; margin-left: 20px;">
+						<a class="dropdown-toggle" data-toggle="dropdown" href=""><h4>Add Scenario</h4></a>
+						<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+						   	<li role="presentation"><a href="#" role="menuitem" id="new_scenario">New Custom Scenario</a></li>
+						   	<li class="divider" role="presentation"></li>
+						   	<li role="presentation"><a href="#" role="menuitem" id="new_scenario1">20% reduction in housing expense</a></li>
+						   	<li role="presentation"><a href="#" role="menuitem" id="new_scenario2">10% raise</a></li>
+						   	<li role="presentation"><a href="#" role="menuitem" id="new_scenario3">$40k inheritance received, invested at 5%</a></li>
+						   	<li role="presentation"><a href="#" role="menuitem" id="new_scenario4">100% of Debt Forgiven</a></li>
+
+						</ul>
+					</div>
+
+					    <!--div class="dropdown">
+						    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Dropdown trigger</a>
+						    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+						    	<li role="presentation"><a href="#" role="menuitem">Action</a></li>
+						    </ul>
+						</div -->
 
 				</div>
 
 				<div class="form_section_divider" style="margin:0;"></div>
 
 				<div id="case0" style="width:330px; border-right:2px solid black; float:left;">
-					
 					<div class="form_section">
 						<h3 class="form_section_header">1. Income:</h3>
 						<h4 class="form_section_subheader">After tax and other deductions</h4>
-						
 
 						<div class="input_item input_type1">
 							<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
@@ -348,7 +697,6 @@
 						</div>
 
 						<a id="new_in" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Income Source</a>
-
 					</div>
 
 					<div class="form_section_divider"></div>
@@ -356,7 +704,6 @@
 					<div class="form_section">
 						<h3 class="form_section_header">2. Basic Expenses:</h3>
 						<h4 class="form_section_subheader">Not including debt payments</h4>
-
 
 						<div class="input_item input_type1">
 							<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
@@ -411,7 +758,6 @@
 						</div>
 						
 						<a id="new_me" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Misc Expense</a>
-
 					</div>
 				
 					<h2 class="form_heading">Accounts</h2>
@@ -419,7 +765,6 @@
 						<h3 class="form_section_header">4. Debt Accounts:</h3>
 						<h4 class="form_section_subheader">&nbsp;</h4>
 						
-
 						<div class="debt_account account">
 							<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
 							<h5 class="form_account_label">Student Loans</h5>
@@ -517,162 +862,11 @@
 						</div>
 
 						<a id="new_ca" class="btn btn-info new_cash_account"><i class="icon-plus"></i>Add New Banking/Investment Account</a>
-
 						
 					</div>
 				</div>
+				<div id="case_target" style="display:none;"></div>
 
-
-
-
-				<div class="scenario_column" id="case1">
-					
-					<div class="form_section">
-						<h3 class="form_section_header">&nbsp;</h3>
-						<h4 class="form_section_subheader">&nbsp;</h4>
-						
-
-						<div class="input_item">
-							$<input type="text" name="in_Salary_1"> 
-						</div>
-
-						<a id="new_in_1" class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
-
-					</div>
-
-					<div class="form_section_divider"></div>
-
-					<div class="form_section">
-						<h3 class="form_section_header">&nbsp;</h3>
-						<h4 class="form_section_subheader">&nbsp;</h4>
-
-
-						<div class="input_item input_type2">
-							$<input type="text" name="be_Housing_1">
-						</div>
-						<div class="input_item input_type2">
-							$<input type="text" name="be_Utilities_1">
-						</div>
-						<div class="input_item input_type2">
-							$<input type="text" name="be_Cable_1">
-						</div>
-						<div class="input_item input_type2">
-							$<input type="text" name="be_Phone_1">
-						</div>
-						<div class="input_item input_type2">
-							$<input type="text" name="be_Gym_1">
-						</div>
-						<div class="input_item input_type2">
-							$<input type="text" name="be_Food_1">
-						</div>
-					
-						<a id="new_be_1" class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
-					
-					</div>
-
-					<div class="form_section_divider"></div>
-
-					<div class="form_section">
-						<h3 class="form_section_header">&nbsp;</h3>
-						<h4 class="form_section_subheader">&nbsp;</h4>
-
-						<div class="input_item input_type2">
-							$<input type="text" name="me_Social_1">
-						</div>
-						<div class="input_item input_type2">
-							$<input type="text" name="me_Other_1">
-						</div>
-						
-						<a id="new_me_1" class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
-
-					</div>
-				
-					<h2 class="form_heading" style="background:none;">&nbsp;</h2>
-					<div class="form_section">
-						<h3 class="form_section_header">&nbsp;</h3>
-						<h4 class="form_section_subheader">&nbsp;</h4>
-						
-
-						<div class="debt_account account">
-							<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>
-							<div class="input_item input_type2">
-								$<input type="text" name="de_Student_1"> 
-							</div>
-							<div class="input_item input_type2">
-								$<input type="text" name="ba_Student_Balance_1">
-							</div>
-							<div class="input_item input_type2">
-								%<input type="text" name="ra_Student_1" class="input_percentage">
-							</div>
-						</div>
-						<div class="debt_account account">
-							<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>
-							<div class="input_item input_type2">
-								$<input type="text" name="de_CC_1"> 
-							</div>
-							<div class="input_item input_type2">
-								$<input type="text" name="ba_CC_Balance_1">
-							</div>
-							<div class="input_item input_type2">
-								%<input type="text" name="ra_CC_1" class="input_percentage">
-							</div>
-						</div>
-						<div class="debt_account account">
-							<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>
-							<div class="input_item input_type2">
-								$<input type="text" name="de_Other_1"> 
-							</div>
-							<div class="input_item input_type2">
-								$<input type="text" name="ba_Other_Balance_1">
-							</div>
-							<div class="input_item input_type2">
-								%<input type="text" name="ra_Other_1" class="input_percentage">
-							</div>
-						</div>
-
-						<a id="new_da_1" class="btn btn-info new_debt_account" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
-					</div>
-
-					<div class="form_section_divider"></div>
-
-					<div class="form_section">
-						<h3 class="form_section_header">&nbsp;</h3>
-						<h4 class="form_section_subheader">&nbsp;</h4>
-
-						<div class="cash_account account">
-							<h5 class="form_account_label" style="margin-left:34px;text-decoration:none;">&nbsp;</h5>
-							<div class="input_item input_type2">
-								$<input type="text" name="cb_Checking_Balance_1">
-							</div>
-							<div class="input_item input_type2">
-								%<input type="text" name="ra_Checking_1" class="input_percentage">
-							</div>
-						</div>
-
-						<div class="cash_account account">
-							<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>
-							<div class="input_item input_type2">
-								$<input type="text" name="cb_Savings_Balance_1">
-							</div>
-							<div class="input_item input_type2">
-								%<input type="text" name="ra_Savings_1" class="input_percentage">
-							</div>
-						</div>
-
-						<div class="cash_account account">
-							<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>
-							<div class="input_item input_type2">
-								$<input type="text" name="cb_Investment_Balance_1">
-							</div>
-							<div class="input_item input_type2">
-								%<input type="text" name="ra_Investment_1" class="input_percentage">
-							</div>
-						</div>
-
-						<a id="new_ca_1" class="btn btn-info new_cash_account" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
-
-					</div>
-				</div>
 
 
 				<br>

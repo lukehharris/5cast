@@ -487,14 +487,14 @@ var CaseView = Backbone.View.extend({
         //console.log(this.model);
     },
     render: function(){
-    	alert('render called');
-    	console.log(this);
-    	console.log(this.model);
+    	//alert('render called');
+    	//console.log(this);
+    	//console.log(this.model);
     	//console.log(this.income_items);
     	//console.log(this.basic_expenses);
     	//console.log(this.caseNumber);
-    	console.log(this.model.get('name'));
-    	console.log(this.model.get('income_items'));
+    	//console.log(this.model.get('name'));
+    	//console.log(this.model.get('income_items'));
     	var context = {caseNumber:this.caseNumber,
     				name:this.model.get('name'),
 	        		income_items:this.model.get('income_items'),
@@ -711,6 +711,9 @@ $(document).ready(function() {
 		}
 	});
 
+	$('#delete_in').live('click',function(){
+
+	});
 });
 </script>
 

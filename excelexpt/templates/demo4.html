@@ -142,7 +142,7 @@ var CaseCollection = Backbone.Collection.extend({
 
 		<% _.each(_.keys(income_items), function(key){ %>
 			<div class="input_item input_type1">
-				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<a id="delete_in" class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
 				<label><%=key%></label>
 				$<input type="text" name="in_<%=key%>_0" value="<%=income_items[key]%>">
 			</div>
@@ -157,7 +157,7 @@ var CaseCollection = Backbone.Collection.extend({
 
 		<% _.each(_.keys(basic_expenses), function(key){ %>
 			<div class="input_item input_type1">
-				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<a id="delete_be" class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
 				<label><%=key%></label>
 				$<input type="text" name="be_<%=key%>_0" value="<%=basic_expenses[key]%>">
 			</div>
@@ -172,7 +172,7 @@ var CaseCollection = Backbone.Collection.extend({
 
 		<% _.each(_.keys(misc_expenses), function(key){ %>
 			<div class="input_item input_type1">
-				<a class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<a id="delete_me" class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
 				<label><%=key%></label>
 				$<input type="text" name="me_<%=key%>_0" value="<%=misc_expenses[key]%>">
 			</div>
@@ -188,7 +188,7 @@ var CaseCollection = Backbone.Collection.extend({
 
 		<% _.each(_.keys(debt_accounts), function(key){ %>
 			<div class="debt_account account">
-				<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
+				<a id="delete_da" class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
 				<h5 class="form_account_label"><%=key%></h5>
 				<div class="input_item input_type1">
 					<label>Current Payment</label>
@@ -218,7 +218,7 @@ var CaseCollection = Backbone.Collection.extend({
 				<h5 class="form_account_label" style="margin-left:34px;"><%=key%></h5>
 			<% }
 			else{ %>
-				<a class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
+				<a id="delete_ca" class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
 				<h5 class="form_account_label"><%=key%></h5>
 			<% } %>
 				<div class="input_item input_type1">
@@ -251,7 +251,7 @@ var CaseCollection = Backbone.Collection.extend({
 			</div>
 		<% });%>
 
-		<a id="new_in" class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
+		<a class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
 	</div>
 	<div class="form_section_divider"></div>
 	<div class="form_section">
@@ -264,7 +264,7 @@ var CaseCollection = Backbone.Collection.extend({
 			</div>
 		<% });%>
 
-		<a id="new_be" class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
+		<a class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
 	</div>
 	<div class="form_section_divider"></div>
 	<div class="form_section">
@@ -278,7 +278,7 @@ var CaseCollection = Backbone.Collection.extend({
 		<% });%>
 
 
-		<a id="new_me" class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
+		<a class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
 	</div>
 	<h2 class="form_heading" style="background:none;">&nbsp;</h2>
 	<div class="form_section">
@@ -300,7 +300,7 @@ var CaseCollection = Backbone.Collection.extend({
 			</div>
 		<% });%>
 
-		<a id="new_da" class="btn btn-info new_debt_account" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
+		<a class="btn btn-info new_debt_account" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
 	</div>
 	<div class="form_section_divider"></div>
 	<div class="form_section">
@@ -320,7 +320,7 @@ var CaseCollection = Backbone.Collection.extend({
 			
 		<% });%>
 
-		<a id="new_ca" class="btn btn-info new_cash_account" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
+		<a class="btn btn-info new_cash_account" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
 	</div>
 	</div>
 </script>
@@ -429,6 +429,7 @@ var ParentView = Backbone.View.extend({
 			//console.log($this_name);
 			//console.log(data);
 
+			var success_calls_count = 0;
 
 		    this.caseViews[case_number].model.save({
 	    		name : $this_name,
@@ -439,15 +440,18 @@ var ParentView = Backbone.View.extend({
 		    	cash_accounts: $cash_accounts
 	    	},
 	    	{
-	    		wait:true,
+	    		//wait:true,
 	        	success: function(model){
+	        		success_calls_count += 1;
 	        		//alert('yep');
 	        		console.log(model);
 	        		//console.log(model.get('id'));
 	        		//console.log(model.get('data'));
 	        		console.log('success');
-	        		console.log($.type(callback));
-	        		if ($.type(callback) == 'function') {
+	        		console.log(success_calls_count);
+	        		if ($.type(callback) == 'function' && success_calls_count === 1) {
+	        			//alert('in here');
+	        			//need to test for # of success calls because we only want to call the callback once. if we're saving multiple cases, it'll call this method once for every case
 	        			callback();	
 	        		}
 	        	},
@@ -490,7 +494,7 @@ var CaseView = Backbone.View.extend({
         //console.log(this.model);
     },
     render: function(){
-    	alert('render called');
+    	//alert('render called');
     	//console.log(this);
     	//console.log(this.model);
     	//console.log(this.income_items);
@@ -640,6 +644,7 @@ $(document).ready(function() {
 		}
 		*/
 		//$('#save_input_data').click();
+		//console.log(this);
 		parentView.save_input_data(function() {
 			$fieldname = prompt('Enter Item Name');
 			console.log(_.size(parentView.caseViews));
@@ -647,7 +652,7 @@ $(document).ready(function() {
 			//console.log(parentView);
 
 			for (i=0;i< _.size(parentView.caseViews);i++) {
-				alert('in');
+				//alert('in');
 				//console.log(parentView.caseViews[i].model);
 				//var in_items = _.clone(parentView.caseViews[i].model.get('income_items'));
 				var in_items = parentView.caseViews[i].model.get('income_items');
@@ -724,9 +729,61 @@ $(document).ready(function() {
 	});
 
 	$('#delete_in').live('click',function(){
-		var name = $(this).next().html();
+		$fieldname = $(this).next().html();
+		for (i=0;i< _.size(parentView.caseViews);i++) {
+			var in_items = parentView.caseViews[i].model.get('income_items');
+			//console.log(in_items);
+			delete in_items[$fieldname];
+			console.log(in_items);
+			parentView.caseViews[i].model.set({income_items:in_items});
+			console.log(parentView.caseViews[i].model.get('income_items'));
+			Case.prototype.defaults.income_items = in_items;
+			console.log('ok');
+			parentView.caseViews[i].model.trigger('change');
+		}
+	});
+	$('#delete_be').live('click',function(){
+		$fieldname = $(this).next().html();
+		for (i=0;i< _.size(parentView.caseViews);i++) {
+			var be_items = parentView.caseViews[i].model.get('basic_expenses');
+			delete be_items[$fieldname];
+			parentView.caseViews[i].model.set({basic_expenses:be_items});
+			Case.prototype.defaults.be_items = be_items;
+			parentView.caseViews[i].model.trigger('change');
+		}
+	});
+	$('#delete_me').live('click',function(){
+		$fieldname = $(this).next().html();
+		for (i=0;i< _.size(parentView.caseViews);i++) {
+			var me_items = parentView.caseViews[i].model.get('misc_expenses');
+			delete me_items[$fieldname];
+			parentView.caseViews[i].model.set({misc_expenses:me_items});
+			Case.prototype.defaults.me_items = me_items;
+			parentView.caseViews[i].model.trigger('change');
+		}
+	});
+	$('#delete_da').live('click',function(){
+		$fieldname = $(this).next().html();
+		for (i=0;i< _.size(parentView.caseViews);i++) {
+			var accounts = parentView.caseViews[i].model.get('debt_accounts');
+			delete accounts[$fieldname];
+			parentView.caseViews[i].model.set({debt_accounts:accounts});
+			Case.prototype.defaults.debt_accounts = accounts;
+			parentView.caseViews[i].model.trigger('change');
+		}
+	});
+	$('#delete_ca').live('click',function(){
+		$fieldname = $(this).next().html();
+		for (i=0;i< _.size(parentView.caseViews);i++) {
+			var accounts = parentView.caseViews[i].model.get('cash_accounts');
+			delete accounts[$fieldname];
+			parentView.caseViews[i].model.set({cash_accounts:accounts});
+			Case.prototype.defaults.cash_accounts = accounts;
+			parentView.caseViews[i].model.trigger('change');
+		}
 	});
 });
+
 </script>
 
 {% endblock %}

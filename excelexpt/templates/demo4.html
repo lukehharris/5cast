@@ -348,7 +348,7 @@ var ParentView = Backbone.View.extend({
     events: {
         "click #save_input_data": "save_input_data"
     },
-    save_input_data: function(){
+    save_input_data: function(callback){
     	var case_numbers = [];
     	$('.case_tag').each(function (){
     		$case_number = $(this).attr('id').substring(4,5);
@@ -446,13 +446,16 @@ var ParentView = Backbone.View.extend({
 	        		//console.log(model.get('id'));
 	        		//console.log(model.get('data'));
 	        		console.log('success');
+	        		console.log($.type(callback));
+	        		if ($.type(callback) == 'function') {
+	        			callback();	
+	        		}
 	        	},
 				error: function(){
 				    console.log('error');
 				}
 	        });
         }
-	    
 	    return false;
     }
 })
@@ -487,7 +490,7 @@ var CaseView = Backbone.View.extend({
         //console.log(this.model);
     },
     render: function(){
-    	//alert('render called');
+    	alert('render called');
     	//console.log(this);
     	//console.log(this.model);
     	//console.log(this.income_items);
@@ -525,7 +528,6 @@ var CaseView = Backbone.View.extend({
         		this.$el.before( template );
         		this.caseTagsViews.push(new CaseTagsView({name:this.model.get('name'),caseNumber:this.caseNumber}));	
         	}
-        	
         }
     }
 });
@@ -637,82 +639,92 @@ $(document).ready(function() {
 			}	
 		}
 		*/
-		$('#save_input_data').click();
-		$fieldname = prompt('Enter Item Name');
-		//console.log(_.size(parentView.caseViews));
-		//console.log(parentView.caseViews);
-		//console.log(parentView);
-
-		for (i=0;i< _.size(parentView.caseViews);i++) {
-			//alert('in');
-			//console.log(parentView.caseViews[i].model);
-			//var in_items = _.clone(parentView.caseViews[i].model.get('income_items'));
-			var in_items = parentView.caseViews[i].model.get('income_items');
-			//console.log(in_items);
-			in_items[$fieldname] = '';
-			//console.log(in_items);
-			parentView.caseViews[i].model.set({income_items:in_items});
-			Case.prototype.defaults.income_items = in_items;
-			parentView.caseViews[i].model.trigger('change');
-			//var key = 'income_items.'+$fieldname;
-			//parentView.caseViews[i].model.set({key:''});
-			//parentView.caseViews[i].model.save({income_items:in_items});
-			//$('#save_input_data').click();
-			//console.log(parentView);
+		//$('#save_input_data').click();
+		parentView.save_input_data(function() {
+			$fieldname = prompt('Enter Item Name');
+			console.log(_.size(parentView.caseViews));
 			//console.log(parentView.caseViews);
-			
-			//console.log(parentView.caseViews[i].model);
-			//parentView.caseViews[i].model.trigger('change');
-			//$('#save_input_data').click();
-		}
+			//console.log(parentView);
+
+			for (i=0;i< _.size(parentView.caseViews);i++) {
+				alert('in');
+				//console.log(parentView.caseViews[i].model);
+				//var in_items = _.clone(parentView.caseViews[i].model.get('income_items'));
+				var in_items = parentView.caseViews[i].model.get('income_items');
+				//console.log(in_items);
+				in_items[$fieldname] = '';
+				console.log(in_items);
+				parentView.caseViews[i].model.set({income_items:in_items});
+				console.log(parentView.caseViews[i].model.get('income_items'));
+				Case.prototype.defaults.income_items = in_items;
+				console.log('ok');
+				parentView.caseViews[i].model.trigger('change');
+				//console.log(parentView.caseViews[i].model);
+				//var key = 'income_items.'+$fieldname;
+				//parentView.caseViews[i].model.set({key:''});
+				//parentView.caseViews[i].model.save({income_items:in_items});
+				//$('#save_input_data').click();
+				//console.log(parentView);
+				//console.log(parentView.caseViews);
+				
+				//console.log(parentView.caseViews[i].model);
+				//parentView.caseViews[i].model.trigger('change');
+				//$('#save_input_data').click();
+			}
+		});
+		
 	});
 	$('#new_be').live('click',function(){
-		$('#save_input_data').click();
-		$fieldname = prompt('Enter Item Name');
-		for (i=0;i< _.size(parentView.caseViews);i++) {
-			var be_items = parentView.caseViews[i].model.get('basic_expenses');
-			be_items[$fieldname] = '';
-			parentView.caseViews[i].model.set({basic_expenses:be_items});
-			Case.prototype.defaults.basic_expenses = be_items;
-			parentView.caseViews[i].model.trigger('change');
-		}
+		parentView.save_input_data(function() {
+			$fieldname = prompt('Enter Item Name');
+			for (i=0;i< _.size(parentView.caseViews);i++) {
+				var be_items = parentView.caseViews[i].model.get('basic_expenses');
+				be_items[$fieldname] = '';
+				parentView.caseViews[i].model.set({basic_expenses:be_items});
+				Case.prototype.defaults.basic_expenses = be_items;
+				parentView.caseViews[i].model.trigger('change');
+			}
+		});
 	});
 	$('#new_me').live('click',function(){
-		$('#save_input_data').click();
-		$fieldname = prompt('Enter Item Name');
-		for (i=0;i< _.size(parentView.caseViews);i++) {
-			var me_items = parentView.caseViews[i].model.get('misc_expenses');
-			me_items[$fieldname] = '';
-			parentView.caseViews[i].model.set({misc_expenses:me_items});
-			Case.prototype.defaults.misc_expenses = me_items;
-			parentView.caseViews[i].model.trigger('change');
-		}
+		parentView.save_input_data(function() {
+			$fieldname = prompt('Enter Item Name');
+			for (i=0;i< _.size(parentView.caseViews);i++) {
+				var me_items = parentView.caseViews[i].model.get('misc_expenses');
+				me_items[$fieldname] = '';
+				parentView.caseViews[i].model.set({misc_expenses:me_items});
+				Case.prototype.defaults.misc_expenses = me_items;
+				parentView.caseViews[i].model.trigger('change');
+			}
+		});
 	});
 	$('#new_da').live('click',function(){
-		$('#save_input_data').click();
-		$fieldname = prompt('Enter Item Name');
-		for (i=0;i< _.size(parentView.caseViews);i++) {
-			var accounts = parentView.caseViews[i].model.get('debt_accounts');
-			accounts[$fieldname] = {'payment':'','balance':'','rate':''};
-			parentView.caseViews[i].model.set({debt_accounts:accounts});
-			Case.prototype.defaults.debt_accounts = accounts;
-			parentView.caseViews[i].model.trigger('change');
-		}
+		parentView.save_input_data(function() {
+			$fieldname = prompt('Enter Item Name');
+			for (i=0;i< _.size(parentView.caseViews);i++) {
+				var accounts = parentView.caseViews[i].model.get('debt_accounts');
+				accounts[$fieldname] = {'payment':'','balance':'','rate':''};
+				parentView.caseViews[i].model.set({debt_accounts:accounts});
+				Case.prototype.defaults.debt_accounts = accounts;
+				parentView.caseViews[i].model.trigger('change');
+			}
+		});
 	});
 	$('#new_ca').live('click',function(){
-		$('#save_input_data').click();
-		$fieldname = prompt('Enter Item Name');
-		for (i=0;i< _.size(parentView.caseViews);i++) {
-			var accounts = parentView.caseViews[i].model.get('cash_accounts');
-			accounts[$fieldname] = {'balance':'','rate':''};
-			parentView.caseViews[i].model.set({cash_accounts:accounts});
-			Case.prototype.defaults.cash_accounts = accounts;
-			parentView.caseViews[i].model.trigger('change');
-		}
+		parentView.save_input_data(function() {
+			$fieldname = prompt('Enter Item Name');
+			for (i=0;i< _.size(parentView.caseViews);i++) {
+				var accounts = parentView.caseViews[i].model.get('cash_accounts');
+				accounts[$fieldname] = {'balance':'','rate':''};
+				parentView.caseViews[i].model.set({cash_accounts:accounts});
+				Case.prototype.defaults.cash_accounts = accounts;
+				parentView.caseViews[i].model.trigger('change');
+			}
+		});
 	});
 
 	$('#delete_in').live('click',function(){
-
+		var name = $(this).next().html();
 	});
 });
 </script>

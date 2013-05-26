@@ -342,8 +342,9 @@ def case():
         #run through the model builder
         #save to db
         #get id, append that to response, append data to response
-        data = {'ok':'heres some data'}
-        return json.dumps({'id':78,'data':data}),200
+        #data = {'ok':'heres some data'}
+        response.update({'id':78})
+        return json.dumps({'id':78}),200
 
 @app.route('/case/<id_input>', methods=['GET','PUT','DELETE']) #this is where existing cases are saved/deleted to
 def case2(id_input):
@@ -357,9 +358,11 @@ def case2(id_input):
 
     if request.method == 'PUT':
         #overwrite the existing case with corresponding id. return 200 status
+        response = {}
         for item in request.json:
             print item,request.json[item]
-        return '200'
+            response.update({item:request.json[item]})
+        return json.dumps({'id':78}),200
     
     if request.method == 'DELETE':
         #delete the object with corresponding id. return 200 status

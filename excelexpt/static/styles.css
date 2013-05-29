@@ -230,8 +230,8 @@ input.input_percentage {
     margin-left:180px; 
 }
 
-#output_grid1 table td,
-#output_grid2 table td {
+#table1 table td,
+#table2 table td {
     border: 1px solid black;
     padding: 5px 10px;
 }

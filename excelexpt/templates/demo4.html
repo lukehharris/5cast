@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Model Builder Demo{% endblock %}
+{% block title %}5cast{% endblock %}
 
 {% block extra_headers %}
 <script src="/static/underscore-min.js"></script>
 <script src="/static/backbone-min.js"></script>
 <script src="/static/deep-model.min.js"></script>
+<script src="/static/Chart.min.js"></script>
 
 <!-- MODELS -->
 <script type="text/javascript">
@@ -24,8 +25,6 @@ var Case = Backbone.Model.extend({
 });
 
 
-
-
 var CaseCollection = Backbone.Collection.extend({
     model: Case,
 	urlRoot: '/case'
@@ -36,68 +35,6 @@ var CaseCollection = Backbone.Collection.extend({
 
 
 <!-- TEMPLATES -->
-<script type="text/template" id="chart_1_net_worth_template">
-	<select id="chart_1_menu">
-		<option value="net_worth" selected>Net Worth</option>
-		<option value="net_income">Net Income</option>
-	</select>
-	<div>
-		<table>
-			<thead>
-				<th>&nbsp;</th>
-				<th>6 mon</th>
-				<th>1 yr</th>
-				<th>2 yr</th>
-				<th>5 yr</th>
-				<th>10 yr</th>
-			</thead>
-			<tbody>
-				{% for scenario in s %}
-				<tr>
-					<td class="table_y_axis">{{scenario['name']}}</td>
-					<td>{{'{:20,.0f}'.format(scenario['net_worth'][6])}}</td>
-					<td>{{'{:20,.0f}'.format(scenario['net_worth'][12])}}</td>
-					<td>{{'{:20,.0f}'.format(scenario['net_worth'][24])}}</td>
-					<td>{{'{:20,.0f}'.format(scenario['net_worth'][60])}}</td>
-					<td>{{'{:20,.0f}'.format(scenario['net_worth'][120])}}</td>
-				</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	</div>
-</script>
-
-<script type="text/template" id="chart_1_net_income_template">
-	<select id="chart_1_menu">
-		<option value="net_worth">Net Worth</option>
-		<option value="net_income" selected>Net Income</option>
-	</select>
-	<div>
-		<table>
-			<thead>
-				<th>&nbsp;</th>
-				<th>6 mon</th>
-				<th>1 yr</th>
-				<th>2 yr</th>
-				<th>5 yr</th>
-				<th>10 yr</th>
-			</thead>
-			<tbody>
-				{% for scenario in s %}
-				<tr>
-					<td class="table_y_axis">{{scenario['name']}}</td>
-					<td>{{'{:20,.0f}'.format(scenario['net_income_raw'][6])}}</td>
-					<td>{{'{:20,.0f}'.format(scenario['net_income_raw'][12])}}</td>
-					<td>{{'{:20,.0f}'.format(scenario['net_income_raw'][24])}}</td>
-					<td>{{'{:20,.0f}'.format(scenario['net_income_raw'][60])}}</td>
-					<td>{{'{:20,.0f}'.format(scenario['net_income_raw'][120])}}</td>
-				</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	</div>
-</script>
-
 <script type="text/template" id="parent_input_template">
 	<div class="form_side_divider"></div>
 	<div class="form_container">
@@ -325,8 +262,48 @@ var CaseCollection = Backbone.Collection.extend({
 	</div>
 </script>
 
+<script type="text/template" id="table_1_template">
+	<select id="table_1_menu">
+		<option value="net_worth" <% if (value=='net_worth'){{'{'}}%> selected <%{{'}'}}%>  >Net Worth</option>
+		<option value="net_income" <% if (value=='net_income'){{'{'}}%>selected<%{{'}'}}%>>Net Income</option>
+	</select>
+	<div>
+		<table>
+			<thead>
+				<th>&nbsp;</th>
+				<th>6 mon</th>
+				<th>1 yr</th>
+				<th>2 yr</th>
+				<th>5 yr</th>
+				<th>10 yr</th>
+			</thead>
+			<tbody>
+				<% models.each(function(model){ %>
+					<tr>
+						<td class="table_y_axis"><%=model.get('name')%></td>
+						<td><%=model.get('data')[value][6]%></td>
+						<td><%=model.get('data')[value][12]%></td>
+						<td><%=model.get('data')[value][24]%></td>
+						<td><%=model.get('data')[value][60]%></td>
+						<td><%=model.get('data')[value][120]%></td>
+					</tr>
+				<% });%>
+			</tbody>
+		</table>
+	</div>
+</script>
+
+<script type="text/template" id="chart1_legend_template">
+	<% for (i=0;i<names.length;i++){ %>
+		<div class="legend_item" style="display:inline-block;">
+		<div style="width:20px;height:20px;display:inline-block;background:<%=colors[i]%>">&nbsp;</div>
+		<div style="font-weight:bold;display:inline-block;"><%=names[i]%></div>
+	</div>
+	<% }%>
+</script>
+
 <script type="text/template" id="case_tag_template">
-	<div class="case_tag" id="case<%=caseNumber%>_tag"><h4><%=name%></h4></div>
+	<div class="case_tag" id="case<%=caseNumber%>_tag"><h4><%=name%></h4><a class="btn btn-danger delete_case" data-id="<%=caseNumber%>" title="Delete This Scenario"><i class="icon-remove"></i></a></div>
 </script>
 
 <!-- VIEWS -->
@@ -334,8 +311,21 @@ var CaseCollection = Backbone.Collection.extend({
 var ParentView = Backbone.View.extend({
 	caseViews: {},
 	initialize: function(){
+		self = this;
 		this.render();
-    	this.caseViews[0] = new CaseView({ el: $("#case0"), parentView:this, isBaseCase:true, model: new Case() });
+		{% if data_exists %}
+			var this_model = new Case({id:{{base_id}} });
+			this_model.fetch({
+				success: function(){
+					self.caseViews[0] = new CaseView({ el: $("#case0"), parentView:self, isBaseCase:true, model: this_model });
+					console.log(self.model);
+					var table1view = new Table1View({el:$('#table1'), model: self.model});
+					var chart1view = new Chart1View({el:$('#chart1_legend'), model: self.model});
+				}
+			});
+		{% else %}
+    		this.caseViews[0] = new CaseView({ el: $("#case0"), parentView:this, isBaseCase:true, model: new Case() });
+    	{% endif %}
     	//console.log(this.caseViews);
     	//this.caseViews[0].parentView = this;
     	//this.otherCaseView = new CaseView({ el: $("#case_target"), isBaseCase:false, model: new Case({name:'Case 2'}) });
@@ -349,13 +339,20 @@ var ParentView = Backbone.View.extend({
         "click #save_input_data": "save_input_data"
     },
     save_input_data: function(callback){
+    	/*
     	var case_numbers = [];
     	$('.case_tag').each(function (){
     		$case_number = $(this).attr('id').substring(4,5);
     		case_numbers.push($case_number);
     	});
+		*/		
+		//var last_loop = Object.keys(this.caseViews).length;
 
-    	for (var case_number in case_numbers) {
+
+
+    	for (var case_number in this.caseViews) {
+    		//console.log('case_number: '+case_number);
+    	
     		/*
 	    	$income_items = {'income_items':{}};
 			$basic_expenses = {'basic_expenses':{}};
@@ -379,7 +376,7 @@ var ParentView = Backbone.View.extend({
 			$('#case'+case_number+' input').each(function() {
 				$raw_name0 = $(this).attr('name');
 				//$case_number = $raw_name0.substring($raw_name0.length-1,$raw_name0.length);
-				$raw_name = $raw_name0.substring(0, $raw_name0.length - 2);
+				$raw_name = $raw_name0.substring(0, $raw_name0.length - case_number.length - 1);
 				$prefix = $raw_name.substring(0,2);
 				$name = $raw_name.substring(3, $raw_name.length);
 				$value = $(this).val();
@@ -429,9 +426,13 @@ var ParentView = Backbone.View.extend({
 			//console.log($this_name);
 			//console.log(data);
 
-			var success_calls_count = 0;
+			//var success_calls_count = 0;
+			//console.log('here')
+			//console.log($isBaseCase);
+			//alert('wait');
 
 		    this.caseViews[case_number].model.save({
+		    	isBaseCase: (case_number == 0),
 	    		name : $this_name,
 		    	income_items: $income_items,
 		    	basic_expenses: $basic_expenses,
@@ -442,40 +443,53 @@ var ParentView = Backbone.View.extend({
 	    	{
 	    		//wait:true,
 	        	success: function(model){
-	        		success_calls_count += 1;
+	        		//success_calls_count += 1;
 	        		//alert('yep');
-	        		console.log(model);
+	        		//console.log(model);
 	        		//console.log(model.get('id'));
 	        		//console.log(model.get('data'));
 	        		console.log('success');
+	        		/*
 	        		console.log(success_calls_count);
-	        		if ($.type(callback) == 'function' && success_calls_count === 1) {
-	        			//alert('in here');
+	        		console.log(last_loop);
+	        		if ($.type(callback) == 'function' && success_calls_count === last_loop) {
+	        			alert('in here');
 	        			//need to test for # of success calls because we only want to call the callback once. if we're saving multiple cases, it'll call this method once for every case
 	        			callback();	
 	        		}
+	        		*/
 	        	},
 				error: function(){
 				    console.log('error');
 				}
 	        });
         }
+        if ($.type(callback) == 'function'){
+        	callback();
+        }
 	    return false;
     }
-})
-
+});
 
 var CaseView = Backbone.View.extend({
-	caseTagsViews: [],
+	caseTagsViews: null,
+	className : 'scenario_column',
 	caseNumber : 0,
     initialize: function(){
+
     	this.isBaseCase = this.options.isBaseCase;
+    	//console.log(this.isBaseCase);
     	if (this.isBaseCase == false) {
-    		$global_case_count += 1;
-    		this.caseNumber = $global_case_count;
+    		this.caseNumber = _.uniqueId();
     	}
+    	//console.log(this.caseNumber);
+    	//console.log(this.model);
     	this.parentView = this.options.parentView;
     	this.parentView.caseViews[this.caseNumber] = this;
+    	console.log('there');
+    	console.log(this.parentView.model);
+    	this.parentView.model.add(this.model); //add the new model to the collection
+    	console.log('here');
     	//this.income_items = this.model.get('income_items');
     	/*
     	this.name = this.model.get('name');
@@ -487,16 +501,19 @@ var CaseView = Backbone.View.extend({
 		this.data = this.model.get('data');
 		*/
 		_.bindAll(this, 'render');
-		this.model.on('change', this.render);
+		this.listenTo(this.model, 'change', this.render);
+		this.listenTo(this.model, 'destroy', this.close);
 		//console.log(this.model);
+
         this.render();
 
         //console.log(this.model);
     },
     render: function(){
+    	//console.log(this.isBaseCase);
     	//alert('render called');
     	//console.log(this);
-    	//console.log(this.model);
+    	console.log(this.model);
     	//console.log(this.income_items);
     	//console.log(this.basic_expenses);
     	//console.log(this.caseNumber);
@@ -509,6 +526,7 @@ var CaseView = Backbone.View.extend({
 	        		misc_expenses:this.model.get('misc_expenses'),
 	        		debt_accounts:this.model.get('debt_accounts'),
 	        		cash_accounts:this.model.get('cash_accounts')};
+	    console.log(context);
 		/*	        		
 	    var context = {caseNumber:this.caseNumber,
     				name:this.name,
@@ -526,13 +544,21 @@ var CaseView = Backbone.View.extend({
         	$selector = $('#case'+this.caseNumber);
         	//console.log(_.size($selector));
         	if (_.size($selector)>0){
-        		$selector.html( template );
+        		//$selector.html( template );
+        		this.$el.html(template);
         	}
         	else {
         		this.$el.before( template );
-        		this.caseTagsViews.push(new CaseTagsView({name:this.model.get('name'),caseNumber:this.caseNumber}));	
+        		this.$el = $('#case'+this.caseNumber);
+        		//this.caseTagsViews.push(new CaseTagsView({name:this.model.get('name'),caseNumber:this.caseNumber}));	
+        		this.caseTagsView = new CaseTagsView({name:this.model.get('name'),caseNumber:this.caseNumber});
         	}
         }
+    },
+    close: function(){
+    	this.caseTagsView.remove();
+    	this.remove();
+    	delete this.parentView.caseViews[this.caseNumber];
     }
 });
 
@@ -546,67 +572,134 @@ var CaseTagsView = Backbone.View.extend({
     	var template = _.template( $("#case_tag_template").html(), {name:this.name,caseNumber:this.caseNumber} );
         //this.$el.before( template );
         $('.dropdown').before(template);
+        this.$el = $('#case'+this.caseNumber+'_tag');
     }
 });
 
 
-var NewChart1NetWorthView = Backbone.View.extend({
+var Table1View = Backbone.View.extend({
+	currentValue : 'net_worth',
     initialize: function(){
+    	console.log('table1view');
+    	_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+		//this.listenTo(this.model, 'destroy', this.close);
         this.render();
     },
     render: function(){
-        var template = _.template( $("#chart_1_net_worth_template").html(), {} );
+    	var value = this.currentValue;
+    	console.log('yep');
+    	console.log(this.model);
+
+    	var template = _.template( $("#table_1_template").html(), {value:value,models:this.model} );
         this.$el.html( template );
     },
     events: {
-        "change #chart_1_menu": "go"
+        "change #table_1_menu": "update"
     },
-    go: function( event ){
+    update: function( event ){
     	var value = event.currentTarget.value;
-        if(value === 'net_worth') {
-        	var template = _.template( $("#chart_1_net_worth_template").html() );
-        }
-        else if(value === 'net_income'){
-        	var template = _.template( $("#chart_1_net_income_template").html() );
-        }
-        $("#output_grid1").html( template );
+    	this.currentValue = value;
+        this.render();
     }
 });
+
+var Chart1View = Backbone.View.extend({
+	fillColors: ["rgba(151,187,205,0.5)", "rgba(153,230,153, 0.5)"],
+	strokeColors: ["rgba(151,187,205,1)", "rgba(153,230,153,1)"],
+	pointColors: ["rgba(151,187,205,1)", "rgba(153,230,153,1)"],
+	pointStrokeColors: ["#fff", "#fff"],
+    initialize: function(){
+    	console.log('chart1view');
+    	var labels_all = Object.keys(this.model.at(0).get('data')['net_worth']);
+    	var labels = [];
+    	for (j=0;j<labels_all.length;j++){
+    		labels.push(j);
+			j+=11;
+		}
+		this.labels = labels;
+    	
+    	_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+        this.render();
+    },
+    render: function(){
+    	var datasets = [];
+    	var legend_names = [];
+    	
+    	console.log(this.model);
+    	console.log(this.model.length);
+    	for (i=0;i<this.model.length;i++){
+    		var data_dict = this.model.at(i).get('data')['net_worth'];
+    		var data_list = []
+    		for (j=0;j<(this.labels.length * 12);j++){
+    			data_list.push(data_dict[j]);
+    			j+=11;
+    		}
+    		var this_dataset = {
+    			fillColor : this.fillColors[i],
+    			strokeColor : this.strokeColors[i],
+    			pointColor : this.pointColors[i],
+    			pointStrokeColor : this.pointStrokeColors[i],
+    			data : data_list
+    		};
+    		datasets.push(this_dataset);
+    		legend_names.push(this.model.at(i).get('name'));
+    	}
+
+
+
+    	var template = _.template( $("#chart1_legend_template").html(), {names:legend_names, colors:this.strokeColors} );
+        this.$el.html( template );
+
+        //console.log($("#chart1"));
+        //console.log($("#chart1").get(0));
+
+        var ctx = $("#chart1_canvas").get(0).getContext("2d");
+        //console.log(this.datasets);
+
+		var Chart1_data = {
+			labels: this.labels,
+			datasets : datasets
+		};
+		new Chart(ctx).Line(Chart1_data,{bezierCurve : false});
+    }
+});
+
 </script>
 
 
 <script type="text/javascript">
 $(document).ready(function() {
-	$global_case_count = 0;
+	Number.prototype.formatMoney = function(c, d, t){
+	var n = this, c = isNaN(c = Math.abs(c)) ? 2 : c, d = d == undefined ? "," : d, t = t == undefined ? "." : t, s = n < 0 ? "-" : "", i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + "", j = (j = i.length) > 3 ? j % 3 : 0;
+	   return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
+	 };
+
 	$global_fieldnames = []
 
-	var baseCase = new Case({ 
-		name : "Test Case"
-	});
-	$('#save_data').live('click', function(){
-		baseCase.save();
-		//alert(baseCase.get('name'));
-		console.log(baseCase.get('data'));
-	});
-	$('#get_data').live('click', function(){
-		var newcase = new Case({id: 5});
-		newcase.fetch();
-	    alert(newcase.get('id'));
-	    alert(newcase.get('name'));
-		alert(newcase.get('income'));
-		alert(newcase.get('expenses'));
-	});
-	$('#delete_data').live('click', function(){
-		var deleteme = new Case({ // attributes passed to the Case constructor will override the defaults
-			id: 9,
-			name : "Delete Case"
-		});
-		deleteme.destroy();
-	});
+	var caseCollection = new CaseCollection();
+	var parentView = new ParentView({el:$("#input"), model: caseCollection});
+	
+	
+	
+	/*
+	var parentView = null;
+	var initializations0 = function() {
+		parentView = new ParentView({el:$("#input"), model: caseCollection});
+		return true;
+	}
+	var initializations1 = function() {
+		var table1view = new Table1View({el:$('#table1'), model: caseCollection});
+		var chart1view = new Chart1View({el:$('#chart1'), model: caseCollection});
+	}
+	var cp1 = initializations0()
+	if (cp1){
+		console.log('initializations1');
+		initializations1();
+	}
+	*/
 
-
-	//var baseCaseView = new BaseCaseView({ el: $("#input_container"), model: new Case() });
-	var parentView = new ParentView({el:$("#input")});
 	$('#back_to_output').live('click',function(){
 		$('#input').addClass('hidden');
 		$('#output').removeClass('hidden');
@@ -621,10 +714,33 @@ $(document).ready(function() {
 	});
 	$('#new_scenario').live('click', function(){
 		$case_name = prompt('Enter new scenario name: ');
-		var new_case = new CaseView({ el: $("#case_target"), isBaseCase:false, model: new Case({name:$case_name}), parentView:parentView });
+		var new_case = new CaseView({ 
+			el: $("#case_target"), 
+			isBaseCase:false, 
+			model: new Case({
+				name:$case_name,
+				data:caseCollection.models[0].get('data')}
+			), parentView:parentView });
 		$('.dropdown-toggle').click();
     	return false;
 	});
+
+	var buildExistingCases = function(input_id) {
+		var this_model = new Case({id: input_id });
+		this_model.fetch({
+			success: function(){
+				var new_case = new CaseView({ el: $("#case_target"), isBaseCase:false, model: this_model, parentView:parentView });
+			}
+		});
+		
+	}
+	{% for this_id in other_ids %}
+		buildExistingCases({{this_id}});
+	{% endfor %}
+
+
+
+
 
 	$('#new_in').live('click',function(){
 		//while (true) {
@@ -651,19 +767,20 @@ $(document).ready(function() {
 			//console.log(parentView.caseViews);
 			//console.log(parentView);
 
-			for (i=0;i< _.size(parentView.caseViews);i++) {
+			//for (i=0;i< _.size(parentView.caseViews);i++) {
+			for (var case_number in parentView.caseViews){
 				//alert('in');
 				//console.log(parentView.caseViews[i].model);
 				//var in_items = _.clone(parentView.caseViews[i].model.get('income_items'));
-				var in_items = parentView.caseViews[i].model.get('income_items');
+				var in_items = parentView.caseViews[case_number].model.get('income_items');
 				//console.log(in_items);
 				in_items[$fieldname] = '';
 				console.log(in_items);
-				parentView.caseViews[i].model.set({income_items:in_items});
-				console.log(parentView.caseViews[i].model.get('income_items'));
+				parentView.caseViews[case_number].model.set({income_items:in_items});
+				console.log(parentView.caseViews[case_number].model.get('income_items'));
 				Case.prototype.defaults.income_items = in_items;
 				console.log('ok');
-				parentView.caseViews[i].model.trigger('change');
+				parentView.caseViews[case_number].model.trigger('change');
 				//console.log(parentView.caseViews[i].model);
 				//var key = 'income_items.'+$fieldname;
 				//parentView.caseViews[i].model.set({key:''});
@@ -677,111 +794,123 @@ $(document).ready(function() {
 				//$('#save_input_data').click();
 			}
 		});
-		
 	});
 	$('#new_be').live('click',function(){
 		parentView.save_input_data(function() {
 			$fieldname = prompt('Enter Item Name');
-			for (i=0;i< _.size(parentView.caseViews);i++) {
-				var be_items = parentView.caseViews[i].model.get('basic_expenses');
+			for (var case_number in parentView.caseViews){
+				var be_items = parentView.caseViews[case_number].model.get('basic_expenses');
 				be_items[$fieldname] = '';
-				parentView.caseViews[i].model.set({basic_expenses:be_items});
+				parentView.caseViews[case_number].model.set({basic_expenses:be_items});
 				Case.prototype.defaults.basic_expenses = be_items;
-				parentView.caseViews[i].model.trigger('change');
+				parentView.caseViews[case_number].model.trigger('change');
 			}
 		});
 	});
 	$('#new_me').live('click',function(){
 		parentView.save_input_data(function() {
 			$fieldname = prompt('Enter Item Name');
-			for (i=0;i< _.size(parentView.caseViews);i++) {
-				var me_items = parentView.caseViews[i].model.get('misc_expenses');
+			for (var case_number in parentView.caseViews){
+				var me_items = parentView.caseViews[case_number].model.get('misc_expenses');
 				me_items[$fieldname] = '';
-				parentView.caseViews[i].model.set({misc_expenses:me_items});
+				parentView.caseViews[case_number].model.set({misc_expenses:me_items});
 				Case.prototype.defaults.misc_expenses = me_items;
-				parentView.caseViews[i].model.trigger('change');
+				parentView.caseViews[case_number].model.trigger('change');
 			}
 		});
 	});
 	$('#new_da').live('click',function(){
 		parentView.save_input_data(function() {
 			$fieldname = prompt('Enter Item Name');
-			for (i=0;i< _.size(parentView.caseViews);i++) {
-				var accounts = parentView.caseViews[i].model.get('debt_accounts');
+			for (var case_number in parentView.caseViews){
+				var accounts = parentView.caseViews[case_number].model.get('debt_accounts');
 				accounts[$fieldname] = {'payment':'','balance':'','rate':''};
-				parentView.caseViews[i].model.set({debt_accounts:accounts});
+				parentView.caseViews[case_number].model.set({debt_accounts:accounts});
 				Case.prototype.defaults.debt_accounts = accounts;
-				parentView.caseViews[i].model.trigger('change');
+				parentView.caseViews[case_number].model.trigger('change');
 			}
 		});
 	});
 	$('#new_ca').live('click',function(){
 		parentView.save_input_data(function() {
 			$fieldname = prompt('Enter Item Name');
-			for (i=0;i< _.size(parentView.caseViews);i++) {
-				var accounts = parentView.caseViews[i].model.get('cash_accounts');
+			for (var case_number in parentView.caseViews){
+				var accounts = parentView.caseViews[case_number].model.get('cash_accounts');
 				accounts[$fieldname] = {'balance':'','rate':''};
-				parentView.caseViews[i].model.set({cash_accounts:accounts});
+				parentView.caseViews[case_number].model.set({cash_accounts:accounts});
 				Case.prototype.defaults.cash_accounts = accounts;
-				parentView.caseViews[i].model.trigger('change');
+				parentView.caseViews[case_number].model.trigger('change');
 			}
 		});
 	});
 
 	$('#delete_in').live('click',function(){
 		$fieldname = $(this).next().html();
-		for (i=0;i< _.size(parentView.caseViews);i++) {
-			var in_items = parentView.caseViews[i].model.get('income_items');
+		for (var case_number in parentView.caseViews){
+			var in_items = parentView.caseViews[case_number].model.get('income_items');
 			//console.log(in_items);
 			delete in_items[$fieldname];
 			console.log(in_items);
-			parentView.caseViews[i].model.set({income_items:in_items});
-			console.log(parentView.caseViews[i].model.get('income_items'));
+			parentView.caseViews[case_number].model.set({income_items:in_items});
+			console.log(parentView.caseViews[case_number].model.get('income_items'));
 			Case.prototype.defaults.income_items = in_items;
 			console.log('ok');
-			parentView.caseViews[i].model.trigger('change');
+			parentView.caseViews[case_number].model.trigger('change');
 		}
 	});
 	$('#delete_be').live('click',function(){
 		$fieldname = $(this).next().html();
-		for (i=0;i< _.size(parentView.caseViews);i++) {
-			var be_items = parentView.caseViews[i].model.get('basic_expenses');
+		for (var case_number in parentView.caseViews){
+			var be_items = parentView.caseViews[case_number].model.get('basic_expenses');
 			delete be_items[$fieldname];
-			parentView.caseViews[i].model.set({basic_expenses:be_items});
+			parentView.caseViews[case_number].model.set({basic_expenses:be_items});
 			Case.prototype.defaults.be_items = be_items;
-			parentView.caseViews[i].model.trigger('change');
+			parentView.caseViews[case_number].model.trigger('change');
 		}
 	});
 	$('#delete_me').live('click',function(){
 		$fieldname = $(this).next().html();
-		for (i=0;i< _.size(parentView.caseViews);i++) {
-			var me_items = parentView.caseViews[i].model.get('misc_expenses');
+		for (var case_number in parentView.caseViews){
+			var me_items = parentView.caseViews[case_number].model.get('misc_expenses');
 			delete me_items[$fieldname];
-			parentView.caseViews[i].model.set({misc_expenses:me_items});
+			parentView.caseViews[case_number].model.set({misc_expenses:me_items});
 			Case.prototype.defaults.me_items = me_items;
-			parentView.caseViews[i].model.trigger('change');
+			parentView.caseViews[case_number].model.trigger('change');
 		}
 	});
 	$('#delete_da').live('click',function(){
 		$fieldname = $(this).next().html();
-		for (i=0;i< _.size(parentView.caseViews);i++) {
-			var accounts = parentView.caseViews[i].model.get('debt_accounts');
+		for (var case_number in parentView.caseViews){
+			var accounts = parentView.caseViews[case_number].model.get('debt_accounts');
 			delete accounts[$fieldname];
-			parentView.caseViews[i].model.set({debt_accounts:accounts});
+			parentView.caseViews[case_number].model.set({debt_accounts:accounts});
 			Case.prototype.defaults.debt_accounts = accounts;
-			parentView.caseViews[i].model.trigger('change');
+			parentView.caseViews[case_number].model.trigger('change');
 		}
 	});
 	$('#delete_ca').live('click',function(){
 		$fieldname = $(this).next().html();
-		for (i=0;i< _.size(parentView.caseViews);i++) {
-			var accounts = parentView.caseViews[i].model.get('cash_accounts');
+		for (var case_number in parentView.caseViews){
+			var accounts = parentView.caseViews[case_number].model.get('cash_accounts');
 			delete accounts[$fieldname];
-			parentView.caseViews[i].model.set({cash_accounts:accounts});
+			parentView.caseViews[case_number].model.set({cash_accounts:accounts});
 			Case.prototype.defaults.cash_accounts = accounts;
-			parentView.caseViews[i].model.trigger('change');
+			parentView.caseViews[case_number].model.trigger('change');
 		}
 	});
+
+	$('.delete_case').live('click',function() {
+		$case_number = $(this).attr('data-id');
+		//$('#case'+$case_id).remove();
+		//$('#case'+$case_id+'_tag').remove();
+		//console.log(parentView.caseViews[$case_id].model);
+		//console.log($case_id);
+		parentView.caseViews[$case_number].model.destroy({success:function(){console.log('destroyed')}});
+		//delete parentView.caseViews[$case_id];
+		//$global_case_count -= 1;
+	});
+
+
 });
 
 </script>
@@ -803,10 +932,14 @@ $(document).ready(function() {
 </div>
 
 <div id="output" class="hidden">
-	<div class="form_container">
-		<div style="margin-bottom: 40px;"><a class="btn btn-info" id="show_output">Show Input</a></div>
-		output
-	</div>
+	<div class="content_box">
+		
+		<div id="table1"></div>
+
+		<div id="chart1">
+			<canvas id="chart1_canvas" width="800" height="400"></canvas>
+			<div id="chart1_legend"></div>
+		</div>
 </div>
 
 

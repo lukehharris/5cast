@@ -39,12 +39,23 @@ class Scenario(db.Model):
     __tablename__ = 'scenarios'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    data = db.Column(db.PickleType)
-    #name = db.Column(db.String)
     is_base = db.Column(db.Boolean)
+    data = db.Column(db.PickleType)
+    name = db.Column(db.String)
+    income_items = db.Column(db.PickleType)
+    basic_expenses = db.Column(db.PickleType)
+    misc_expenses = db.Column(db.PickleType)
+    debt_accounts = db.Column(db.PickleType)
+    cash_accounts = db.Column(db.PickleType)
 
-    def __init__(self, data):
+    def __init__(self, data, name, income_items, basic_expenses, misc_expenses, debt_accounts, cash_accounts):
         self.data = data
+        self.name = name
+        self.income_items = income_items
+        self.basic_expenses = basic_expenses
+        self.misc_expenses = misc_expenses
+        self.debt_accounts = debt_accounts
+        self.cash_accounts = cash_accounts
         self.is_base = False
 
     def __repr__(self):

@@ -258,6 +258,12 @@ def submit_demo3():
 
     #scenario_count = len(scenarios)
 
+    print 'cash_balances: \n',cash_balances
+    print 'rates: \n',rates
+
+
+
+
     d = build_demo3.build_demo3_data(names, income, basic_expenses, debt_expenses, misc_expenses, debt_balances, cash_balances, rates, scenarios)
 
     if current_user.is_active():
@@ -325,48 +331,107 @@ def demo3_output_detail():
 
 @app.route('/demo4')
 def demo4():
-    return render_template('demo4.html')
+    if current_user.is_active():
+        scenarios_query = current_user.scenarios.all()
+        base_id = None
+        other_ids = []
+        if scenarios_query == []:
+            data_exists = False
+        else:
+            for scenario in scenarios_query:
+                if scenario.is_base:
+                    base_id = scenario.id
+                else:
+                    other_ids.append(scenario.id)
+            data_exists = True
+        return render_template('demo4.html',data_exists=data_exists, base_id=base_id, other_ids=other_ids)
+    else:
+        return redirect(url_for('login'))
+    
 
 
-@app.route('/case', methods=['GET','POST']) #this is where new cases are POSTed, or collections are GET..tten
+
+
+
+import build_demo4
+
+
+
+@app.route('/case', methods=['POST']) #this is where new cases are POSTed, or collections are GET..tten
 def case():
     if request.method == 'POST':
-        print 'POSTed'
-        """ json available through request.json """
-        #run all the code in the demo3_submit section, but now it's json instead of form data
-        #return the full object, including new id, with jsonify
-        response = {}
+        data = {}
         for item in request.json:
-            print item,request.json[item] 
-            response.update({item:request.json[item]})
-        #run through the model builder
-        #save to db
-        #get id, append that to response, append data to response
-        #data = {'ok':'heres some data'}
-        response.update({'id':78})
-        return json.dumps({'id':78}),200
+            value = request.json[item]
+            if item != 'data':
+                print item,value
+            data.update({item:value})
+        #print data
+        s = build_demo4.build_demo4_data(data)
+
+        if current_user.is_active():            
+            new_scenario = Scenario(s, data['name'], data['income_items'], data['basic_expenses'], data['misc_expenses'], data['debt_accounts'], data['cash_accounts'])
+            if data['isBaseCase']:
+                new_scenario.is_base = True
+            current_user.scenarios.append(new_scenario)
+            db.session.add(current_user)
+            db.session.flush()
+            this_id = new_scenario.id
+            db.session.commit()
+
+        data.update({'id':this_id,'data':s})
+        return json.dumps(data),200
 
 @app.route('/case/<id_input>', methods=['GET','PUT','DELETE']) #this is where existing cases are saved/deleted to
 def case2(id_input):
     if request.method == 'GET':
-        #get the object with corresponding id and return it as json
-        #for item in request.json:
-        #    print item,request.json[item]
-
-        data = {'id':id_input,'name':"Case 2",'income' : 5000,'expenses' : 4000}
+        data = {}
+        if current_user.is_active():
+            this_scenario = current_user.scenarios.filter_by(id=id_input).first()
+            data['id'] = id_input
+            data['data'] = this_scenario.data
+            data['isBaseCase'] = this_scenario.is_base
+            data['name'] = this_scenario.name
+            data['income_items'] = this_scenario.income_items
+            data['basic_expenses'] = this_scenario.basic_expenses
+            data['misc_expenses'] = this_scenario.misc_expenses
+            data['debt_accounts'] = this_scenario.debt_accounts
+            data['cash_accounts'] = this_scenario.cash_accounts
         return jsonify(**data),200
 
     if request.method == 'PUT':
-        #overwrite the existing case with corresponding id. return 200 status
-        response = {}
+        data = {}
         for item in request.json:
-            print item,request.json[item]
-            response.update({item:request.json[item]})
-        return json.dumps({'id':78}),200
+            value = request.json[item]
+            if item != 'data':
+                print item,value
+            data.update({item:value})
+        #print data
+        s = build_demo4.build_demo4_data(data)
+
+        if current_user.is_active():
+            #print data['id']       
+            this_scenario = current_user.scenarios.filter_by(id=data['id']).first()
+            #print this_scenario
+            this_scenario.data = s
+            this_scenario.name = data['name']
+            this_scenario.income_items = data['income_items']
+            this_scenario.basic_expenses = data['basic_expenses']
+            this_scenario.misc_expenses = data['misc_expenses']
+            this_scenario.debt_accounts = data['debt_accounts']
+            this_scenario.cash_accounts = data['cash_accounts']
+            db.session.add(this_scenario)
+            db.session.commit()        
+            
+        return json.dumps({'data':s}),200
     
     if request.method == 'DELETE':
         #delete the object with corresponding id. return 200 status
         print 'DELETED CASE NUMBER ',id_input
+        if current_user.is_active():
+            this_scenario = current_user.scenarios.filter_by(id=id_input).first()
+            db.session.delete(this_scenario)
+            db.session.commit()
         return '200'
     
 

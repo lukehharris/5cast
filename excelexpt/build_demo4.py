@@ -1,47 +1,65 @@
 
-def build_demo3_data(names, income, basic_expenses, debt_expenses, misc_expenses, debt_balances, cash_balances, rates, scenarios):
-    d = []
-    for scenario in scenarios:
+def build_demo4_data(data):
+    
+    #names, income, basic_expenses, debt_expenses, misc_expenses, debt_balances, cash_balances, rates, scenarios
+
+
+    #d = []
+    #for scenario in scenarios:
     #for scenario in range(0,1):
-        s = {'name': names[scenario]}
-        #for column indicies, 0 = today, 1 = 1 month from today,...,n=n months from today
+    
+    s = {'name': data['name']}
+    #for column indicies, 0 = today, 1 = 1 month from today,...,n=n months from today
 
-        s = build_income_section(s, income[scenario])
-     
-        s = build_expense_section(s, basic_expenses[scenario], debt_expenses[scenario], misc_expenses[scenario])
-        
-        s = calculate_net_income(s)
-        
-        s = build_cash_section(s, cash_balances[scenario], rates[scenario])
-        
-        s = build_debt_section(s, debt_balances[scenario], rates[scenario])
+    s = build_income_section(s, data['income_items'])
 
-        s = calculate_net_worth(s) 
+    debt_expenses = {}
+    for name,value in data['debt_accounts'].iteritems():
+        debt_expenses[name] = value['payment']
+ 
+    s = build_expense_section(s, data['basic_expenses'], debt_expenses, data['misc_expenses'])
+    
+    s = calculate_net_income(s)
+    """
+    cash_balances = {}
+    ca_rates = {}
+    for name,value in data['cash_accounts'].iteritems():
+        cash_balances[name] = value['balance']
+        ca_rates[name] = value['rate']
+    """
+    #s = build_cash_section(s, cash_balances, ca_rates)
+    s = build_cash_section(s, data['cash_accounts'])
+    
+    #s = build_debt_section(s, debt_balances[scenario], rates[scenario])
+    s = build_debt_section(s, data['debt_accounts'])
 
-        s = calculate_totals(s)
-        
-        
-        
-        if s['net_income'][0] > 0:
-            NI_order = [{'type':'debt_accounts','name':'CC'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
-        else:
-            NI_order = [{'type':'cash_accounts','name':'Checking','max_balance':False}]
-        """
-            print 'NEGATIVE NI'
-            s['debt_accounts']['accounts'].update({'NET INCOME SHORTFALL':{'rate':0.0,'items': {'beginning_balance':{},'payments':{},'interest':{},'ending_balance':{0:0} } } } )
-            s['expenses']['sections']['Debt']['items'].update({'NET INCOME SHORTFALL':{0:0}})
-            for x in range(1,121):
-                s['expenses']['sections']['Debt']['items']['NET INCOME SHORTFALL'][x] = 0
-            s = build_debt_sub_section(s, 'NET INCOME SHORTFALL')
-            s = allocate_NI(s, [{'type':'debt_accounts','name':'NET INCOME SHORTFALL'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}])
-        """
+    s = calculate_net_worth(s) 
 
-        s = allocate_NI(s, NI_order)
-        s = calc_net_income_raw(s)
+    s = calculate_totals(s)
+    
+    
+    
+    if s['net_income'][0] > 0:
+        NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
+    else:
+        NI_order = [{'type':'cash_accounts','name':'Checking','max_balance':False}]
+    """
+        print 'NEGATIVE NI'
+        s['debt_accounts']['accounts'].update({'NET INCOME SHORTFALL':{'rate':0.0,'items': {'beginning_balance':{},'payments':{},'interest':{},'ending_balance':{0:0} } } } )
+        s['expenses']['sections']['Debt']['items'].update({'NET INCOME SHORTFALL':{0:0}})
+        for x in range(1,121):
+            s['expenses']['sections']['Debt']['items']['NET INCOME SHORTFALL'][x] = 0
+        s = build_debt_sub_section(s, 'NET INCOME SHORTFALL')
+        s = allocate_NI(s, [{'type':'debt_accounts','name':'NET INCOME SHORTFALL'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}])
+    """
 
-        d.append(s)
+    s = allocate_NI(s, NI_order)
+    s = calc_net_income_raw(s)
 
-    return d
+        #d.append(s)
+
+    #return d
+    return s
 
 def calc_net_income_raw(s):
     s.update({'net_income_raw':{0:0}})
@@ -368,12 +386,13 @@ def calculate_net_income(s):
 
     return s
 
-def build_cash_section(s, cash_balances, rates):
+#def build_cash_section(s, cash_balances, rates):
+def build_cash_section(s, cash_accounts):
     s['cash_accounts'] = {'accounts':{},'total':{}}
-    print cash_balances
-    for k,balance in cash_balances.iteritems():
-        name = k[:-8]
-        s['cash_accounts']['accounts'].update({name:{'rate':float(rates[name]),'items': {'beginning_balance':{},'withdrawal':{},'interest':{},'ending_balance':{0:float(balance)} } } } )
+    #print cash_balances
+    for name,data in cash_accounts.iteritems():
+        #name = k[:-8]
+        s['cash_accounts']['accounts'].update({name:{'rate':float(data['rate'])/100.0,'items': {'beginning_balance':{},'withdrawal':{},'interest':{},'ending_balance':{0:float(data['balance'])} } } } )
         s = build_cash_sub_section(s, name)
 
     s = build_cash_summary(s)
@@ -421,11 +440,13 @@ def build_cash_summary(s):
 
     return s
 
-def build_debt_section(s, debt_balances, rates):
+#def build_debt_section(s, debt_balances, rates):
+def build_debt_section(s, debt_accounts):
     s['debt_accounts'] = {'accounts':{},'total_debt':{},'debt_expense_summary':{}}
-    for k,balance in debt_balances.iteritems():
-        name = k[:-8]
-        s['debt_accounts']['accounts'].update({name:{'rate':float(rates[name]),'items': {'beginning_balance':{},'payments':{},'interest':{},'ending_balance':{0:float(balance)} } } } )
+    #for k,balance in debt_balances.iteritems():
+    for name,data in debt_accounts.iteritems():
+        #name = k[:-8]
+        s['debt_accounts']['accounts'].update({name:{'rate':float(data['rate'])/100.0,'items': {'beginning_balance':{},'payments':{},'interest':{},'ending_balance':{0:float(data['balance'])} } } } )
         s = build_debt_sub_section(s, name)
 
     s = build_debt_summary(s)

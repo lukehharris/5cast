@@ -502,7 +502,7 @@ def login():
         if user:
             if login_user(user):
                 #do stuff
-                return redirect(url_for('demo3'))
+                return redirect(url_for('demo6'))
         #error = "Login failed"
     return render_template('login.html', login=True, email=email, password=password)
 

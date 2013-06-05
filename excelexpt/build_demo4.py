@@ -40,7 +40,8 @@ def build_demo4_data(data):
     
     
     if s['net_income'][0] > 0:
-        NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
+        #NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
+        NI_order = [{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
     else:
         NI_order = [{'type':'cash_accounts','name':'Checking','max_balance':False}]
     """

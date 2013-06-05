@@ -348,9 +348,44 @@ def demo4():
     else:
         return redirect(url_for('login'))
     
+@app.route('/demo5')
+def demo5():
+    if current_user.is_active():
+        scenarios_query = current_user.scenarios.all()
+        base_id = None
+        other_ids = []
+        if scenarios_query == []:
+            data_exists = False
+        else:
+            for scenario in scenarios_query:
+                if scenario.is_base:
+                    base_id = scenario.id
+                else:
+                    other_ids.append(scenario.id)
+            data_exists = True
+        return render_template('demo5.html',data_exists=data_exists, base_id=base_id, other_ids=other_ids)
+    else:
+        return redirect(url_for('login'))
 
 
-
+@app.route('/demo6')
+def demo6():
+    if current_user.is_active():
+        scenarios_query = current_user.scenarios.all()
+        base_id = None
+        other_ids = []
+        if scenarios_query == []:
+            data_exists = False
+        else:
+            for scenario in scenarios_query:
+                if scenario.is_base:
+                    base_id = scenario.id
+                else:
+                    other_ids.append(scenario.id)
+            data_exists = True
+        return render_template('demo6.html',data_exists=data_exists, base_id=base_id, other_ids=other_ids)
+    else:
+        return redirect(url_for('login'))
 
 
 import build_demo4

@@ -147,13 +147,7 @@ label {
 	font-size: 11pt;
 }
 
-.input_item {
-	margin: 12px 8px;
-}
-.input_item input {
-	margin:0 16px;
-	width: 80px;
-}
+
 
 .new_field,
 .new_debt_account,
@@ -170,21 +164,7 @@ label {
 	left: 4px;
 }
 
-.delete_item,
-.delete_account,
-.delete_case {
-	border-radius: 20px;
-	height: 20px;
-	width: 20px;
-	padding: 0;
-	margin-right: 10px;
-	box-shadow: 0 1px 2px 0 #888888;
-}
-.delete_case {
-    float: right;
-    position: relative;
-    top: -30px;
-}
+
 
 
 .content_box {
@@ -265,7 +245,46 @@ input.input_percentage {
     left: -16px;
 }
 
-#input .close {
+.input_item_labels .close {
     float: left;
     margin-right: 16px;
+}
+
+.input_item_labels {
+    display: inline-block;
+    border-right: 1px solid black;
+}
+.input_item_label {
+    height: 36px;
+    padding-top: 4px;
+}
+.input_section {
+    display: inline-block;
+    width: 200px;
+    vertical-align: top;
+    border-right: 1px solid black;
+}
+.input_item {
+    margin: 0;
+    display: inline-block;
+    height: 40px;
+
+}
+.input_item input {
+    margin:0 6px;
+    width: 80px;
+}
+.case_label {
+    font-size: 16px;
+    text-shadow: 0 1px 1px #888888;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid black;
+    height: 30px;
+    margin-bottom: 10px;
+    padding-right: 20px;
+}
+.case_label .close {
+    float: none;
+    margin-right: 12px;
 }

@@ -3,6 +3,7 @@
 {% block title %}Model Builder Demo{% endblock %}
 
 {% block extra_headers %}
+<link href="/static/styles.css" rel="stylesheet">
 <script src="/static/Chart.min.js"></script>
 
 <script src="/static/underscore-min.js"></script>
@@ -91,11 +92,6 @@ $(document).ready(function() {
 
 
 <script type="text/javascript">
-	Case = Backbone.Model.extend({
-        initialize: function(){
-            
-        }
-    });
 
 
 	NewChart1NetWorthView = Backbone.View.extend({

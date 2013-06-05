@@ -3,9 +3,10 @@
 {% block title %}5cast{% endblock %}
 
 {% block extra_headers %}
+<link href="/static/styles.css" rel="stylesheet">
 <script src="/static/underscore-min.js"></script>
 <script src="/static/backbone-min.js"></script>
-<script src="/static/deep-model.min.js"></script>
+<!--script src="/static/deep-model.min.js"></script-->
 <script src="/static/Chart.min.js"></script>
 
 <!-- MODELS -->
@@ -326,10 +327,6 @@ var ParentView = Backbone.View.extend({
 		{% else %}
     		this.caseViews[0] = new CaseView({ el: $("#case0"), parentView:this, isBaseCase:true, model: new Case() });
     	{% endif %}
-    	//console.log(this.caseViews);
-    	//this.caseViews[0].parentView = this;
-    	//this.otherCaseView = new CaseView({ el: $("#case_target"), isBaseCase:false, model: new Case({name:'Case 2'}) });
-    	//this.otherCaseView.parentView = this;
     },
     render: function(){
     	var template = _.template( $("#parent_input_template").html());
@@ -339,27 +336,7 @@ var ParentView = Backbone.View.extend({
         "click #save_input_data": "save_input_data"
     },
     save_input_data: function(callback){
-    	/*
-    	var case_numbers = [];
-    	$('.case_tag').each(function (){
-    		$case_number = $(this).attr('id').substring(4,5);
-    		case_numbers.push($case_number);
-    	});
-		*/		
-		//var last_loop = Object.keys(this.caseViews).length;
-
-
-
     	for (var case_number in this.caseViews) {
-    		//console.log('case_number: '+case_number);
-    	
-    		/*
-	    	$income_items = {'income_items':{}};
-			$basic_expenses = {'basic_expenses':{}};
-			$misc_expenses = {'misc_expenses':{}};
-			$debt_accounts = {'debt_accounts':{}};
-			$cash_accounts = {'cash_accounts':{}};
-			*/
 			$income_items = {};
 			$basic_expenses = {};
 			$misc_expenses = {};
@@ -375,22 +352,18 @@ var ParentView = Backbone.View.extend({
 			var data = {};
 			$('#case'+case_number+' input').each(function() {
 				$raw_name0 = $(this).attr('name');
-				//$case_number = $raw_name0.substring($raw_name0.length-1,$raw_name0.length);
 				$raw_name = $raw_name0.substring(0, $raw_name0.length - case_number.length - 1);
 				$prefix = $raw_name.substring(0,2);
 				$name = $raw_name.substring(3, $raw_name.length);
 				$value = $(this).val();
 				if($value == '') {$value = 0;}
 				if($prefix == 'in') {
-					//$income_items['income_items'][$name] = $value;
 					$income_items[$name] = $value;
 				}
 				else if($prefix == 'be') {
-					//$basic_expenses['basic_expenses'][$name] = $value;
 					$basic_expenses[$name] = $value;
 				}
 				else if($prefix == 'me') {
-					//$misc_expenses['misc_expenses'][$name] = $value;
 					$misc_expenses[$name] = $value;
 				}
 				else if($prefix == 'de') {
@@ -414,22 +387,12 @@ var ParentView = Backbone.View.extend({
 			});
 			for (i=0;i<$de_items.length;i++) {
 				var account_name = $de_items[i][0]
-				//$debt_accounts['debt_accounts'][account_name] = {'payment':$de_items[i][1],'balance':$ba_items[i][1],'rate':$ra_items[i][1]};
 				$debt_accounts[account_name] = {'payment':$de_items[i][1],'balance':$ba_items[i][1],'rate':$ra_items[i][1]};
 			}
 			for (i=0;i<$cb_items.length;i++) {
 				var account_name = $cb_items[i][0]
-				//$cash_accounts['cash_accounts'][account_name] = {'balance':$cb_items[i][1],'rate':$er_items[i][1]};
 				$cash_accounts[account_name] = {'balance':$cb_items[i][1],'rate':$er_items[i][1]};
 			}
-			//var data = $.extend({},$this_name,$income_items,$basic_expenses,$misc_expenses,$debt_accounts,$cash_accounts);
-			//console.log($this_name);
-			//console.log(data);
-
-			//var success_calls_count = 0;
-			//console.log('here')
-			//console.log($isBaseCase);
-			//alert('wait');
 
 		    this.caseViews[case_number].model.save({
 		    	isBaseCase: (case_number == 0),
@@ -627,8 +590,8 @@ var Chart1View = Backbone.View.extend({
     	var datasets = [];
     	var legend_names = [];
     	
-    	console.log(this.model);
-    	console.log(this.model.length);
+    	//console.log(this.model);
+    	//console.log(this.model.length);
     	for (i=0;i<this.model.length;i++){
     		var data_dict = this.model.at(i).get('data')['net_worth'];
     		var data_list = []
@@ -712,15 +675,119 @@ $(document).ready(function() {
 		$(this).addClass('hidden');
 		$('#back_to_output').removeClass('hidden');
 	});
+
 	$('#new_scenario').live('click', function(){
 		$case_name = prompt('Enter new scenario name: ');
+		var base_model = null;
+		caseCollection.each(function(model){
+			console.log('YO');
+			console.log(model.get('isBaseCase'));
+			if(model.get('isBaseCase')) {base_model = model;}
+		});
+		console.log(base_model);
 		var new_case = new CaseView({ 
 			el: $("#case_target"), 
 			isBaseCase:false, 
 			model: new Case({
 				name:$case_name,
-				data:caseCollection.models[0].get('data')}
-			), parentView:parentView });
+				data:base_model.get('data'),
+				income_items: base_model.get('income_items'),
+				basic_expenses: base_model.get('basic_expenses'),
+				misc_expenses: base_model.get('misc_expenses'),
+				debt_accounts: base_model.get('debt_accounts'),
+				cash_accounts: base_model.get('cash_accounts')
+			}), parentView:parentView });
+		$('.dropdown-toggle').click();
+    	return false;
+	});
+	$('#new_scenario1').live('click', function(){
+		$case_name = prompt('Enter new scenario name: ');
+		var be = $.extend(true, {}, caseCollection.models[0].get('basic_expenses'));
+		be['Housing'] = be['Housing'] * 0.8;
+		var new_case = new CaseView({ 
+			el: $("#case_target"), 
+			isBaseCase:false, 
+			model: new Case({
+				name:$case_name,
+				data:caseCollection.models[0].get('data'),
+				income_items: caseCollection.models[0].get('income_items'),
+				basic_expenses: be,
+				misc_expenses: caseCollection.models[0].get('misc_expenses'),
+				debt_accounts: caseCollection.models[0].get('debt_accounts'),
+				cash_accounts: caseCollection.models[0].get('cash_accounts')
+			}), parentView:parentView });
+		$('.dropdown-toggle').click();
+    	return false;
+	});
+	$('#new_scenario2').live('click', function(){
+		$case_name = prompt('Enter new scenario name: ');
+		var inc = $.extend(true, {}, caseCollection.models[0].get('income_items'));
+		inc['Salary'] = inc['Salary'] * 1.1;
+		var new_case = new CaseView({ 
+			el: $("#case_target"), 
+			isBaseCase:false, 
+			model: new Case({
+				name:$case_name,
+				data:caseCollection.models[0].get('data'),
+				income_items: inc,
+				basic_expenses: caseCollection.models[0].get('basic_expenses'),
+				misc_expenses: caseCollection.models[0].get('misc_expenses'),
+				debt_accounts: caseCollection.models[0].get('debt_accounts'),
+				cash_accounts: caseCollection.models[0].get('cash_accounts')
+			}), parentView:parentView });
+		$('.dropdown-toggle').click();
+    	return false;
+	});
+	$('#new_scenario3').live('click', function(){
+		var accounts = null;
+		caseCollection.each(function(model){
+			accounts = model.get('cash_accounts');
+			accounts['Inheritance'] = {'balance':'','rate':''};
+			model.set({cash_accounts:accounts});
+			model.trigger('change');
+		});
+		Case.prototype.defaults.cash_accounts = accounts;
+		
+		$case_name = prompt('Enter new scenario name: ');
+		var ca = $.extend(true, {}, caseCollection.models[0].get('cash_accounts'));
+		ca['Inheritance'] = {'balance':40000,'rate':5};
+
+		var new_case = new CaseView({ 
+			el: $("#case_target"), 
+			isBaseCase:false, 
+			model: new Case({
+				name:$case_name,
+				data:caseCollection.models[0].get('data'),
+				income_items: caseCollection.models[0].get('income_items'),
+				basic_expenses: caseCollection.models[0].get('basic_expenses'),
+				misc_expenses: caseCollection.models[0].get('misc_expenses'),
+				debt_accounts: caseCollection.models[0].get('debt_accounts'),
+				cash_accounts: ca
+			}), parentView:parentView });
+		
+		$('.dropdown-toggle').click();
+
+    	return false;
+	});
+	$('#new_scenario4').live('click', function(){
+		$case_name = prompt('Enter new scenario name: ');
+		var da = $.extend(true, {}, caseCollection.models[0].get('debt_accounts'));
+		for (var key in da) {
+			da[key]['balance'] = 0;
+			da[key]['payment'] = 0;
+		}
+		var new_case = new CaseView({ 
+			el: $("#case_target"), 
+			isBaseCase:false, 
+			model: new Case({
+				name:$case_name,
+				data:caseCollection.models[0].get('data'),
+				income_items: caseCollection.models[0].get('income_items'),
+				basic_expenses: caseCollection.models[0].get('basic_expenses'),
+				misc_expenses: caseCollection.models[0].get('misc_expenses'),
+				debt_accounts: da,
+				cash_accounts: caseCollection.models[0].get('cash_accounts')
+			}), parentView:parentView });
 		$('.dropdown-toggle').click();
     	return false;
 	});
@@ -731,8 +798,7 @@ $(document).ready(function() {
 			success: function(){
 				var new_case = new CaseView({ el: $("#case_target"), isBaseCase:false, model: this_model, parentView:parentView });
 			}
-		});
-		
+		});	
 	}
 	{% for this_id in other_ids %}
 		buildExistingCases({{this_id}});
@@ -768,17 +834,17 @@ $(document).ready(function() {
 			//console.log(parentView);
 
 			//for (i=0;i< _.size(parentView.caseViews);i++) {
+			var in_items = null;
 			for (var case_number in parentView.caseViews){
 				//alert('in');
 				//console.log(parentView.caseViews[i].model);
 				//var in_items = _.clone(parentView.caseViews[i].model.get('income_items'));
-				var in_items = parentView.caseViews[case_number].model.get('income_items');
+				in_items = parentView.caseViews[case_number].model.get('income_items');
 				//console.log(in_items);
 				in_items[$fieldname] = '';
 				console.log(in_items);
 				parentView.caseViews[case_number].model.set({income_items:in_items});
 				console.log(parentView.caseViews[case_number].model.get('income_items'));
-				Case.prototype.defaults.income_items = in_items;
 				console.log('ok');
 				parentView.caseViews[case_number].model.trigger('change');
 				//console.log(parentView.caseViews[i].model);
@@ -793,110 +859,119 @@ $(document).ready(function() {
 				//parentView.caseViews[i].model.trigger('change');
 				//$('#save_input_data').click();
 			}
+			Case.prototype.defaults.income_items = in_items;
 		});
 	});
 	$('#new_be').live('click',function(){
 		parentView.save_input_data(function() {
 			$fieldname = prompt('Enter Item Name');
+			var be_items = null;
 			for (var case_number in parentView.caseViews){
-				var be_items = parentView.caseViews[case_number].model.get('basic_expenses');
+				be_items = parentView.caseViews[case_number].model.get('basic_expenses');
 				be_items[$fieldname] = '';
 				parentView.caseViews[case_number].model.set({basic_expenses:be_items});
-				Case.prototype.defaults.basic_expenses = be_items;
 				parentView.caseViews[case_number].model.trigger('change');
 			}
+			Case.prototype.defaults.basic_expenses = be_items;
 		});
 	});
 	$('#new_me').live('click',function(){
 		parentView.save_input_data(function() {
 			$fieldname = prompt('Enter Item Name');
+			var me_items = null;
 			for (var case_number in parentView.caseViews){
-				var me_items = parentView.caseViews[case_number].model.get('misc_expenses');
+				me_items = parentView.caseViews[case_number].model.get('misc_expenses');
 				me_items[$fieldname] = '';
 				parentView.caseViews[case_number].model.set({misc_expenses:me_items});
-				Case.prototype.defaults.misc_expenses = me_items;
 				parentView.caseViews[case_number].model.trigger('change');
 			}
+			Case.prototype.defaults.misc_expenses = me_items;
 		});
 	});
 	$('#new_da').live('click',function(){
 		parentView.save_input_data(function() {
 			$fieldname = prompt('Enter Item Name');
+			var accounts = null;
 			for (var case_number in parentView.caseViews){
-				var accounts = parentView.caseViews[case_number].model.get('debt_accounts');
+				accounts = parentView.caseViews[case_number].model.get('debt_accounts');
 				accounts[$fieldname] = {'payment':'','balance':'','rate':''};
 				parentView.caseViews[case_number].model.set({debt_accounts:accounts});
-				Case.prototype.defaults.debt_accounts = accounts;
 				parentView.caseViews[case_number].model.trigger('change');
 			}
+			Case.prototype.defaults.debt_accounts = accounts;
 		});
 	});
 	$('#new_ca').live('click',function(){
 		parentView.save_input_data(function() {
 			$fieldname = prompt('Enter Item Name');
+			var accounts = null;
 			for (var case_number in parentView.caseViews){
-				var accounts = parentView.caseViews[case_number].model.get('cash_accounts');
+				accounts = parentView.caseViews[case_number].model.get('cash_accounts');
 				accounts[$fieldname] = {'balance':'','rate':''};
 				parentView.caseViews[case_number].model.set({cash_accounts:accounts});
-				Case.prototype.defaults.cash_accounts = accounts;
 				parentView.caseViews[case_number].model.trigger('change');
 			}
+			Case.prototype.defaults.cash_accounts = accounts;
 		});
 	});
 
 	$('#delete_in').live('click',function(){
 		$fieldname = $(this).next().html();
+		var in_items = null;
 		for (var case_number in parentView.caseViews){
-			var in_items = parentView.caseViews[case_number].model.get('income_items');
-			//console.log(in_items);
+			in_items = parentView.caseViews[case_number].model.get('income_items');
 			delete in_items[$fieldname];
 			console.log(in_items);
 			parentView.caseViews[case_number].model.set({income_items:in_items});
 			console.log(parentView.caseViews[case_number].model.get('income_items'));
-			Case.prototype.defaults.income_items = in_items;
 			console.log('ok');
 			parentView.caseViews[case_number].model.trigger('change');
 		}
+		Case.prototype.defaults.income_items = in_items;
 	});
 	$('#delete_be').live('click',function(){
 		$fieldname = $(this).next().html();
+		var be_items = null;
 		for (var case_number in parentView.caseViews){
-			var be_items = parentView.caseViews[case_number].model.get('basic_expenses');
+			be_items = parentView.caseViews[case_number].model.get('basic_expenses');
 			delete be_items[$fieldname];
 			parentView.caseViews[case_number].model.set({basic_expenses:be_items});
-			Case.prototype.defaults.be_items = be_items;
 			parentView.caseViews[case_number].model.trigger('change');
 		}
+		Case.prototype.defaults.be_items = be_items;
 	});
 	$('#delete_me').live('click',function(){
 		$fieldname = $(this).next().html();
+		var me_items = null;
 		for (var case_number in parentView.caseViews){
-			var me_items = parentView.caseViews[case_number].model.get('misc_expenses');
+			me_items = parentView.caseViews[case_number].model.get('misc_expenses');
 			delete me_items[$fieldname];
 			parentView.caseViews[case_number].model.set({misc_expenses:me_items});
-			Case.prototype.defaults.me_items = me_items;
 			parentView.caseViews[case_number].model.trigger('change');
 		}
+		Case.prototype.defaults.me_items = me_items;
 	});
 	$('#delete_da').live('click',function(){
 		$fieldname = $(this).next().html();
+		var accounts = null;
 		for (var case_number in parentView.caseViews){
-			var accounts = parentView.caseViews[case_number].model.get('debt_accounts');
+			accounts = parentView.caseViews[case_number].model.get('debt_accounts');
 			delete accounts[$fieldname];
 			parentView.caseViews[case_number].model.set({debt_accounts:accounts});
-			Case.prototype.defaults.debt_accounts = accounts;
 			parentView.caseViews[case_number].model.trigger('change');
 		}
+		Case.prototype.defaults.debt_accounts = accounts;
 	});
 	$('#delete_ca').live('click',function(){
 		$fieldname = $(this).next().html();
+		var accounts
 		for (var case_number in parentView.caseViews){
-			var accounts = parentView.caseViews[case_number].model.get('cash_accounts');
+			accounts = parentView.caseViews[case_number].model.get('cash_accounts');
 			delete accounts[$fieldname];
 			parentView.caseViews[case_number].model.set({cash_accounts:accounts});
-			Case.prototype.defaults.cash_accounts = accounts;
 			parentView.caseViews[case_number].model.trigger('change');
 		}
+		Case.prototype.defaults.cash_accounts = accounts;
 	});
 
 	$('.delete_case').live('click',function() {

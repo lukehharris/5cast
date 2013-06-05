@@ -1,0 +1,1203 @@
+{% extends "base.html" %}
+
+{% block title %}5cast{% endblock %}
+
+{% block extra_headers %}
+<link href="/static/styles.css" rel="stylesheet">
+<script src="/static/underscore-min.js"></script>
+<script src="/static/backbone-min.js"></script>
+<!--script src="/static/deep-model.min.js"></script-->
+<script src="/static/Chart.min.js"></script>
+<script src="/static/highcharts/highcharts.js"></script>
+<script src="/static/highcharts/highcharts-more.js"></script>
+<script src="/static/highcharts/modules/exporting.js"></script>
+
+<script type="text/javascript">
+	function numberWithCommas(x) {
+		x=x.toFixed(0);
+	    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	}
+	function roundToHundreds(x){
+		x=parseFloat(x).toFixed(0);
+		return (Math.round(x/100)*100);
+	}
+</script>
+<!-- MODELS -->
+<script type="text/javascript">
+var Case = Backbone.Model.extend({
+	defaults : {
+		name : 'Base Case',
+		income_items : {'Salary':''},
+		basic_expenses : {'Housing':'','Utilities':'','TV/Internet':'','Phone':'','Gym':'','Food':''},
+		misc_expenses : {'Social/Entertainment':'','Other':''},
+		debt_accounts : {'Student':{'payment':'','balance':'','rate':''},'Credit Card':{'payment':'','balance':'','rate':''}},
+		cash_accounts : {'Checking':{'balance':'','rate':''},'Savings':{'balance':'','rate':''},'Investment':{'balance':'','rate':''}},
+		isBaseCase: false,
+		data : null //this is where the full model output is stored
+	},
+	urlRoot: '/case'
+});
+
+
+var CaseCollection = Backbone.Collection.extend({
+    model: Case,
+	urlRoot: '/case'
+});
+</script>
+
+
+
+<!-- TEMPLATES -->
+<script type="text/template" id="parent_input_template">
+	<div class="accordion_div" style="width:250px;margin:40px;display:inline-block;">
+
+		<div class="dropdown" style="display:inline-block; margin-left: 20px;">
+			<a class="dropdown-toggle" data-toggle="dropdown" href=""><h4>Add Scenario</h4></a>
+			<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+			   	<li role="presentation"><a href="#" role="menuitem" id="new_scenario">New Custom Scenario</a></li>
+			   	<li class="divider" role="presentation"></li>
+			   	<li role="presentation"><a href="#" role="menuitem" id="new_scenario1">20% reduction in housing expense</a></li>
+			   	<li role="presentation"><a href="#" role="menuitem" id="new_scenario2">10% raise</a></li>
+			   	<li role="presentation"><a href="#" role="menuitem" id="new_scenario3">$40k inheritance received, invested at 5%</a></li>
+			   	<li role="presentation"><a href="#" role="menuitem" id="new_scenario4">100% of Debt Forgiven</a></li>
+			</ul>
+		</div>
+
+		<div id="input_accordion" class="accordion">
+			<div class="accordion-group" id="income_items_accordion_group">
+				<div class="accordion-heading">
+					<a class="accordion-toggle" data-toggle="collapse" data-parent="#input_accordion" href="#collapseOne">
+						Income
+					</a>
+				</div>
+				<div id="collapseOne" class="accordion-body collapse in">
+					<div class="accordion-inner">
+						<ul>
+							<% _.each(_.keys(income_items), function(key){ %>
+								<li>
+								<button id="delete_in" class="close" title="Delete This Item">&times;</button>
+								<a class="edit_input" href="#" name="<%=key%>" data-section="income_items"><%=key%></a>
+								</li>
+							<% });%>
+						</ul>
+						<a id="new_in" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Income Source</a>
+					</div>
+				</div>
+			</div>
+			<div class="accordion-group" id="expense_items_accordion_group">
+				<div class="accordion-heading">
+					<a class="accordion-toggle" data-toggle="collapse" data-parent="#input_accordion" href="#collapseTwo">
+						Expenses
+					</a>
+				</div>
+				<div id="collapseTwo" class="accordion-body collapse">
+					<div class="accordion-inner">
+						<ul>
+							<% _.each(_.keys(basic_expenses), function(key){ %>
+								<li>
+									<button id="delete_be" class="close" title="Delete This Item">&times;</button>
+									<a class="edit_input" href="#" name="<%=key%>" data-section="basic_expenses"><%=key%></a>
+								</li>
+							<% });%>
+							<% _.each(_.keys(misc_expenses), function(key){ %>
+								<li>
+									<button id="delete_me" class="close" title="Delete This Item">&times;</button>
+									<a class="edit_input" href="#" name="<%=key%>" data-section="misc_expenses"><%=key%></a>
+								</li>
+							<% });%>
+						</ul>
+						<a id="new_be" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Expense</a>
+					</div>
+				</div>
+			</div>
+			<div class="accordion-group" id="cash_accounts_accordion_group">
+				<div class="accordion-heading">
+					<a class="accordion-toggle" data-toggle="collapse" data-parent="#input_accordion" href="#collapseThree">
+						Assets
+					</a>
+				</div>
+				<div id="collapseThree" class="accordion-body collapse">
+					<div class="accordion-inner">
+						<ul>
+							<% _.each(_.keys(cash_accounts), function(key){ %>
+								<li>
+									<%if (key != 'Checking'){ %>
+									<button id="delete_ca" class="close" title="Delete This Item">&times;</button>
+									<%}%>
+									<a class="edit_input" href="#" name="<%=key%>" data-section="cash_accounts"><%=key%></a>
+								</li>
+							<% });%>
+						</ul>
+						<a id="new_ca" class="btn btn-info new_cash_account"><i class="icon-plus"></i>Add New Banking/Investment Account</a>
+					</div>
+				</div>
+			</div>
+			<div class="accordion-group" id="debt_accounts_accordion_group">
+				<div class="accordion-heading">
+					<a class="accordion-toggle" data-toggle="collapse" data-parent="#input_accordion" href="#collapseFour">
+						Debt
+					</a>
+				</div>
+				<div id="collapseFour" class="accordion-body collapse">
+					<div class="accordion-inner">
+						<ul>
+							<% _.each(_.keys(debt_accounts), function(key){ %>
+								<li>
+									<button id="delete_da" class="close" title="Delete This Item">&times;</button>
+									<a class="edit_input" href="#" name="<%=key%>" data-section="debt_accounts"><%=key%></a>
+								</li>
+							<% });%>
+						</ul>
+						<a id="new_da" class="btn btn-info new_debt_account"><i class="icon-plus"></i>Add New Debt Account</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div style="display:block;">
+		<a id="save_input_data" class="btn btn-info" style="font-size:16pt;margin-top:20px; ">Save Data</a>
+	</div>
+</script>
+
+<script type="text/template" id="input_table_template">
+	<strong><%=item%></strong>
+	<table>
+		<tbody>
+			<% models.each(function(model){ %>
+			<tr>
+				<td>
+					<% if (model.get('isBaseCase') == false){ %>
+						<button class="close delete_scenario" title="Delete this Case" data-id="<%=model.cid%>">&times;</button>
+					<%}%>
+					<strong><%=model.get('name')%></strong>
+				</td>
+				<% if(section == 'income_items'){{'{'}} %>
+				<td>
+					$<input class="<%=model.cid%>_input" type="text" name="in_<%=item%>" value="<%=model.get(section)[item]%>">per month
+				</td>
+				<%{{'}'}}else if(section == 'basic_expenses'){{'{'}}%>
+				<td>
+					$<input class="<%=model.cid%>_input" type="text" name="be_<%=item%>" value="<%=model.get(section)[item]%>">per month
+				</td>
+				<%{{'}'}}else if(section == 'misc_expenses'){{'{'}}%>
+				<td>
+					$<input class="<%=model.cid%>_input" type="text" name="me_<%=item%>" value="<%=model.get(section)[item]%>">per month
+				</td>
+				<%{{'}'}}else if(section == 'cash_accounts'){{'{'}}%>
+				<td>
+					<div class="input_item input_type1">
+						<label>Current Balance</label>
+						$<input class="<%=model.cid%>_input" type="text" name="cb_<%=item%>" value="<%=model.get(section)[item]['balance']%>">
+					</div>
+					<div class="input_item input_type1">
+						<label>Expected Return</label>
+						%<input class="<%=model.cid%>_input" type="text" name="er_<%=item%>" value="<%=model.get(section)[item]['rate']%>" class="input_percentage">
+					</div>
+				</td>
+				<%{{'}'}}else if(section == 'debt_accounts'){{'{'}}%>
+				<td>
+					<div class="input_item input_type1">
+						<label>Current Payment</label>
+						$<input class="<%=model.cid%>_input" type="text" name="de_<%=item%>" value="<%=model.get(section)[item]['payment']%>">per month
+					</div>
+					<div class="input_item input_type1">
+						<label>Current Balance</label>
+						$<input class="<%=model.cid%>_input" type="text" name="ba_<%=item%>" value="<%=model.get(section)[item]['balance']%>">
+					</div>
+					<div class="input_item input_type1">
+						<label>APR</label>
+						%<input class="<%=model.cid%>_input" type="text" name="ra_<%=item%>" value="<%=model.get(section)[item]['rate']%>" class="input_percentage">
+					</div>
+				</td>	
+				<%}%>
+			</tr>
+			<% });%>
+		</tbody>
+	</table>
+</script>
+
+<script type="text/template" id="base_case_template">
+	<input type="name" name="na_0" style="display:none;" value="Base Case">
+
+	<div class="form_section">
+		<h3 class="form_section_header">1. Income:</h3>
+		<h4 class="form_section_subheader">After tax and other deductions</h4>
+
+		<% _.each(_.keys(income_items), function(key){ %>
+			<div class="input_item input_type1">
+				<a id="delete_in" class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label><%=key%></label>
+				$<input type="text" name="in_<%=key%>_0" value="<%=income_items[key]%>">
+			</div>
+		<% });%>
+
+		<a id="new_in" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Income Source</a>
+	</div>
+	<div class="form_section_divider"></div>
+	<div class="form_section">
+		<h3 class="form_section_header">2. Basic Expenses:</h3>
+		<h4 class="form_section_subheader">Not including debt payments</h4>
+
+		<% _.each(_.keys(basic_expenses), function(key){ %>
+			<div class="input_item input_type1">
+				<a id="delete_be" class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label><%=key%></label>
+				$<input type="text" name="be_<%=key%>_0" value="<%=basic_expenses[key]%>">
+			</div>
+		<% });%>
+
+		<a id="new_be" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Basic Expense</a>
+	</div>
+	<div class="form_section_divider"></div>
+	<div class="form_section">
+		<h3 class="form_section_header">3. Misc Expenses:</h3>
+		<h4 class="form_section_subheader">Not including debt payments</h4>
+
+		<% _.each(_.keys(misc_expenses), function(key){ %>
+			<div class="input_item input_type1">
+				<a id="delete_me" class="btn btn-danger delete_item" title="Delete This Item"><i class="icon-remove"></i></a>
+				<label><%=key%></label>
+				$<input type="text" name="me_<%=key%>_0" value="<%=misc_expenses[key]%>">
+			</div>
+		<% });%>
+
+
+		<a id="new_me" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Misc Expense</a>
+	</div>
+	<h2 class="form_heading">Accounts</h2>
+	<div class="form_section">
+		<h3 class="form_section_header">4. Debt Accounts:</h3>
+		<h4 class="form_section_subheader">&nbsp;</h4>
+
+		<% _.each(_.keys(debt_accounts), function(key){ %>
+			<div class="debt_account account">
+				<a id="delete_da" class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
+				<h5 class="form_account_label"><%=key%></h5>
+				<div class="input_item input_type1">
+					<label>Current Payment</label>
+					$<input type="text" name="de_<%=key%>_0" value="<%=debt_accounts[key]['payment']%>"> 
+				</div>
+				<div class="input_item input_type1">
+					<label>Current Balance</label>
+					$<input type="text" name="ba_<%=key%>_0" value="<%=debt_accounts[key]['balance']%>">
+				</div>
+				<div class="input_item input_type1">
+					<label>APR</label>
+					%<input type="text" name="ra_<%=key%>_0" value="<%=debt_accounts[key]['rate']%>" class="input_percentage">
+				</div>
+			</div>
+		<% });%>
+
+		<a id="new_da" class="btn btn-info new_debt_account"><i class="icon-plus"></i>Add New Debt Account</a>
+	</div>
+	<div class="form_section_divider"></div>
+	<div class="form_section">
+		<h3 class="form_section_header">5. Banking/Investment Accounts:</h3>
+		<h4 class="form_section_subheader">&nbsp;</h4>
+
+		<% _.each(_.keys(cash_accounts), function(key){ %>
+			<div class="cash_account account">
+			<% if(key == 'Checking') { %>
+				<h5 class="form_account_label" style="margin-left:34px;"><%=key%></h5>
+			<% }
+			else{ %>
+				<a id="delete_ca" class="btn btn-danger delete_account" title="Delete This Account"><i class="icon-remove"></i></a>
+				<h5 class="form_account_label"><%=key%></h5>
+			<% } %>
+				<div class="input_item input_type1">
+					<label>Current Balance</label>
+					$<input type="text" name="cb_<%=key%>_0" value="<%=cash_accounts[key]['balance']%>">
+				</div>
+				<div class="input_item input_type1">
+					<label>Expected Return</label>
+					%<input type="text" name="er_<%=key%>_0" value="<%=cash_accounts[key]['rate']%>" class="input_percentage">
+				</div>
+			</div>
+			
+		<% });%>
+
+		<a id="new_ca" class="btn btn-info new_cash_account"><i class="icon-plus"></i>Add New Banking/Investment Account</a>
+	</div>		
+</script>
+
+<script type="text/template" id="other_case_template">
+	<div id="case<%=cid%>" class="scenario_column">
+	<input type="name" name="na_<%=cid%>" style="display:none;" value="<%=name%>">
+
+	<div class="form_section">
+		<h3 class="form_section_header">&nbsp;</h3>
+		<h4 class="form_section_subheader">&nbsp;</h4>
+
+		<% _.each(_.keys(income_items), function(key){ %>
+			<div class="input_item input_type2">
+				$<input type="text" name="in_<%=key%>_<%=cid%>" value="<%=income_items[key]%>">
+			</div>
+		<% });%>
+
+		<a class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
+	</div>
+	<div class="form_section_divider"></div>
+	<div class="form_section">
+		<h3 class="form_section_header">&nbsp;</h3>
+		<h4 class="form_section_subheader">&nbsp;</h4>
+
+		<% _.each(_.keys(basic_expenses), function(key){ %>
+			<div class="input_item input_type2">
+				$<input type="text" name="be_<%=key%>_<%=cid%>" value="<%=basic_expenses[key]%>">
+			</div>
+		<% });%>
+
+		<a class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
+	</div>
+	<div class="form_section_divider"></div>
+	<div class="form_section">
+		<h3 class="form_section_header">&nbsp;</h3>
+		<h4 class="form_section_subheader">&nbsp;</h4>
+
+		<% _.each(_.keys(misc_expenses), function(key){ %>
+			<div class="input_item input_type2">
+				$<input type="text" name="me_<%=key%>_<%=cid%>" value="<%=misc_expenses[key]%>">
+			</div>
+		<% });%>
+
+
+		<a class="btn btn-info new_field" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
+	</div>
+	<h2 class="form_heading" style="background:none;">&nbsp;</h2>
+	<div class="form_section">
+		<h3 class="form_section_header">&nbsp;</h3>
+		<h4 class="form_section_subheader">&nbsp;</h4>
+
+		<% _.each(_.keys(debt_accounts), function(key){ %>
+			<div class="debt_account account">
+				<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>
+				<div class="input_item input_type2">
+					$<input type="text" name="de_<%=key%>_<%=cid%>" value="<%=debt_accounts[key]['payment']%>"> 
+				</div>
+				<div class="input_item input_type2">
+					$<input type="text" name="ba_<%=key%>_<%=cid%>" value="<%=debt_accounts[key]['balance']%>">
+				</div>
+				<div class="input_item input_type2">
+					%<input type="text" name="ra_<%=key%>_<%=cid%>" value="<%=debt_accounts[key]['rate']%>" class="input_percentage">
+				</div>
+			</div>
+		<% });%>
+
+		<a class="btn btn-info new_debt_account" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
+	</div>
+	<div class="form_section_divider"></div>
+	<div class="form_section">
+		<h3 class="form_section_header">&nbsp;</h3>
+		<h4 class="form_section_subheader">&nbsp;</h4>
+
+		<% _.each(_.keys(cash_accounts), function(key){ %>
+			<div class="cash_account account">
+				<h5 class="form_account_label" style="text-decoration:none;">&nbsp;</h5>
+				<div class="input_item input_type2">
+					$<input type="text" name="cb_<%=key%>_<%=cid%>" value="<%=cash_accounts[key]['balance']%>">
+				</div>
+				<div class="input_item input_type2">
+					%<input type="text" name="er_<%=key%>_<%=cid%>" value="<%=cash_accounts[key]['rate']%>" class="input_percentage">
+				</div>
+			</div>
+			
+		<% });%>
+
+		<a class="btn btn-info new_cash_account" style="visibility:hidden;"><i class="icon-plus"></i>&nbsp;</a>
+	</div>
+	</div>
+</script>
+
+<script type="text/template" id="table_1_template">
+	<select id="table_1_menu">
+		<option value="net_worth" <% if (value=='net_worth'){{'{'}}%> selected <%{{'}'}}%>  >Net Worth</option>
+		<option value="net_income" <% if (value=='net_income'){{'{'}}%>selected<%{{'}'}}%>>Net Income</option>
+	</select>
+	<div>
+		<table>
+			<thead>
+				<th>&nbsp;</th>
+				<th>6 mon</th>
+				<th>1 yr</th>
+				<th>2 yr</th>
+				<th>5 yr</th>
+				<th>10 yr</th>
+			</thead>
+			<tbody>
+				<% models.each(function(model){ %>
+					<tr>
+						<% if(value=='net_worth'){{'{'}}%>
+							<td class="table_y_axis"><%=model.get('name')%></td>
+							<td><%=numberWithCommas(roundToHundreds(model.get('data')[value][6]))%></td>
+							<td><%=numberWithCommas(roundToHundreds(model.get('data')[value][12]))%></td>
+							<td><%=numberWithCommas(roundToHundreds(model.get('data')[value][24]))%></td>
+							<td><%=numberWithCommas(roundToHundreds(model.get('data')[value][60]))%></td>
+							<td><%=numberWithCommas(roundToHundreds(model.get('data')[value][120]))%></td>
+						<%{{'}'}}else{{'{'}}%>
+							<td class="table_y_axis"><%=model.get('name')%></td>
+							<td><%=numberWithCommas(model.get('data')[value][6])%></td>
+							<td><%=numberWithCommas(model.get('data')[value][12])%></td>
+							<td><%=numberWithCommas(model.get('data')[value][24])%></td>
+							<td><%=numberWithCommas(model.get('data')[value][60])%></td>
+							<td><%=numberWithCommas(model.get('data')[value][120])%></td>
+						<%{{'}'}}%>
+					</tr>
+				<% });%>
+			</tbody>
+		</table>
+	</div>
+</script>
+
+<script type="text/template" id="chart1_legend_template">
+	<% for (i=0;i<names.length;i++){ %>
+		<div class="legend_item" style="display:inline-block;">
+		<div style="width:20px;height:20px;display:inline-block;background:<%=colors[i]%>">&nbsp;</div>
+		<div style="font-weight:bold;display:inline-block;"><%=names[i]%></div>
+	</div>
+	<% }%>
+</script>
+
+
+<!-- VIEWS -->
+<script type="text/javascript">
+var ParentView = Backbone.View.extend({
+	currentSection: 'income_items',
+	currentItem: 'Salary',
+	initialize: function(){
+		self = this;
+		{% if data_exists %}
+			var this_model = new Case({id:{{base_id}} });
+			this_model.fetch({
+				success: function(){
+					//self.caseViews[0] = new CaseView({ el: $("#case0"), parentView:self, isBaseCase:true, model: this_model });
+					self.model.add(this_model); //add the new model to the collection
+					self.listenTo(self.model.at(0), 'change', self.render);
+					self.render();
+					var inputTableView = new InputTableView({el:$('#input_table'), parentView:self, model: self.model});
+					self.inputView = inputTableView;
+					var table1view = new Table1View({el:$('#table1'), model: self.model});
+					var chart1view = new Chart1View({el:$('#chart1_legend'), model: self.model});
+					var chart2view = new Chart2View({el:$('#chart2'), model: self.model});
+				}
+			});
+		{% else %}
+    		//this.caseViews[0] = new CaseView({ el: $("#case0"), parentView:this, isBaseCase:true, model: new Case() });
+    	{% endif %}
+    },
+    render: function(){
+    	var context = {cid:this.model.at(0).cid,
+    				name:this.model.at(0).get('name'),
+	        		income_items:this.model.at(0).get('income_items'),
+	        		basic_expenses:this.model.at(0).get('basic_expenses'),
+	        		misc_expenses:this.model.at(0).get('misc_expenses'),
+	        		debt_accounts:this.model.at(0).get('debt_accounts'),
+	        		cash_accounts:this.model.at(0).get('cash_accounts')};
+
+    	var template = _.template( $("#parent_input_template").html(), context );
+    	this.$el.html( template );
+    	//console.log('parent rendered');
+    	//alert($('#input_table').html());
+    	//console.log(this.inputView);
+    	/*
+    	if (this.inputView != undefined) {
+    		this.inputView.render();	
+    	}
+    	*/
+    },
+    events: {
+        "click #save_input_data": "save_input_data",
+        "click .edit_input": "edit_input"
+    },
+    edit_input: function( event ){
+    	this.save_input_data();
+    	$clicked = $(event.currentTarget);
+    	var name = $clicked.attr('name');
+    	this.currentItem = name;
+    	var section = $clicked.attr('data-section');
+    	this.currentSection = section;
+        this.inputView.render();
+        return false;
+    },
+    save_input_data: function(callback){
+		this.model.each(function(model){
+			var cid = model.cid;
+
+			$debt_expense = null;
+			$debt_balance = null;
+			$debt_rate = null;
+
+			$cash_balance = null;
+			$cash_rate = null;
+
+			$input = $('.'+cid+'_input');
+			console.log($input);
+			//$case_name = $input[0].attr('data-caseName');
+
+			$input.each(function(){
+				$raw_name = $(this).attr('name');
+				$prefix = $raw_name.substring(0,2);
+				console.log($prefix);
+				$name = $raw_name.substring(3, $raw_name.length);
+				console.log($name);
+				$value = $(this).val();
+				if($value == '') {$value = 0;}
+
+				if($prefix == 'in') {
+					var items = model.get('income_items');
+					items[$name] = $value;
+					var context = {income_items:items};
+				}
+				else if($prefix == 'be') {
+					var items = model.get('basic_expenses');
+					items[$name] = $value;
+					var context = {basic_expenses:items};
+				}
+				else if($prefix == 'me') {
+					var items = model.get('misc_expenses');
+					items[$name] = $value;
+					var context = {misc_expenses:items};
+				}
+				else if($prefix == 'de') {
+					$debt_expense = $value;
+				}
+				else if($prefix == 'ba') {
+					$debt_balance = $value;
+				}
+				else if($prefix == 'ra') {
+					$debt_rate = $value;
+				}
+				else if($prefix == 'cb') {
+					$cash_balance = $value;
+				}
+				else if($prefix == 'er') {
+					$cash_rate = $value;
+				}
+			});
+			if($cash_balance != null) {
+				var items = model.get('cash_accounts');
+				items[$name] = {'balance':$cash_balance,'rate':$cash_rate};
+				var context = {cash_accounts: items };
+			}
+			else if ($debt_balance != null) {
+				var items = model.get('debt_accounts');
+				items[$name] = {'payment':$debt_expense,'balance':$debt_balance,'rate':$debt_rate};
+				var context = {debt_accounts: items };
+			}
+		    model.save(context,
+	    	{
+	    		//wait:true,
+	        	success: function(model){
+	        		console.log('success');
+	        	},
+				error: function(){
+				    console.log('error');
+				}
+	        });
+		});
+
+
+        if ($.type(callback) == 'function'){
+        	callback();
+        }
+	    return false;
+    }
+});
+
+var InputTableView = Backbone.View.extend({
+	initialize: function(){
+		this.parentView = this.options.parentView;
+		//_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+		this.render();
+	},
+    render: function(){
+    	//this.parentView.render();
+    	//console.log('rendered');
+    	var template = _.template( $("#input_table_template").html(), {models:this.model, section:this.parentView.currentSection, item: this.parentView.currentItem} );
+    	this.$el.html( template );
+    	//alert(this.$el.html());
+    }
+});
+
+
+var CaseView = Backbone.View.extend({
+	caseTagsViews: null,
+	className : 'scenario_column',
+	caseNumber : 0,
+    initialize: function(){
+    	this.isBaseCase = this.options.isBaseCase;
+    	if (this.isBaseCase == false) {
+    		this.caseNumber = _.uniqueId();
+    	}
+    	this.parentView = this.options.parentView;
+    	this.parentView.caseViews[this.caseNumber] = this;
+    	console.log('there');
+    	console.log(this.parentView.model);
+    	this.parentView.model.add(this.model); //add the new model to the collection
+    	console.log('here');
+
+		_.bindAll(this, 'render');
+		this.listenTo(this.model, 'change', this.render);
+		this.listenTo(this.model, 'destroy', this.close);
+        this.render();
+    },
+    render: function(){
+    	var context = {caseNumber:this.caseNumber,
+    				name:this.model.get('name'),
+	        		income_items:this.model.get('income_items'),
+	        		basic_expenses:this.model.get('basic_expenses'),
+	        		misc_expenses:this.model.get('misc_expenses'),
+	        		debt_accounts:this.model.get('debt_accounts'),
+	        		cash_accounts:this.model.get('cash_accounts')};
+	    console.log(context);
+
+    	if (this.isBaseCase) {
+        	var template = _.template( $("#base_case_template").html(), context );
+        	this.$el.html( template );
+        } else {
+        	var template = _.template( $("#other_case_template").html(), context );
+        	$selector = $('#case'+this.caseNumber);
+        	//console.log(_.size($selector));
+        	if (_.size($selector)>0){
+        		//$selector.html( template );
+        		this.$el.html(template);
+        	}
+        	else {
+        		this.$el.before( template );
+        		this.$el = $('#case'+this.caseNumber);
+        		//this.caseTagsViews.push(new CaseTagsView({name:this.model.get('name'),caseNumber:this.caseNumber}));	
+        		this.caseTagsView = new CaseTagsView({name:this.model.get('name'),caseNumber:this.caseNumber});
+        	}
+        }
+    },
+    close: function(){
+    	this.caseTagsView.remove();
+    	this.remove();
+    	delete this.parentView.caseViews[this.caseNumber];
+    }
+});
+
+var Table1View = Backbone.View.extend({
+	currentValue : 'net_worth',
+    initialize: function(){
+    	_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+        this.render();
+    },
+    render: function(){
+    	var value = this.currentValue;
+    	var template = _.template( $("#table_1_template").html(), {value:value,models:this.model} );
+        this.$el.html( template );
+    },
+    events: {
+        "change #table_1_menu": "update"
+    },
+    update: function( event ){
+    	var value = event.currentTarget.value;
+    	this.currentValue = value;
+        this.render();
+    }
+});
+
+var Chart1View = Backbone.View.extend({
+	fillColors: ["rgba(151,187,205,0.5)", "rgba(153,230,153, 0.5)"],
+	strokeColors: ["rgba(151,187,205,1)", "rgba(153,230,153,1)"],
+	pointColors: ["rgba(151,187,205,1)", "rgba(153,230,153,1)"],
+	pointStrokeColors: ["#fff", "#fff"],
+    initialize: function(){
+    	var labels_all = Object.keys(this.model.at(0).get('data')['net_worth']);
+    	var labels = [];
+    	for (j=0;j<labels_all.length;j++){
+    		labels.push(j);
+			j+=11;
+		}
+		this.labels = labels;
+    	
+    	_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+        this.render();
+    },
+    render: function(){
+    	var datasets = [];
+    	var legend_names = [];
+    	
+    	//console.log(this.model);
+    	//console.log(this.model.length);
+    	for (i=0;i<this.model.length;i++){
+    		var data_dict = this.model.at(i).get('data')['net_worth'];
+    		var data_list = []
+    		for (j=0;j<(this.labels.length * 12);j++){
+    			data_list.push(data_dict[j]);
+    			j+=11;
+    		}
+    		var this_dataset = {
+    			fillColor : this.fillColors[i],
+    			strokeColor : this.strokeColors[i],
+    			pointColor : this.pointColors[i],
+    			pointStrokeColor : this.pointStrokeColors[i],
+    			data : data_list
+    		};
+    		datasets.push(this_dataset);
+    		legend_names.push(this.model.at(i).get('name'));
+    	}
+
+
+
+    	var template = _.template( $("#chart1_legend_template").html(), {names:legend_names, colors:this.strokeColors} );
+        this.$el.html( template );
+
+        //console.log($("#chart1"));
+        //console.log($("#chart1").get(0));
+
+        var ctx = $("#chart1_canvas").get(0).getContext("2d");
+        //console.log(this.datasets);
+
+		var Chart1_data = {
+			labels: this.labels,
+			datasets : datasets
+		};
+		new Chart(ctx).Line(Chart1_data,{bezierCurve : false});
+    }
+});
+
+var Chart2View = Backbone.View.extend({
+    initialize: function(){
+    	_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+        this.render();
+    },
+    render: function(){
+		var model = this.model.at(0);
+		var income_items = [];
+		var expenses = [];
+
+		var inc_items = model.get('income_items');
+		_.each(_.keys(inc_items), function(key){
+			income_items.push({name:key,y:parseInt(inc_items[key])});
+		});
+		income_items.push({
+            name: 'Total Income',
+            isIntermediateSum: true,
+            color: Highcharts.getOptions().colors[1]
+        });
+		var be_items = model.get('basic_expenses');
+		_.each(_.keys(be_items), function(key){
+			expenses.push({name:key,y:(-1)*parseInt(be_items[key])});
+		});
+		var me_items = model.get('misc_expenses');
+		_.each(_.keys(me_items), function(key){
+			expenses.push({name:key,y:(-1)*parseInt(me_items[key])});
+		});
+		var debt_accounts = model.get('debt_accounts');
+		_.each(_.keys(debt_accounts), function(key){
+			expenses.push({name:key,y:(-1)*parseInt(debt_accounts[key]['payment'])});
+		});
+		expenses.push({
+            name: 'Net Income',
+            isSum: true,
+            color: Highcharts.getOptions().colors[1]
+        });
+        console.log(income_items);
+        console.log(expenses);
+        var data = income_items.concat(expenses);
+        console.log(data);
+
+    	this.$el.highcharts({
+        chart: {
+            type: 'waterfall'
+        },
+        title: {
+            text: 'Monthly Net Income Breakdown'
+        },
+        xAxis: {
+            type: 'category'
+        },
+        yAxis: {
+            title: {
+                text: 'USD'
+            }
+        },
+        legend: {
+            enabled: false
+        },
+        exporting: {
+        	enabled: false
+        },
+        credits: {
+        	enabled: false
+        },
+        tooltip: {
+            pointFormat: '<b>${point.y:,.0f}</b> USD'
+        },
+        series: [{
+            upColor: Highcharts.getOptions().colors[2],
+            color: Highcharts.getOptions().colors[3],
+            data: data,
+            /*
+            data: [{
+                name: 'Start',
+                y: 120000
+            }, {
+                name: 'Product Revenue',
+                y: 569000
+            }, {
+                name: 'Service Revenue',
+                y: 231000
+            }, {
+                name: 'Positive Balance',
+                isIntermediateSum: true,
+                color: Highcharts.getOptions().colors[1]
+            }, {
+                name: 'Fixed Costs',
+                y: -342000
+            }, {
+                name: 'Variable Costs',
+                y: -233000
+            }, {
+                name: 'Balance',
+                isSum: true,
+                color: Highcharts.getOptions().colors[1]
+            }],
+            */
+            dataLabels: {
+                enabled: true,
+                formatter: function () {
+                    //return Highcharts.numberFormat(this.y / 1000, 0, ',') + 'k';
+                    return Highcharts.numberFormat(this.y, 0, ',');
+                },
+                style: {
+                    color: '#FFFFFF',
+                    fontWeight: 'bold'
+                }
+            },
+            pointPadding: 0
+        }]
+    });
+    }
+});
+
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function() {
+	$global_fieldnames = []
+
+	var caseCollection = new CaseCollection();
+	var parentView = new ParentView({el:$("#input_left"), model: caseCollection});
+	
+
+	$('#back_to_output').live('click',function(){
+		$('#input').addClass('hidden');
+		$('#output').removeClass('hidden');
+		$(this).addClass('hidden');
+		$('#back_to_input').removeClass('hidden');
+	});
+	$('#back_to_input').live('click',function(){
+		$('#output').addClass('hidden');
+		$('#input').removeClass('hidden');
+		$(this).addClass('hidden');
+		$('#back_to_output').removeClass('hidden');
+	});
+
+	$('#new_scenario').live('click', function(){
+		$case_name = prompt('Enter new scenario name: ');
+		var base_model = caseCollection.at(0);
+		var new_model = new Case({
+				name:$case_name,
+				data:base_model.get('data'),
+				income_items: base_model.get('income_items'),
+				basic_expenses: base_model.get('basic_expenses'),
+				misc_expenses: base_model.get('misc_expenses'),
+				debt_accounts: base_model.get('debt_accounts'),
+				cash_accounts: base_model.get('cash_accounts')
+			});
+		caseCollection.add(new_model);
+		$('.dropdown-toggle').click();
+    	return false;
+	});
+	$('#new_scenario1').live('click', function(){
+		$case_name = prompt('Enter new scenario name: ');
+		var base_model = caseCollection.at(0);
+		var be = $.extend(true, {}, base_model.get('basic_expenses'));
+		be['Housing'] = be['Housing'] * 0.8;
+		var new_model = new Case({
+				name:$case_name,
+				data: base_model.get('data'),
+				income_items: base_model.get('income_items'),
+				basic_expenses: be,
+				misc_expenses: base_model.get('misc_expenses'),
+				debt_accounts: base_model.get('debt_accounts'),
+				cash_accounts: base_model.get('cash_accounts')
+			});
+		caseCollection.add(new_model);
+		$('.dropdown-toggle').click();
+    	return false;
+	});
+	$('#new_scenario2').live('click', function(){
+		$case_name = prompt('Enter new scenario name: ');
+		var base_model = caseCollection.at(0);
+		var inc = $.extend(true, {}, base_model.get('income_items'));
+		inc['Salary'] = inc['Salary'] * 1.1;
+		var new_model = new Case({
+				name:$case_name,
+				data: base_model.get('data'),
+				income_items: inc,
+				basic_expenses: base_model.get('basic_expenses'),
+				misc_expenses: base_model.get('misc_expenses'),
+				debt_accounts: base_model.get('debt_accounts'),
+				cash_accounts: base_model.get('cash_accounts')
+			});
+		caseCollection.add(new_model);
+		$('.dropdown-toggle').click();
+    	return false;
+	});
+	$('#new_scenario3').live('click', function(){
+		var accounts = null;
+		caseCollection.each(function(model){
+			accounts = model.get('cash_accounts');
+			accounts['Inheritance'] = {'balance':0,'rate':0};
+			model.set({cash_accounts:accounts});
+			model.trigger('change');
+		});
+		Case.prototype.defaults.cash_accounts = accounts;
+		
+		$case_name = prompt('Enter new scenario name: ');
+		var base_model = caseCollection.at(0);
+		var ca = $.extend(true, {}, base_model.get('cash_accounts'));
+		ca['Inheritance'] = {'balance':40000,'rate':5};
+
+		var new_model = new Case({
+				name:$case_name,
+				data: base_model.get('data'),
+				income_items: base_model.get('income_items'),
+				basic_expenses: base_model.get('basic_expenses'),
+				misc_expenses: base_model.get('misc_expenses'),
+				debt_accounts: base_model.get('debt_accounts'),
+				cash_accounts: ca
+			});
+		caseCollection.add(new_model);
+		//$('.dropdown-toggle').click();
+    	return false;
+	});
+	$('#new_scenario4').live('click', function(){
+		$case_name = prompt('Enter new scenario name: ');
+		var base_model = caseCollection.at(0);
+		var da = $.extend(true, {}, base_model.get('debt_accounts'));
+		for (var key in da) {
+			da[key]['balance'] = 0;
+			da[key]['payment'] = 0;
+		}
+		var new_model = new Case({
+				name:$case_name,
+				data: base_model.get('data'),
+				income_items: base_model.get('income_items'),
+				basic_expenses: base_model.get('basic_expenses'),
+				misc_expenses: base_model.get('misc_expenses'),
+				debt_accounts: da,
+				cash_accounts: base_model.get('cash_accounts')
+			});
+		caseCollection.add(new_model);
+		$('.dropdown-toggle').click();
+    	return false;
+	});
+
+	var buildExistingCases = function(input_id) {
+		var this_model = new Case({id: input_id});
+		this_model.fetch({
+			success: function(){
+				caseCollection.add(this_model);
+			}
+		});	
+	}
+	{% for this_id in other_ids %}
+		buildExistingCases({{this_id}});
+	{% endfor %}
+
+
+
+	$('#new_in').live('click',function(){
+		//while (true) {
+		//	$fieldname = prompt('Enter Item Name');
+		//	if ($fieldname != null && $fieldname != '') {
+		//		if($global_fieldnames.indexOf($fieldname.toLowerCase()) == -1) {
+
+		/*
+				}
+				else {
+					alert('You already have an item with the name \"'+$fieldname+'\".\r\nPlease use a new, unique name.');
+				}
+			}
+			else {
+				break;
+			}	
+		}
+		*/
+		parentView.save_input_data(function() {
+			$fieldname = prompt('Enter Item Name');
+			//console.log(_.size(parentView.caseViews));
+			var in_items = null;
+			//for (var case_number in parentView.caseViews){
+			caseCollection.each(function(model){
+				in_items = model.get('income_items');
+				in_items[$fieldname] = 0;
+				//console.log(in_items);
+				model.set({income_items:in_items});
+				//console.log(parentView.caseViews[case_number].model.get('income_items'));
+				//console.log('ok');
+				model.trigger('change');
+			});
+			Case.prototype.defaults.income_items = in_items;
+		});
+	});
+	$('#new_be').live('click',function(){
+		parentView.save_input_data(function() {
+			$fieldname = prompt('Enter Item Name');
+			var be_items = null;
+			caseCollection.each(function(model){
+				be_items = model.get('basic_expenses');
+				be_items[$fieldname] = 0;
+				model.set({basic_expenses:be_items});
+				model.trigger('change');
+			});
+			Case.prototype.defaults.basic_expenses = be_items;
+		});
+	});
+	$('#new_me').live('click',function(){
+		parentView.save_input_data(function() {
+			$fieldname = prompt('Enter Item Name');
+			var me_items = null;
+			caseCollection.each(function(model){
+				me_items = model.get('misc_expenses');
+				me_items[$fieldname] = 0;
+				model.set({misc_expenses:me_items});
+				model.trigger('change');
+			});
+			Case.prototype.defaults.misc_expenses = me_items;
+		});
+	});
+	$('#new_da').live('click',function(){
+		parentView.save_input_data(function() {
+			$fieldname = prompt('Enter Item Name');
+			var accounts = null;
+			caseCollection.each(function(model){
+				accounts = model.get('debt_accounts');
+				accounts[$fieldname] = {'payment':0,'balance':0,'rate':0};
+				model.set({debt_accounts:accounts});
+				model.trigger('change');
+			});
+			Case.prototype.defaults.debt_accounts = accounts;
+		});
+	});
+	$('#new_ca').live('click',function(){
+		parentView.save_input_data(function() {
+			$fieldname = prompt('Enter Item Name');
+			var accounts = null;
+			caseCollection.each(function(model){
+				accounts = model.get('cash_accounts');
+				accounts[$fieldname] = {'balance':0,'rate':0};
+				model.set({cash_accounts:accounts});
+				model.trigger('change');
+			});
+			Case.prototype.defaults.cash_accounts = accounts;
+		});
+	});
+
+	$('#delete_in').live('click',function(){
+		$fieldname = $(this).next().html();
+		var in_items = null;
+		caseCollection.each(function(model){
+			in_items = model.get('income_items');
+			delete in_items[$fieldname];
+			model.set({income_items:in_items});
+			model.trigger('change');
+		});
+		Case.prototype.defaults.income_items = in_items;
+	});
+	$('#delete_be').live('click',function(){
+		$fieldname = $(this).next().html();
+		console.log($fieldname);
+		var be_items = null;
+		caseCollection.each(function(model){
+			//console.log(model);
+			be_items = model.get('basic_expenses');
+			delete be_items[$fieldname];
+			model.set({basic_expenses:be_items});
+			model.trigger('change');
+		});
+		Case.prototype.defaults.be_items = be_items;
+	});
+	$('#delete_me').live('click',function(){
+		$fieldname = $(this).next().html();
+		var me_items = null;
+		caseCollection.each(function(model){
+			me_items = model.get('misc_expenses');
+			delete me_items[$fieldname];
+			model.set({misc_expenses:me_items});
+			model.trigger('change');
+		});
+		Case.prototype.defaults.me_items = me_items;
+	});
+	$('#delete_da').live('click',function(){
+		$fieldname = $(this).next().html();
+		var accounts = null;
+		caseCollection.each(function(model){
+			accounts = model.get('debt_accounts');
+			delete accounts[$fieldname];
+			model.set({debt_accounts:accounts});
+			model.trigger('change');
+		});
+		Case.prototype.defaults.debt_accounts = accounts;
+	});
+	$('#delete_ca').live('click',function(){
+		$fieldname = $(this).next().html();
+		var accounts
+		caseCollection.each(function(model){
+			accounts = model.get('cash_accounts');
+			delete accounts[$fieldname];
+			model.set({cash_accounts:accounts});
+			model.trigger('change');
+		});
+		Case.prototype.defaults.cash_accounts = accounts;
+	});
+
+	$('.delete_scenario').live('click',function() {
+		$cid = $(this).attr('data-id');
+		//console.log($cid);
+		caseCollection.get($cid).destroy({success:function(){console.log('destroyed')}});
+	});
+
+
+});
+
+</script>
+
+{% endblock %}
+
+{% block main %}
+
+
+<div id="input">
+	<div id="input_left" style="display:inline-block;"></div>
+	<div id="input_table"></div>
+</div>
+
+<div id="output" class="hidden">
+	<div class="content_box">
+		<h2>Net Worth</h2>
+		<div id="table1" style="margin-bottom:40px;"></div>
+		<div id="chart1" style="text-align:center;">
+			<div><h3>Projected Net Worth over Time</h3></div>
+			<canvas id="chart1_canvas" width="800" height="400" style="display: inline;"></canvas>
+			<div id="chart1_legend"></div>
+		</div>
+		<div class="form_section_divider" style="margin-top:80px;"></div>
+		<h2>Cash Flow</h2>
+		<div id="chart2" style="width: 800px; height: 400px; margin: 0 auto;text-align:center;"></div>
+		<div class="form_section_divider" style="margin-top:80px;"></div>
+		<h2>Debt Summary</h2>
+</div>
+
+
+{% endblock %}

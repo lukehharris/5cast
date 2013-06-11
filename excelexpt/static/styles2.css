@@ -244,8 +244,16 @@ input.input_percentage {
     position: relative;
     left: -16px;
 }
+/*
+#input_accordion .collapsed {
+    box-shadow: 0 0 4px gray;
+}
+.accordion-toggle {
+    box-shadow: 0 0 4px gray;
+}
+*/
 
-.input_item_labels .close {
+.input_item_label .close {
     float: left;
     margin-right: 16px;
 }
@@ -255,36 +263,78 @@ input.input_percentage {
     border-right: 1px solid black;
 }
 .input_item_label {
-    height: 36px;
+    display: inline-block;
+    /*height: 36px;*/
+    width:200px;
     padding-top: 4px;
+    font-weight: bold;
+    vertical-align: top;
 }
+.input_item_row {
+    min-height: 30px;
+    margin-bottom: 10px;
+}
+
+.input_item_sub {
+    display: inline-block;
+    text-align: center;
+}
+
 .input_section {
     display: inline-block;
-    width: 200px;
+    width: 264px;
     vertical-align: top;
     border-right: 1px solid black;
 }
 .input_item {
     margin: 0;
     display: inline-block;
-    height: 40px;
+    width: 266px;
+    vertical-align: top;
 
 }
 .input_item input {
-    margin:0 6px;
+    margin: 0 4px;
     width: 80px;
 }
+
 .case_label {
+    display: inline-block;
     font-size: 16px;
     text-shadow: 0 1px 1px #888888;
     font-weight: bold;
     text-align: center;
     border-bottom: 1px solid black;
     height: 30px;
+    width: 266px;
     margin-bottom: 10px;
-    padding-right: 20px;
 }
 .case_label .close {
     float: none;
     margin-right: 12px;
+}
+#case_label_add_scenario {
+    width:200px;
+}
+
+.input_period {
+    width: 105px;
+    margin: 0;
+    margin-right: 6px;
+}
+
+.icon-cog {
+    font-size: 16px;
+    margin-left: 6px;
+    text-shadow: 0 1px 1px #363636;   
+}
+.icon-cog:hover {/*
+    font-size: 28px;
+    vertical-align: -4px;
+    position: relative;
+    right: 4px;
+    cursor: pointer;
+    */
+    color:gray;
+    text-decoration: none;
 }

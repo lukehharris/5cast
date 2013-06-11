@@ -346,7 +346,7 @@ def build_income_section(s, income):
 
 def build_expense_section(s, basic_expenses, debt_expenses, misc_expenses):
     s.update({'expenses':{'sections':{},'total':{}}})
-    s = build_expense_subsection(s, basic_expenses, 'Basic')
+    s = build_be_expense_subsection(s, basic_expenses, 'Basic')
     #print s
     s = build_expense_subsection(s, debt_expenses, 'Debt')
     s = build_expense_subsection(s, misc_expenses, 'Misc')
@@ -354,6 +354,27 @@ def build_expense_section(s, basic_expenses, debt_expenses, misc_expenses):
     s = sum_expenses(s)
 
     return s
+
+
+
+def build_be_expense_subsection(s, expense_dict, name):
+    s['expenses']['sections'].update({name:{'items':{},'total':{}}})
+    for k,v in expense_dict.iteritems():
+        s['expenses']['sections'][name]['items'].update({k:{0:float(v['value'])}})
+
+        fill_value = s['expenses']['sections'][name]['items'][k][0]
+        for x in range(1,121):
+            s['expenses']['sections'][name]['items'][k][x] = fill_value
+
+    for x in range(0,121):
+        s['expenses']['sections'][name]['total'].update({x:0})
+        for k in s['expenses']['sections'][name]['items']:
+            s['expenses']['sections'][name]['total'][x] += s['expenses']['sections'][name]['items'][k][x]
+
+    return s
+
+
+
 
 def build_expense_subsection(s, expense_dict, name):
     s['expenses']['sections'].update({name:{'items':{},'total':{}}})

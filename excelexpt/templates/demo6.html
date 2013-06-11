@@ -27,9 +27,23 @@
 var Case = Backbone.Model.extend({
 	defaults : {
 		name : 'Base Case',
+		/*
 		income_items : {'Salary':''},
 		basic_expenses : {'Housing':'','Utilities':'','TV/Internet':'','Phone':'','Gym':'','Food':''},
 		misc_expenses : {'Social/Entertainment':'','Other':''},
+		debt_accounts : {'Student':{'payment':'','balance':'','rate':''},'Credit Card':{'payment':'','balance':'','rate':''}},
+		cash_accounts : {'Checking':{'balance':'','rate':''},'Savings':{'balance':'','rate':''},'Investment':{'balance':'','rate':''}},
+		*/
+		//income_items : {'Salary':{'type':'flatline','value':''}},
+		income_items : {'Salary':''},
+		basic_expenses : {'Housing':{'type':'flatline','frequency':'monthly','value':''},
+			'Utilities':{'type':'flatline','frequency':'monthly','value':''},
+			'TV/Internet':{'type':'flatline','frequency':'monthly','value':''},
+			'Phone':{'type':'flatline','frequency':'monthly','value':''},
+			'Gym':{'type':'flatline','frequency':'monthly','value':''},
+			'Food':{'type':'flatline','frequency':'monthly','value':''}
+		},
+		misc_expenses : {'Social/Entertainment':{'type':'flatline','value':''},'Other':{'type':'flatline','value':''}},
 		debt_accounts : {'Student':{'payment':'','balance':'','rate':''},'Credit Card':{'payment':'','balance':'','rate':''}},
 		cash_accounts : {'Checking':{'balance':'','rate':''},'Savings':{'balance':'','rate':''},'Investment':{'balance':'','rate':''}},
 		isBaseCase: false,
@@ -144,8 +158,8 @@ var CaseCollection = Backbone.Collection.extend({
 </script>
 
 <script type="text/template" id="expenses_input_template">
-	<div class="input_item_labels">
-		<div class="case_label">
+	<div class="case_labels">
+		<div id="case_label_add_scenario" class="case_label">
 			<div class="dropdown" style="display:inline-block; margin-left: 20px;">
 				<a class="dropdown-toggle" data-toggle="dropdown" href="">Add Scenario</a>
 				<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
@@ -158,28 +172,130 @@ var CaseCollection = Backbone.Collection.extend({
 				</ul>
 			</div>
 		</div>
-		<% _.each(_.keys(items), function(key){{'{'}} %>
-			<div class="input_item_label">
-				<button id="delete_be" class="close" data-name="<%=key%>" title="Delete This Item">&times;</button>
-				<%=key%>
-			</div>
-		<% });%>
-	</div>
-	<% models.each(function(model){{'{'}}%>
-		<div class="input_section">
+		<% models.each(function(model){{'{'}}%>
 			<div class="case_label">
 				<% if (!model.get('isBaseCase')) {{'{'}}%>
 				<button class="close delete_scenario" data-id="<%=model.cid%>" title="Delete This Scenario">&times;</button>
 				<%{{'}'}}%>
 				<%=model.get('name')%>
 			</div>
-			<% _.each(_.keys(items), function(key){{'{'}} %>
+		<%});%>
+	</div>
+	<% _.each(_.keys(items), function(key){{'{'}} %>
+		<div class="input_item_row">
+			<div class="input_item_label">
+				<button id="delete_be" class="close" data-name="<%=key%>" title="Delete This Item">&times;</button>
+				<%=key%>
+			</div>
+			<% models.each(function(model){{'{'}}%>
+
 				<div class="input_item">
-					$<input class="<%=model.cid%>_input" type="text" name="be_<%=key%>" value="<%=model.get('basic_expenses')[key]%>">per month
+					<div class="input_item_sub input_sub_<%=model.cid%>" data-section="basic_expenses" data-name="<%=model.get('name')%>" data-input-type="<%=model.get('basic_expenses')[key]['type']%>" >
+						<% if (model.get('basic_expenses')[key]['type'] == 'flatline') {{'{'}}%>
+							$<input type="text" name="value" value="<%=model.get('basic_expenses')[key]['value']%>">
+							<select class="input_period" name="frequency">
+								<option value="monthly" <%if (model.get('basic_expenses')[key]['frequency'] == 'monthly') {{'{'}}%>selected<%{{'}'}}%>>Monthly</option>
+								<option value="weekly" <%if (model.get('basic_expenses')[key]['frequency'] == 'weekly') {{'{'}}%>selected<%{{'}'}}%>>Weekly</option>
+							</select>
+						<%{{'}'}}else if(model.get('basic_expenses')[key]['type'] == 'pct_change'){{'{'}} %>
+							$<input type="text" name="value" value="<%=model.get('basic_expenses')[key]['value']%>">
+							<select class="input_period" name="frequency">
+								<option value="yearly" <%if (model.get('basic_expenses')[key]['frequency'] == 'yearly') {{'{'}}%>selected<%{{'}'}}%>>Yearly</option>
+								<option value="monthly" <%if (model.get('basic_expenses')[key]['frequency'] == 'monthly') {{'{'}}%>selected<%{{'}'}}%>>Monthly</option>
+								<option value="weekly" <%if (model.get('basic_expenses')[key]['frequency'] == 'weekly') {{'{'}}%>selected<%{{'}'}}%>>Weekly</option>
+							</select>
+							<br>
+							and 
+							<select class="input_period" name="change_direction" style="margin:8px 0;">
+								<option value="increases" <%if (model.get('basic_expenses')[key]['change_direction'] == 'increases') {{'{'}}%>selected<%{{'}'}}%>>Increases</option>
+								<option value="decreases" <%if (model.get('basic_expenses')[key]['change_direction'] == 'decreases') {{'{'}}%>selected<%{{'}'}}%>>Decreases</option>
+							</select>
+							 by
+							<input type="text" name="change" value="<%=model.get('basic_expenses')[key]['change']%>" style="width:20px; margin:8px 0;">%
+							<br>
+							every  
+							<input type="text" name="change_periods" value="<%=model.get('basic_expenses')[key]['change_periods']%>" style="width:20px;">
+							<select class="input_period" name="change_frequency">
+								<option value="year" <%if (model.get('basic_expenses')[key]['change_frequency'] == 'year') {{'{'}}%>selected<%{{'}'}}%>>year(s)</option>
+								<option value="month" <%if (model.get('basic_expenses')[key]['change_frequency'] == 'month') {{'{'}}%>selected<%{{'}'}}%>>month(s)</option>
+							</select>
+
+						<%{{'}'}}else if(model.get('basic_expenses')[key]['type'] == 'val_change'){{'{'}} %>
+							$<input type="text" name="value" value="<%=model.get('basic_expenses')[key]['value']%>">
+							<select class="input_period" name="frequency">
+								<option value="yearly" <%if (model.get('basic_expenses')[key]['frequency'] == 'yearly') {{'{'}}%>selected<%{{'}'}}%>>Yearly</option>
+								<option value="monthly" <%if (model.get('basic_expenses')[key]['frequency'] == 'monthly') {{'{'}}%>selected<%{{'}'}}%>>Monthly</option>
+								<option value="weekly" <%if (model.get('basic_expenses')[key]['frequency'] == 'weekly') {{'{'}}%>selected<%{{'}'}}%>>Weekly</option>
+							</select>
+							<br>
+							and 
+							<select class="input_period" name="change_direction" style="margin:8px 0;">
+								<option value="increases" <%if (model.get('basic_expenses')[key]['change_direction'] == 'increases') {{'{'}}%>selected<%{{'}'}}%>>Increases</option>
+								<option value="decreases" <%if (model.get('basic_expenses')[key]['change_direction'] == 'decreases') {{'{'}}%>selected<%{{'}'}}%>>Decreases</option>
+							</select>
+							 by
+							$<input type="text" name="change" value="<%=model.get('basic_expenses')[key]['change']%>" style="width:60px;">
+							<br>
+							every  
+							<input type="text" name="change_periods" value="<%=model.get('basic_expenses')[key]['change_periods']%>" style="width:20px;">
+							<select class="input_period" name="change_frequency">
+								<option value="year" <%if (model.get('basic_expenses')[key]['change_frequency'] == 'year') {{'{'}}%>selected<%{{'}'}}%>>year(s)</option>
+								<option value="month" <%if (model.get('basic_expenses')[key]['change_frequency'] == 'month') {{'{'}}%>selected<%{{'}'}}%>>month(s)</option>
+							</select>
+						<%{{'}'}}else if(model.get('basic_expenses')[key]['type'] == 'custom'){{'{'}} %>
+							<% for (x=0;x<model.get('basic_expenses')[key]['data'].length;x++){{'{'}} %>
+							<div class="custom_input_block">
+								$<input type="text" name="be_<%=key%>" value="<%=model.get('basic_expenses')[key]['data'][x]['value']%>" style="margin:8px 0;"> 
+								<select class="<%=model.cid%>_input input_period" name="ip_<%=key%>">
+									<option value="monthly" <%if (model.get('basic_expenses')[key]['data'][x]['frequency'] == 'monthly') {{'{'}}%>selected<%{{'}'}}%>>Monthly</option>
+									<option value="weekly" <%if (model.get('basic_expenses')[key]['data'][x]['frequency'] == 'weekly') {{'{'}}%>selected<%{{'}'}}%>>Weekly</option>
+								</select>
+								<br>
+								from
+								<select class="<%=model.cid%>_input input_period" data-period="start" name="ip_<%=key%>_mo" style="width:60px;">
+									<%for(i=1;i<=12;i++){{'{'}} %>
+										<option value="<%=i%>" <%if(i==model.get('basic_expenses')[key]['data'][x]['start_mo']){{'{'}}%>selected<%{{'}'}} %>><%=i%></option>
+									<%{{'}'}}%>
+								</select> 
+								<select class="<%=model.cid%>_input input_period" data-period="start" name="ip_<%=key%>_mo" style="width:76px;">
+									<%for(i=2013;i<=2023;i++){{'{'}} %>
+										<option value="<%=i-2012%>" <%if(i==model.get('basic_expenses')[key]['data'][x]['start_yr']){{'{'}}%>selected<%{{'}'}} %>><%=i%></option>
+									<%{{'}'}}%>
+								</select>
+								<br>
+								to
+								<select class="<%=model.cid%>_input input_period" data-period="end" name="ip_<%=key%>_mo" style="width:60px;margin:8px 0;">
+									<%for(i=1;i<=12;i++){{'{'}} %>
+										<option value="<%=i%>" <%if(i==model.get('basic_expenses')[key]['data'][x]['end_mo']){{'{'}}%>selected<%{{'}'}} %>><%=i%></option>
+									<%{{'}'}}%>
+								</select> 
+								<select class="<%=model.cid%>_input input_period" data-period="end" name="ip_<%=key%>_mo" style="width:76px">
+									<%for(i=2013;i<=2023;i++){{'{'}} %>
+										<option value="<%=i-2012%>" <%if(i==model.get('basic_expenses')[key]['data'][x]['end_yr']){{'{'}}%>selected<%{{'}'}} %>><%=i%></option>
+									<%{{'}'}}%>
+								</select>
+							</div>
+							<%{{'}'}}%>
+							<a class="btn btn-info" id="new_custom_input_block" href="#">Add Another Period</a>
+						<%{{'}'}}%>
+					</div>
+
+					<div class="dropdown" style="display:inline-block; vertical-align:top; margin-top:4px; float:right;">
+						<a class="dropdown-toggle" data-toggle="dropdown" href=""><i class="icon-cog" title="Change Input Type"></i></a>
+						<ul class="dropdown-menu" role="menu" data-id="<%=model.cid%>" data-name="<%=key%>" data-section="basic_expenses" aria-labelledby="dLabel">
+						   	<li role="presentation"><a href="#" role="menuitem" id="it_flatline">Flatline</a></li>
+						   	<li role="presentation"><a href="#" role="menuitem" id="it_pct_change">Increase by %</a></li>
+						   	<li role="presentation"><a href="#" role="menuitem" id="it_val_change">Increase by $</a></li>
+						   	<li role="presentation"><a href="#" role="menuitem" id="it_custom">Custom</a></li>
+						</ul>
+					</div>
 				</div>
-			<% });%>
+
+			<%});%>
 		</div>
-	<%});%>
+	<% });%>
+	
+
 	<div>
 		<a id="new_be" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Expense</a>
 	</div>
@@ -227,10 +343,10 @@ var CaseCollection = Backbone.Collection.extend({
 			<% _.each(_.keys(items), function(key){{'{'}} %>
 				<div class="input_item_label">&nbsp;</div>
 				<div class="input_item">
-					$<input class="<%=model.cid%>_input" type="text" name="cb_<%=key%>" value="<%=model.get('cash_accounts')[key]['balance']%>">per month
+					$<input class="<%=model.cid%>_input" type="text" name="cb_<%=key%>" value="<%=model.get('cash_accounts')[key]['balance']%>">
 				</div>
 				<div class="input_item">
-					%<input class="<%=model.cid%>_input" type="text" name="er_<%=key%>" value="<%=model.get('cash_accounts')[key]['rate']%>" class="input_percentage">
+					%<input class="<%=model.cid%>_input input_percentage" type="text" name="er_<%=key%>" value="<%=model.get('cash_accounts')[key]['rate']%>">
 				</div>
 				<div class="input_item_label">&nbsp;</div>
 			<% });%>
@@ -288,10 +404,10 @@ var CaseCollection = Backbone.Collection.extend({
 					$<input class="<%=model.cid%>_input" type="text" name="de_<%=key%>" value="<%=model.get('debt_accounts')[key]['payment']%>">per month
 				</div>
 				<div class="input_item">
-					$<input class="<%=model.cid%>_input" type="text" name="ba_<%=key%>" value="<%=model.get('debt_accounts')[key]['balance']%>">per month
+					$<input class="<%=model.cid%>_input" type="text" name="ba_<%=key%>" value="<%=model.get('debt_accounts')[key]['balance']%>">
 				</div>
 				<div class="input_item">
-					$<input class="<%=model.cid%>_input" type="text" name="ra_<%=key%>" value="<%=model.get('debt_accounts')[key]['rate']%>">per month
+					%<input class="<%=model.cid%>_input input_percentage" type="text" name="ra_<%=key%>" value="<%=model.get('debt_accounts')[key]['rate']%>">
 				</div>
 				<div class="input_item_label">&nbsp;</div>
 			<% });%>
@@ -413,15 +529,44 @@ var ParentView = Backbone.View.extend({
 			$er_items = [];
 			$this_name = '';
 			var data = {};
-			$input = $('.'+cid+'_input');
+			//$input = $('.'+cid+'_input');
+			$input = $('.input_sub_'+cid);
 
 			$input.each(function(){
-				$raw_name = $(this).attr('name');
-				$prefix = $raw_name.substring(0,2);
-				//console.log($prefix);
-				$name = $raw_name.substring(3, $raw_name.length);
-				//console.log($name);
-				$value = $(this).val();
+				$input_type = $(this).attr('data-input-type');
+				$section = $(this).attr('data-section');
+				$name = $(this).attr('data-name');
+				
+				if($section == 'basic_expenses'){
+					if($input_type == 'flatline'){
+						$value = $(this).children('input').val();
+						if($value == '') {$value = 0;}
+						$frequency = $(this).children('select').val();
+						$basic_expenses[$name] = {'type':$input_type,'frequency':$frequency,'value':$value};
+					}else if($input_type == 'pct_change' || $input_type == 'val_change'){
+						$value = $(this).children('input[name="value"]').val();
+						if($value == '') {$value = 0;}
+						$frequency = $(this).children('select[name="frequency"]').val();
+						$change = $(this).children('input[name="change"]').val();
+						$change_direction = $(this).children('select[name="change_direction"]').val();
+						$change_frequency = $(this).children('select[name="change_frequency"]').val();
+						$change_periods = $(this).children('input[name="change_periods"]').val();
+						$basic_expenses[$name] = {'type':$input_type,'frequency':$frequency,'change':$change,'change_frequency':$change_frequency,'change_direction':$change_direction,'change_periods':$change_periods, 'value':$value};
+					}else if($input_type == 'custom'){
+						$periods = $(this).children('.custom_input_block');
+						$data = [];
+						$periods.each(function(){
+							$value = $(this).children('input[name="value"]').val();
+							if($value == '') {$value = 0;}
+							$frequency = $(this).children('select[name="frequency"]').val();
+							$start_mo = $(this).children('select[name="start_mo"]').val();
+							$start_yr = $(this).children('select[name="start_yr"]').val();
+							$end_mo = $(this).children('select[name="end_mo"]').val();
+							$end_yr = $(this).children('select[name="end_yr"]').val();
+							$data.push({'value':$value,'frequency':$frequency,'start_mo':$start_mo,'start_yr':$start_yr,'end_mo':$end_mo,'end_yr':$end_yr});
+						});
+					}
+				}
 
 				if($value == '') {$value = 0;}
 
@@ -429,7 +574,11 @@ var ParentView = Backbone.View.extend({
 					$income_items[$name] = $value;
 				}
 				else if($prefix == 'be') {
-					$basic_expenses[$name] = $value;
+					//$basic_expenses[$name] = $value;
+					//alert($(this).attr('data-input-type'));
+					$input_type = $(this).attr('data-input-type');
+					$frequency = $(this).next().val();
+					$basic_expenses[$name] = {'type':$input_type,'frequency':$frequency,'value':$value};
 				}
 				else if($prefix == 'me') {
 					$misc_expenses[$name] = $value;
@@ -636,11 +785,11 @@ var Chart2View = Backbone.View.extend({
         });
 		var be_items = model.get('basic_expenses');
 		_.each(_.keys(be_items), function(key){
-			expenses.push({name:key,y:(-1)*parseInt(be_items[key])});
+			expenses.push({name:key,y:(-1)*parseInt(be_items[key]['value'])});
 		});
 		var me_items = model.get('misc_expenses');
 		_.each(_.keys(me_items), function(key){
-			expenses.push({name:key,y:(-1)*parseInt(me_items[key])});
+			expenses.push({name:key,y:(-1)*parseInt(me_items[key]['value'])});
 		});
 		var debt_accounts = model.get('debt_accounts');
 		_.each(_.keys(debt_accounts), function(key){
@@ -869,6 +1018,115 @@ $(document).ready(function() {
     	return false;
 	});
 
+	$('#it_flatline').live('click',function(){
+		$parent = $(this).closest('.dropdown-menu');
+		$section = $parent.attr('data-section');
+		$name = $parent.attr('data-name');
+		$id = $parent.attr('data-id');
+		var model = caseCollection.get($id);
+		var items = model.get($section);
+		items[$name] = {'type':'flatline','frequency':'monthly','value':0};
+		if($section == 'basic_expenses') {
+			var context = {basic_expenses:items};
+		}
+		else if ($section == 'misc_expenses'){
+			var context = {misc_expenses:items};
+		}
+		else if ($section == 'income_items') {
+			var context = {income_items:items};
+		}
+		model.set(context);
+		model.trigger('change');
+		return false;
+	});
+	$('#it_pct_change').live('click',function(){
+		$parent = $(this).closest('.dropdown-menu');
+		$section = $parent.attr('data-section');
+		$name = $parent.attr('data-name');
+		$id = $parent.attr('data-id');
+		var model = caseCollection.get($id);
+		var items = model.get($section);
+		items[$name] = {'type':'pct_change','frequency':'monthly','change':0,'change_frequency':'year','change_direction':'increases','change_periods':1,'value':0};
+		if($section == 'basic_expenses') {
+			var context = {basic_expenses:items};
+		}
+		else if ($section == 'misc_expenses'){
+			var context = {misc_expenses:items};
+		}
+		else if ($section == 'income_items') {
+			var context = {income_items:items};
+		}
+		model.set(context);
+		model.trigger('change');
+		return false;
+	});
+	$('#it_val_change').live('click',function(){
+		$parent = $(this).closest('.dropdown-menu');
+		$section = $parent.attr('data-section');
+		$name = $parent.attr('data-name');
+		$id = $parent.attr('data-id');
+		var model = caseCollection.get($id);
+		var items = model.get($section);
+		items[$name] = {'type':'val_change','frequency':'monthly','change':0,'change_frequency':'year','change_direction':'increases','change_periods':1,'value':0};
+		if($section == 'basic_expenses') {
+			var context = {basic_expenses:items};
+		}
+		else if ($section == 'misc_expenses'){
+			var context = {misc_expenses:items};
+		}
+		else if ($section == 'income_items') {
+			var context = {income_items:items};
+		}
+		model.set(context);
+		model.trigger('change');
+		return false;
+	});
+	$('#it_custom').live('click',function(){
+		$parent = $(this).closest('.dropdown-menu');
+		$section = $parent.attr('data-section');
+		$name = $parent.attr('data-name');
+		$id = $parent.attr('data-id');
+		var model = caseCollection.get($id);
+		var items = model.get($section);
+		items[$name] = {'type':'custom','data': [ {'value':0,'frequency':'monthly','start_mo':6,'start_yr':2013,'end_mo':7,'end_yr':2013} ] };
+		if($section == 'basic_expenses') {
+			var context = {basic_expenses:items};
+		}
+		else if ($section == 'misc_expenses'){
+			var context = {misc_expenses:items};
+		}
+		else if ($section == 'income_items') {
+			var context = {income_items:items};
+		}
+		model.set(context);
+		model.trigger('change');
+		return false;
+	});
+	$('#new_custom_input_block').live('click',function(){
+		$parent = $(this).parent().next().children('.dropdown-menu');
+		$section = $parent.attr('data-section');
+		$name = $parent.attr('data-name');
+		$id = $parent.attr('data-id');
+		var model = caseCollection.get($id);
+		var items = model.get($section);
+		items[$name]['data'].push({'value':0,'frequency':'monthly','start_mo':6,'start_yr':2013,'end_mo':7,'end_yr':2013});
+		if($section == 'basic_expenses') {
+			var context = {basic_expenses:items};
+		}
+		else if ($section == 'misc_expenses'){
+			var context = {misc_expenses:items};
+		}
+		else if ($section == 'income_items') {
+			var context = {income_items:items};
+		}
+		model.set(context);
+		model.trigger('change');
+		return false;
+	});
+
+
+
+
 
 	$('#new_in').live('click',function(){
 		//while (true) {
@@ -910,7 +1168,8 @@ $(document).ready(function() {
 			var be_items = null;
 			caseCollection.each(function(model){
 				be_items = model.get('basic_expenses');
-				be_items[$fieldname] = 0;
+				//be_items[$fieldname] = 0;
+				be_items[$fieldname] = {'type':'flatline','frequency':'monthly','value':0};
 				model.set({basic_expenses:be_items});
 			});
 			caseCollection.trigger('change');

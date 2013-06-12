@@ -142,18 +142,19 @@ html, body {
 
 label {
 	display: inline-block;
-	width: 120px;
-	margin-right: 20px;
+	width: 140px;
+	margin-right: 10px;
 	font-size: 11pt;
 }
 
 
-
+/*
 .new_field,
 .new_debt_account,
 .new_cash_account {
 	margin-top: 20px;
 }
+*/
 
 .icon-plus {
 	margin-right: 8px;
@@ -265,19 +266,19 @@ input.input_percentage {
 .input_item_label {
     display: inline-block;
     /*height: 36px;*/
-    width:200px;
+    width:180px;
     padding-top: 4px;
     font-weight: bold;
     vertical-align: top;
 }
 .input_item_row {
     min-height: 30px;
-    margin-bottom: 10px;
+    margin-bottom: 30px;
 }
 
 .input_item_sub {
     display: inline-block;
-    text-align: center;
+    max-width: 460px;
 }
 
 .input_section {
@@ -289,7 +290,7 @@ input.input_percentage {
 .input_item {
     margin: 0;
     display: inline-block;
-    width: 266px;
+    width: 480px;
     vertical-align: top;
 
 }
@@ -337,4 +338,18 @@ input.input_percentage {
     */
     color:gray;
     text-decoration: none;
+}
+
+.accordion {
+    width: 700px;
+}
+.change_input_type {
+    display:inline-block;
+    vertical-align:top;
+    margin-top:4px;
+    margin-right: 10px;
+}
+
+.custom_input_block {
+    margin-bottom: 12px;
 }

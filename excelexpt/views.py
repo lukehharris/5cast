@@ -387,8 +387,26 @@ def demo6():
     else:
         return redirect(url_for('login'))
 
+@app.route('/demo7')
+def demo7():
+    if current_user.is_active():
+        scenarios_query = current_user.scenarios.all()
+        base_id = None
+        other_ids = []
+        if scenarios_query == []:
+            data_exists = False
+        else:
+            for scenario in scenarios_query:
+                if scenario.is_base:
+                    base_id = scenario.id
+                else:
+                    other_ids.append(scenario.id)
+            data_exists = True
+        return render_template('demo7.html',data_exists=data_exists, base_id=base_id, other_ids=other_ids)
+    else:
+        return redirect(url_for('login'))
 
-import build_demo4
+import build_demo7
 
 
 
@@ -402,7 +420,7 @@ def case():
                 print item,value
             data.update({item:value})
         #print data
-        s = build_demo4.build_demo4_data(data)
+        s = build_demo7.build_demo7_data(data)
 
         if current_user.is_active():            
             new_scenario = Scenario(s, data['name'], data['income_items'], data['basic_expenses'], data['misc_expenses'], data['debt_accounts'], data['cash_accounts'])
@@ -442,7 +460,7 @@ def case2(id_input):
                 print item,value
             data.update({item:value})
         #print data
-        s = build_demo4.build_demo4_data(data)
+        s = build_demo7.build_demo7_data(data)
 
         if current_user.is_active():
             #print data['id']       

@@ -492,6 +492,8 @@ var ParentView = Backbone.View.extend({
 			var inputAssetsView = new InputAssetsView({el:$("#assets_el"), model: self.model});
 			var inputDebtView = new InputDebtView({el:$("#debt_el"), model: self.model});
 
+			var inputRightView = new InputRightView({el:$("#input_right"), model: self.model});
+
 			//var table1view = new Table1View({el:$('#table1'), model: self.model});
 			//var chart1view = new Chart1View({el:$('#chart1_legend'), model: self.model});
 			//var chart2view = new Chart2View({el:$('#chart2'), model: self.model});
@@ -678,6 +680,15 @@ var InputRightView = Backbone.View.extend({
 	},
     render: function(){
     	var data = this.model.at(0).get('data');
+    	console.log(data);
+    	if(data == null){
+    		console.log('yep');
+    		data = {'net_income':{},'net_worth':{}};
+    		data['net_income'][1] = 0;
+    		data['net_worth'][1] = 0;
+    		data['net_worth'][12] = 0;
+    		data['net_worth'][60] = 0;
+    	}
     	var template = _.template( $("#input_right_template").html(), {data:data} );
     	this.$el.html( template );
     }

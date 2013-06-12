@@ -536,6 +536,7 @@ var ParentView = Backbone.View.extend({
 					if($input_type == 'flatline'){
 						$value = $(this).children('input').val();
 						if($value == '') {$value = 0;}
+						console.log($value);
 						$frequency = $(this).children('select').val();
 						if($section == 'income_items'){
 							$income_items[$name] = {'type':$input_type,'frequency':$frequency,'value':$value};	
@@ -547,9 +548,11 @@ var ParentView = Backbone.View.extend({
 						if($value == '') {$value = 0;}
 						$frequency = $(this).children('select[name="frequency"]').val();
 						$change = $(this).children('input[name="change"]').val();
+						if($change == '') {$change = 0;}
 						$change_direction = $(this).children('select[name="change_direction"]').val();
 						$change_frequency = $(this).children('select[name="change_frequency"]').val();
 						$change_periods = $(this).children('input[name="change_periods"]').val();
+						if($change_periods == '') {$change_periods = 0;}
 						if($section == 'income_items'){
 							$income_items[$name] = {'type':$input_type,'frequency':$frequency,'change':$change,'change_frequency':$change_frequency,'change_direction':$change_direction,'change_periods':$change_periods, 'value':$value};	
 						} else {
@@ -559,7 +562,6 @@ var ParentView = Backbone.View.extend({
 						$periods = $(this).children('.custom_input_block');
 						$data = [];
 						$periods.each(function(){
-							console.log(this);
 							$value = $(this).children('input[name="value"]').val();
 							if($value == '') {$value = 0;}
 							$frequency = $(this).children('select[name="frequency"]').val();
@@ -577,12 +579,17 @@ var ParentView = Backbone.View.extend({
 					}
 				} else if($section == 'cash_accounts'){
 					$balance = $(this).children('span').children('input[name="balance"]').val();
+					if($balance == '') {$balance = 0;}
 					$rate = $(this).children('span').children('input[name="rate"]').val();
+					if($rate == '') {$rate = 0;}
 					$cash_accounts[$name] = {'balance':$balance,'rate':$rate};
 				} else if($section == 'debt_accounts'){
 					$payment = $(this).children('span').children('input[name="payment"]').val();
+					if($payment == '') {$payment = 0;}
 					$balance = $(this).children('span').children('input[name="balance"]').val();
+					if($balance == '') {$balance = 0;}
 					$rate = $(this).children('span').children('input[name="rate"]').val();
+					if($rate == '') {$rate = 0;}
 					$debt_accounts[$name] = {'balance':$balance,'rate':$rate,'payment':$payment};
 				}
 			});

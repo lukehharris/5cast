@@ -327,11 +327,23 @@ def build_income_section(s, income):
 
         input_type = v['type']
         if input_type == 'flatline':
-            s = populate_flatline_vector(s, 'income', k, v['frequency'], float(v['value']))
+            try:
+                value = float(v['value'])
+            except:
+                value = 0.0
+            s = populate_flatline_vector(s, 'income', k, v['frequency'], value)
         elif input_type == 'pct_change':
-            s = populate_pct_change_vector(s, 'income', k, v['frequency'], float(v['value']), float(v['change']), v['change_frequency'], v['change_direction'], float(v['change_periods']))
+            try:
+                value = float(v['value'])
+            except:
+                value = 0.0
+            s = populate_pct_change_vector(s, 'income', k, v['frequency'], value, float(v['change']), v['change_frequency'], v['change_direction'], float(v['change_periods']))
         elif input_type == 'val_change':
-            s = populate_val_change_vector(s, 'income', k, v['frequency'], float(v['value']), float(v['change']), v['change_frequency'], v['change_direction'], float(v['change_periods']))
+            try:
+                value = float(v['value'])
+            except:
+                value = 0.0
+            s = populate_val_change_vector(s, 'income', k, v['frequency'], value, float(v['change']), v['change_frequency'], v['change_direction'], float(v['change_periods']))
         elif input_type == 'custom':
             s = populate_custom_vector(s, 'income', k, v['data'])
 
@@ -430,7 +442,10 @@ def populate_custom_vector(s, section, item_name, data):
             s['expenses']['sections'][section]['items'][item_name][x] = 0
 
     for period in data:
-        value = float(period['value'])
+        try:
+            value = float(period['value'])
+        except:
+            value = 0.0
         if value < 0:
             value = 0
         
@@ -482,11 +497,23 @@ def build_expense_subsection(s, expense_dict, name):
 
         input_type = v['type']
         if input_type == 'flatline':
-            s = populate_flatline_vector(s, name, k, v['frequency'], float(v['value']))
+            try:
+                value = float(v['value'])
+            except:
+                value = 0.0
+            s = populate_flatline_vector(s, name, k, v['frequency'], value)
         elif input_type == 'pct_change':
-            s = populate_pct_change_vector(s, name, k, v['frequency'], float(v['value']), float(v['change']), v['change_frequency'], v['change_direction'], float(v['change_periods']))
+            try:
+                value = float(v['value'])
+            except:
+                value = 0.0
+            s = populate_pct_change_vector(s, name, k, v['frequency'], value, float(v['change']), v['change_frequency'], v['change_direction'], float(v['change_periods']))
         elif input_type == 'val_change':
-            s = populate_val_change_vector(s, name, k, v['frequency'], float(v['value']), float(v['change']), v['change_frequency'], v['change_direction'], float(v['change_periods']))
+            try:
+                value = float(v['value'])
+            except:
+                value = 0.0
+            s = populate_val_change_vector(s, name, k, v['frequency'], value, float(v['change']), v['change_frequency'], v['change_direction'], float(v['change_periods']))
         elif input_type == 'custom':
             s = populate_custom_vector(s, name, k, v['data'])
 

@@ -398,7 +398,7 @@ var CaseCollection = Backbone.Collection.extend({
 <script type="text/template" id="input_right_template">
 	
 		<h5>Current Monthly Net Income: </h5>
-		<strong>$<%=numberWithCommas(data['net_income'][1])%></strong>
+		<strong>$<%=numberWithCommas(data['net_income_raw'][1])%></strong>
 		<h5>Current Net Worth: </h5>
 		<strong>$<%=numberWithCommas(data['net_worth'][1])%></strong>
 		<h5>Net Worth in 1 Year: </h5>
@@ -417,6 +417,7 @@ var CaseCollection = Backbone.Collection.extend({
 		<table>
 			<thead>
 				<th>&nbsp;</th>
+				<th>Today</th>
 				<th>6 mon</th>
 				<th>1 yr</th>
 				<th>2 yr</th>
@@ -428,18 +429,20 @@ var CaseCollection = Backbone.Collection.extend({
 					<tr>
 						<% if(value=='net_worth'){{'{'}}%>
 							<td class="table_y_axis"><%=model.get('name')%></td>
+							<td><%=numberWithCommas(roundToHundreds(model.get('data')[value][0]))%></td>
 							<td><%=numberWithCommas(roundToHundreds(model.get('data')[value][6]))%></td>
 							<td><%=numberWithCommas(roundToHundreds(model.get('data')[value][12]))%></td>
 							<td><%=numberWithCommas(roundToHundreds(model.get('data')[value][24]))%></td>
 							<td><%=numberWithCommas(roundToHundreds(model.get('data')[value][60]))%></td>
 							<td><%=numberWithCommas(roundToHundreds(model.get('data')[value][120]))%></td>
-						<%{{'}'}}else{{'{'}}%>
+						<%{{'}'}}else if(value=='net_income'){{'{'}}%>
 							<td class="table_y_axis"><%=model.get('name')%></td>
-							<td><%=numberWithCommas(model.get('data')[value][6])%></td>
-							<td><%=numberWithCommas(model.get('data')[value][12])%></td>
-							<td><%=numberWithCommas(model.get('data')[value][24])%></td>
-							<td><%=numberWithCommas(model.get('data')[value][60])%></td>
-							<td><%=numberWithCommas(model.get('data')[value][120])%></td>
+							<td><%=numberWithCommas(model.get('data')['net_income_raw'][0])%></td>
+							<td><%=numberWithCommas(model.get('data')['net_income_raw'][6])%></td>
+							<td><%=numberWithCommas(model.get('data')['net_income_raw'][12])%></td>
+							<td><%=numberWithCommas(model.get('data')['net_income_raw'][24])%></td>
+							<td><%=numberWithCommas(model.get('data')['net_income_raw'][60])%></td>
+							<td><%=numberWithCommas(model.get('data')['net_income_raw'][120])%></td>
 						<%{{'}'}}%>
 					</tr>
 				<% });%>
@@ -449,6 +452,53 @@ var CaseCollection = Backbone.Collection.extend({
 </script>
 
 <script type="text/template" id="chart1_legend_template">
+	<% for (i=0;i<names.length;i++){ %>
+		<div class="legend_item" style="display:inline-block;">
+		<div style="width:20px;height:20px;display:inline-block;background:<%=colors[i]%>">&nbsp;</div>
+		<div style="font-weight:bold;display:inline-block;"><%=names[i]%></div>
+	</div>
+	<% }%>
+</script>
+
+<script type="text/template" id="debt_summary_table_template">
+	<div>
+		<table>
+			<thead>
+				<th style="text-align:left;">Account</th>
+				<th>Today</th>
+				<th>6 mon</th>
+				<th>1 yr</th>
+				<th>2 yr</th>
+				<th>5 yr</th>
+				<th>10 yr</th>
+			</thead>
+			<tbody>
+				<% _.each(_.keys(debt_accounts), function(key){{'{'}} %>
+					<tr>
+						<td class="table_y_axis"><%=key%></td>
+						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][0])) %></td>
+						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][6])) %></td>
+						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][12])) %></td>
+						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][24])) %></td>
+						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][60])) %></td>
+						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][120])) %></td>
+					</tr>
+				<%{{'});'}}%>
+					<tr>
+						<td class="table_y_axis">Total</td>
+						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][0]))%></td>
+						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][6]))%></td>
+						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][12]))%></td>
+						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][24]))%></td>
+						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][60]))%></td>
+						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][120]))%></td>
+					</tr>
+			</tbody>
+		</table>
+	</div>
+</script>
+
+<script type="text/template" id="debt_chart_legend_template">
 	<% for (i=0;i<names.length;i++){ %>
 		<div class="legend_item" style="display:inline-block;">
 		<div style="width:20px;height:20px;display:inline-block;background:<%=colors[i]%>">&nbsp;</div>
@@ -479,6 +529,8 @@ var ParentView = Backbone.View.extend({
 					var table1view = new Table1View({el:$('#table1'), model: self.model});
 					var chart1view = new Chart1View({el:$('#chart1_legend'), model: self.model});
 					var chart2view = new Chart2View({el:$('#chart2'), model: self.model});
+					var debtSummaryTableView = new DebtSummaryTableView({el:$('#debt_summary_table'), model: self.model});
+					var debtGraphView = new DebtGraphView({el:$('#debt_chart_legend'), model: self.model});
 				}
 			});
 		{% else %}
@@ -787,7 +839,7 @@ var Chart2View = Backbone.View.extend({
 		var model = this.model.at(0);
 		var income_items = [];
 		var expenses = [];
-
+		/*
 		var inc_items = model.get('income_items');
 		_.each(_.keys(inc_items), function(key){
 			income_items.push({name:key,y:parseInt(inc_items[key])});
@@ -814,6 +866,35 @@ var Chart2View = Backbone.View.extend({
             isSum: true,
             color: Highcharts.getOptions().colors[1]
         });
+		*/
+		var inc_items = model.get('data')['income']['items'];
+		_.each(_.keys(inc_items), function(key){
+			income_items.push({name:key,y:inc_items[key][1]});
+		});
+		income_items.push({
+            name: 'Total Income',
+            isIntermediateSum: true,
+            color: Highcharts.getOptions().colors[1]
+        });
+		var be_items = model.get('data')['expenses']['sections']['Basic']['items'];
+		_.each(_.keys(be_items), function(key){
+			expenses.push({name:key,y:(-1)*be_items[key][1]});
+		});
+		var me_items = model.get('data')['expenses']['sections']['Misc']['items'];
+		_.each(_.keys(me_items), function(key){
+			expenses.push({name:key,y:(-1)*me_items[key][1]});
+		});
+		var de_items = model.get('data')['expenses']['sections']['Debt']['items'];
+		_.each(_.keys(de_items), function(key){
+			expenses.push({name:key,y:(-1)*de_items[key][1]});
+		});
+		expenses.push({
+            name: 'Net Income',
+            isSum: true,
+            color: Highcharts.getOptions().colors[1]
+        });
+
+
         //console.log(income_items);
         //console.log(expenses);
         var data = income_items.concat(expenses);
@@ -890,6 +971,84 @@ var Chart2View = Backbone.View.extend({
             pointPadding: 0
         }]
     });
+    }
+});
+
+var DebtSummaryTableView = Backbone.View.extend({
+    initialize: function(){
+    	_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+        this.render();
+    },
+    render: function(){
+    	var data = this.model.at(0).get('data');
+    	var debt_accounts = this.model.at(0).get('data')['debt_accounts']['accounts'];
+    	var template = _.template( $("#debt_summary_table_template").html(), {data:data, debt_accounts:debt_accounts} );
+        this.$el.html( template );
+    }
+});
+
+var DebtGraphView = Backbone.View.extend({
+	fillColors: ["rgba(153,230,153, 0.5)","rgba(151,187,205,0.5)"],
+	strokeColors: ["rgba(153,230,153,1)","rgba(151,187,205,1)"],
+	pointColors: ["rgba(153,230,153,1)","rgba(151,187,205,1)"],
+	pointStrokeColors: ["#fff", "#fff"],
+    initialize: function(){
+    	var labels_all = Object.keys(this.model.at(0).get('data')['debt_accounts']['total_debt']);
+    	var labels = [];
+    	for (j=0;j<labels_all.length;j++){
+    		labels.push(j);
+			j+=11;
+		}
+		console.log(labels);
+		this.labels = labels;
+    	
+    	_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+        this.render();
+    },
+    render: function(){
+    	var datasets = [];
+    	var legend_names = [];
+    	
+    	var debt_accounts = this.model.at(0).get('data')['debt_accounts']['accounts'];
+
+    	self = this;
+    	var counter = 0;
+    	_.each(_.keys(debt_accounts), function(key){
+    		var data_dict = debt_accounts[key]['items']['ending_balance'];
+    		var data_list = []
+    		for (j=0;j<(self.labels.length * 12);j++){
+    			data_list.push(data_dict[j]);
+    			j+=11;
+    		}
+    		var this_dataset = {
+    			fillColor : self.fillColors[counter],
+    			strokeColor : self.strokeColors[counter],
+    			pointColor : self.pointColors[counter],
+    			pointStrokeColor : self.pointStrokeColors[counter],
+    			data : data_list
+    		};
+    		datasets.push(this_dataset);
+    		legend_names.push(key);
+    		counter += 1;
+    	});
+
+
+    	var template = _.template( $("#debt_chart_legend_template").html(), {names:legend_names, colors:this.strokeColors} );
+        this.$el.html( template );
+
+        //console.log($("#chart1"));
+        //console.log($("#chart1").get(0));
+
+        var ctx = $("#debt_chart_canvas").get(0).getContext("2d");
+        //console.log(this.datasets);
+
+		var Chart1_data = {
+			labels: this.labels,
+			datasets : datasets
+		};
+		new Chart(ctx).Line(Chart1_data,{bezierCurve : false});
     }
 });
 
@@ -1341,6 +1500,12 @@ $(document).ready(function() {
 		<div id="chart2" style="width: 800px; height: 400px; margin: 0 auto;text-align:center;"></div>
 		<div class="form_section_divider" style="margin-top:80px;"></div>
 		<h2>Debt Summary</h2>
+		<div id="debt_summary_table"></div>
+		<div id="debt_chart" style="text-align:center;">
+			<div><h3>Projected Debt Balances over Time</h3></div>
+			<canvas id="debt_chart_canvas" width="800" height="400" style="display: inline;"></canvas>
+			<div id="debt_chart_legend"></div>
+		</div>
 </div>
 
 

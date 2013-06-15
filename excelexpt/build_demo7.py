@@ -33,10 +33,11 @@ def build_demo7_data(data):
     
     
     if s['net_income'][0] > 0:
-        #NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
-        NI_order = [{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
+        NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
+        #NI_order = [{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
     else:
-        NI_order = [{'type':'cash_accounts','name':'Checking','max_balance':False}]
+        #NI_order = [{'type':'cash_accounts','name':'Checking','max_balance':False}]
+        NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
     """
         print 'NEGATIVE NI'
         s['debt_accounts']['accounts'].update({'NET INCOME SHORTFALL':{'rate':0.0,'items': {'beginning_balance':{},'payments':{},'interest':{},'ending_balance':{0:0} } } } )
@@ -81,7 +82,6 @@ def allocate_NI(q, NI_order):
         # fill preceding NI fields with 0s
         for x in range(1,current_col):
             s[account_type]['accounts'][account_name]['items']['net_income'][x] = 0
-
 
         if account_type == 'debt_accounts':
             s['expenses']['sections']['Debt']['items'].update({account_name+'_Optional':{0:0}})

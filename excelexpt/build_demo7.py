@@ -32,12 +32,10 @@ def build_demo7_data(data):
     
     
     
-    if s['net_income'][0] > 0:
-        NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
+
+    NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
         #NI_order = [{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
-    else:
-        #NI_order = [{'type':'cash_accounts','name':'Checking','max_balance':False}]
-        NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
+
     """
         print 'NEGATIVE NI'
         s['debt_accounts']['accounts'].update({'NET INCOME SHORTFALL':{'rate':0.0,'items': {'beginning_balance':{},'payments':{},'interest':{},'ending_balance':{0:0} } } } )
@@ -50,7 +48,7 @@ def build_demo7_data(data):
 
     s = calc_survival_period(s)
 
-    s = allocate_NI(s, NI_order)
+    s = allocate_NI_2(s, NI_order)
     s = calc_net_income_raw(s)
 
         #d.append(s)
@@ -170,6 +168,80 @@ def allocate_NI(q, NI_order):
             raise Exception('Invalid account type: %s' % account_type)
     
     return s
+
+
+def allocate_NI_2(q, NI_order):
+    s = q
+    s['cash_accounts']['accounts']['Checking']['items'].update({'net_income':{0:0}})
+    for item in NI_order:
+        account_type = item['type']
+        account_name = item['name']
+        s[account_type]['accounts'][account_name]['items'].update({'net_income':{0:0}})
+        if account_type == 'debt_accounts':
+            s['expenses']['sections']['Debt']['items'].update({account_name+'_Optional':{0:0}})
+        
+        for x in range(0,121):
+            s['cash_accounts']['accounts']['Checking']['items']['net_income'][x] = 0
+            s[account_type]['accounts'][account_name]['items']['net_income'][x] = 0
+            if account_type == 'debt_accounts':
+                s['expenses']['sections']['Debt']['items'][account_name+'_Optional'][x] = 0
+    
+    for x in range(1,121):
+        s = calculate_totals_for_x(s, x)
+
+        if s['net_income'][x] < 0:
+            s['cash_accounts']['accounts']['Checking']['items']['net_income'][x] = s['net_income'][x]
+        else:
+            carryover_NI = 0
+            for item in NI_order:
+                account_type = item['type']
+                account_name = item['name']
+
+                if carryover_NI > 0:
+                    this_col_NI = carryover_NI
+                    carryover_NI = 0
+                else:
+                    this_col_NI = s['net_income'][x]
+
+                if account_type == 'debt_accounts':
+                    if s[account_type]['accounts'][account_name]['items']['ending_balance'][x] == 0:
+                        continue
+                    else:
+                        #allocate. if partial alloc, create overflow, reduce x, reloop
+                        total_due = s[account_type]['accounts'][account_name]['items']['beginning_balance'][x] + s[account_type]['accounts'][account_name]['items']['interest'][x] + s[account_type]['accounts'][account_name]['items']['payments'][x]
+                        #print current_col, ' ',total_due, s[account_type]['accounts'][account_name]['items']['beginning_balance'][current_col]
+                        if this_col_NI <= total_due:
+                            s[account_type]['accounts'][account_name]['items']['net_income'][x] = (-1) * this_col_NI
+                            s['expenses']['sections']['Debt']['items'][account_name+'_Optional'][x] = this_col_NI
+                            break
+                        else:
+                            s[account_type]['accounts'][account_name]['items']['net_income'][x] = (-1) * total_due
+                            s['expenses']['sections']['Debt']['items'][account_name+'_Optional'][x] = total_due
+                            carryover_NI = this_col_NI - total_due
+
+                elif account_type == 'cash_accounts':
+                    max_balance = item['max_balance']
+                    if max_balance:
+                        current_balance = s[account_type]['accounts'][account_name]['items']['beginning_balance'][x]
+                        if current_balance < max_balance: 
+                            if (current_balance + this_col_NI) < max_balance:
+                                s[account_type]['accounts'][account_name]['items']['net_income'][x] = this_col_NI
+                                break
+                            else:
+                                amount_needed = max_balance - current_balance
+                                s[account_type]['accounts'][account_name]['items']['net_income'][x] = amount_needed
+                                carryover_NI = this_col_NI - amount_needed
+                        else:
+                            raise Exception('current_balance (%s) > max_balance (%s)' % current_balance,max_balance)
+                    else:
+                        s[account_type]['accounts'][account_name]['items']['net_income'][x] = this_col_NI
+                        break
+                else:
+                    raise Exception('Invalid account type: %s' % account_type)
+        s = calculate_totals_for_x(s, x)
+    return s
+
+
 
 def calculate_totals(s):
     # income section #

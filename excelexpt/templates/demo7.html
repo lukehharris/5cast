@@ -493,10 +493,17 @@ var CaseCollection = Backbone.Collection.extend({
 
 	<div id="cashflow_health" style="margin-top:40px;">
 		<%if(insolvent_month > 0){ %>
-			Your net income is projected to run negative. If your financial situation doesn&apos;t improve, you will be insolvent in about <%=insolvent_month%> months (ie your checking account will hit zero).
+			<p>
+				Your net income is projected to run negative. If your financial situation doesn&apos;t improve, you will be insolvent in about <%=insolvent_month%> month(s) (i.e. your checking account will hit zero).
+			</p>
+			<p>
+				Your net income is projected to be <strong>$<%=Math.round(data['net_income_raw'][1])%></strong> over the next month. You&apos;ll need to make that much in additional income, cut that much in expenses, or some combination thereof to reach break-even.
+			</p>
+		<%{{'}'}}else if(data['net_income_raw'][1] < 0) {{'{'}}%>
+			You have a short term net income shortfall, but your cash balance is sufficient to fund your expenses until your return to positive net income.
 		<%{{'}'}}else{{'{'}}%>
-			<!--You are not projected to have concerns about insolvency.-->
-		<%}%>
+			You are not projected to have concerns about insolvency.
+		<%{{'}'}}%>
 	</div>
 
 	<div id="survival_period" style="margin-top:40px;">

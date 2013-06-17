@@ -214,7 +214,8 @@ input.input_percentage {
 
 #table1 table td,
 #table2 table td,
-#debt_summary_table table td {
+#debt_summary_table table td,
+#expense_breakdown table td {
     border: 1px solid black;
     padding: 5px 10px;
 }

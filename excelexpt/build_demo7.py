@@ -48,12 +48,27 @@ def build_demo7_data(data):
         s = allocate_NI(s, [{'type':'debt_accounts','name':'NET INCOME SHORTFALL'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}])
     """
 
+    s = calc_survival_period(s)
+
     s = allocate_NI(s, NI_order)
     s = calc_net_income_raw(s)
 
         #d.append(s)
 
     #return d
+    return s
+
+def calc_survival_period(s):
+    expenses = s['expenses']['total'][0]
+    #print expenses
+    total_assets = s['cash_accounts']['total'][0]
+    #print total_assets
+    try:
+        survival_period = round(total_assets / expenses,1)
+    except ZeroDivisionError:
+        survival_period = 'no expenses'
+    #print survival_period
+    s.update({'survival_period':survival_period})
     return s
 
 def calc_net_income_raw(s):

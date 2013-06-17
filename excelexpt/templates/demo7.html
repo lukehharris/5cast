@@ -460,6 +460,61 @@ var CaseCollection = Backbone.Collection.extend({
 	<% }%>
 </script>
 
+<script type="text/template" id="cashflow_template">
+	<div id="expense_breakdown">
+		<table>
+			<thead>
+				<th>Expense Category</th>
+				<th>Amount</th>
+				<th>% of Total Income</th>
+			</thead>
+			<tbody>
+				<%for(i=0;i<expenses.length;i++){{'{'}} %>
+					<tr>
+						<td><%=expenses[i]['name']%></td>
+						<td>$<%=expenses[i]['amount']%></td>
+						<td><%=expenses[i]['pct']%>%</td>
+					</tr>
+				<% {{'}'}} %>
+					<tr>
+						<td class="table_y_axis">Total Expenses</td>
+						<td><strong>$<%=expenses_totals['amount']%></strong></td>
+						<td><strong><%=expenses_totals['pct']%>%</strong></td>
+					</tr>
+					<tr>
+						<td class="table_y_axis">Net Income</td>
+						<td><strong>$<%=Math.round(data['net_income_raw'][1])%></strong></td>
+						<td><strong><%=Math.round((100.0 - expenses_totals['pct'])*10)/10%>%</strong></td>
+					</tr>
+			</tbody>
+		</table>
+
+	</div>
+
+	<div id="cashflow_health" style="margin-top:40px;">
+		<%if(insolvent_month > 0){ %>
+			Your net income is projected to run negative. If your financial situation doesn&apos;t improve, you will be insolvent in about <%=insolvent_month%> months (ie your checking account will hit zero).
+		<%{{'}'}}else{{'{'}}%>
+			<!--You are not projected to have concerns about insolvency.-->
+		<%}%>
+	</div>
+
+	<div id="survival_period" style="margin-top:40px;">
+		<%if(data['survival_period'] == 'no expenses'){ %>
+			No expenses entered yet
+		<%}else{ %>
+			Assuming:
+			<ul>
+				<li>Your income suddently went to zero</li>
+				<li>You only make minimum payments on your debt (if applicable)</li>
+				<li>The rest of your expenses stay constant</li>
+				<li>All of your assets are liquid and usable to fund your expenses</li>
+			</ul>
+			You could survive for <strong>about <%=data['survival_period']%> months</strong> without income.
+		<%}%>
+	</div>
+</script>
+
 <script type="text/template" id="debt_summary_table_template">
 	<div>
 		<table>
@@ -529,6 +584,7 @@ var ParentView = Backbone.View.extend({
 					var table1view = new Table1View({el:$('#table1'), model: self.model});
 					var chart1view = new Chart1View({el:$('#chart1_legend'), model: self.model});
 					var chart2view = new Chart2View({el:$('#chart2'), model: self.model});
+					var cashflowview = new CashflowView({el:$('#cashflow_section'), model: self.model});
 					var debtSummaryTableView = new DebtSummaryTableView({el:$('#debt_summary_table'), model: self.model});
 					var debtGraphView = new DebtGraphView({el:$('#debt_chart_legend'), model: self.model});
 				}
@@ -886,7 +942,9 @@ var Chart2View = Backbone.View.extend({
 		});
 		var de_items = model.get('data')['expenses']['sections']['Debt']['items'];
 		_.each(_.keys(de_items), function(key){
-			expenses.push({name:key,y:(-1)*de_items[key][1]});
+			if(key.slice(-9,key.length)!='_Optional'){
+				expenses.push({name:key,y:(-1)*de_items[key][1]});
+			}
 		});
 		expenses.push({
             name: 'Net Income',
@@ -971,6 +1029,86 @@ var Chart2View = Backbone.View.extend({
             pointPadding: 0
         }]
     });
+    }
+});
+
+var CashflowView = Backbone.View.extend({
+    initialize: function(){
+    	_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+        this.render();
+    },
+    render: function(){
+    	var data = this.model.at(0).get('data');
+
+    	//calc how long until insolvent
+    	var checking_data = data['cash_accounts']['accounts']['Checking']['items']['ending_balance'];
+    	insolvent_month = 0;
+    	//console.log(checking_data);
+    	//console.log(_.keys(checking_data).length);
+    	for(i=1;i<_.keys(checking_data).length;i++){
+    		if(checking_data[i]<=0){
+    			insolvent_month = i-1;
+    			break;
+    		}
+    	}
+    	
+    	//build data for expense table
+    	var expenses = [];
+    	var expense_amount = 0;
+    	var expense_pct = 0;
+    	var total_income = data['income']['total'][1];
+    	_.each(_.keys(data['expenses']['sections']['Basic']['items']),function(key){ 
+    		var amount = data['expenses']['sections']['Basic']['items'][key][1];
+    		if(total_income > 0){
+    			var pct_of_income = Math.round((amount / total_income)*1000) / 10; 
+    			expense_pct += pct_of_income;
+    		}
+    		else {
+    			var pct_of_income = 'N/A';
+    		}
+    		expense_amount += amount;
+    		expenses.push({'name':key,'amount':amount,'pct':pct_of_income});
+		});
+		_.each(_.keys(data['expenses']['sections']['Misc']['items']),function(key){ 
+    		var amount = data['expenses']['sections']['Misc']['items'][key][1];
+    		if(total_income > 0){
+    			var pct_of_income = Math.round((amount / total_income)*1000) / 10; 
+    			expense_pct += pct_of_income;
+    		}
+    		else {
+    			var pct_of_income = 'N/A';
+    		}
+    		expense_amount += amount;
+    		expenses.push({'name':key,'amount':amount,'pct':pct_of_income});
+		});
+		_.each(_.keys(data['expenses']['sections']['Debt']['items']),function(key){ 
+    		if(key.slice(-9,key.length)!='_Optional'){
+    			var amount = data['expenses']['sections']['Debt']['items'][key][1];
+	    		if(total_income > 0){
+	    			var pct_of_income = Math.round((amount / total_income)*1000) / 10; 
+	    			expense_pct += pct_of_income;
+	    		}
+	    		else {
+	    			var pct_of_income = 'N/A';
+	    		}
+	    		expense_amount += amount;
+	    		expenses.push({'name':key,'amount':amount,'pct':pct_of_income});
+    		}
+		});
+		expenses.sort(function(a,b){
+			return b.amount - a.amount;
+		});
+		if(expense_pct == 0) {
+			expense_pct = 'N/A';
+		}
+		else {
+			expense_pct = Math.round(expense_pct*100)/100;
+		}
+		var expenses_totals = {'amount':expense_amount,'pct':expense_pct};
+
+    	var template = _.template( $("#cashflow_template").html(), {expenses:expenses, expenses_totals:expenses_totals, data:data,insolvent_month:insolvent_month} );
+        this.$el.html( template );
     }
 });
 
@@ -1498,6 +1636,7 @@ $(document).ready(function() {
 		<div class="form_section_divider" style="margin-top:80px;"></div>
 		<h2>Cash Flow</h2>
 		<div id="chart2" style="width: 800px; height: 400px; margin: 0 auto;text-align:center;"></div>
+		<div id="cashflow_section"></div>
 		<div class="form_section_divider" style="margin-top:80px;"></div>
 		<h2>Debt Summary</h2>
 		<div id="debt_summary_table"></div>

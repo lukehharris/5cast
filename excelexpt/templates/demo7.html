@@ -451,7 +451,7 @@ var CaseCollection = Backbone.Collection.extend({
 	</div>
 </script>
 
-<script type="text/template" id="chart1_legend_template">
+<script type="text/template" id="net_worth_chart_legend_template">
 	<% for (i=0;i<names.length;i++){ %>
 		<div class="legend_item" style="display:inline-block;">
 		<div style="width:20px;height:20px;display:inline-block;background:<%=colors[i]%>">&nbsp;</div>
@@ -460,67 +460,323 @@ var CaseCollection = Backbone.Collection.extend({
 	<% }%>
 </script>
 
-<script type="text/template" id="cashflow_template">
-	<div id="expense_breakdown">
+<script type="text/template" id="net_worth_tables_template">
+	<div id="net_worth_tables_left" class="left_case_container">
+		<h3 class="case_name">Base Case</h3>
 		<table>
 			<thead>
-				<th>Expense Category</th>
-				<th>Amount</th>
-				<th>% of Total Income</th>
+				<th>&nbsp;</th>
+				<th>Today</th>
+				<th>6 mon</th>
+				<th>1 yr</th>
+				<th>2 yr</th>
+				<th>5 yr</th>
+				<th>10 yr</th>
 			</thead>
 			<tbody>
-				<%for(i=0;i<expenses.length;i++){{'{'}} %>
-					<tr>
-						<td><%=expenses[i]['name']%></td>
-						<td>$<%=expenses[i]['amount']%></td>
-						<td><%=expenses[i]['pct']%>%</td>
-					</tr>
-				<% {{'}'}} %>
-					<tr>
-						<td class="table_y_axis">Total Expenses</td>
-						<td><strong>$<%=expenses_totals['amount']%></strong></td>
-						<td><strong><%=expenses_totals['pct']%>%</strong></td>
-					</tr>
-					<tr>
-						<td class="table_y_axis">Net Income</td>
-						<td><strong>$<%=Math.round(data['net_income_raw'][1])%></strong></td>
-						<td><strong><%=Math.round((100.0 - expenses_totals['pct'])*10)/10%>%</strong></td>
-					</tr>
+				<tr>
+					<td class="table_y_axis">Assets</td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['cash_accounts']['total'][0]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['cash_accounts']['total'][6]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['cash_accounts']['total'][12]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['cash_accounts']['total'][24]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['cash_accounts']['total'][60]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['cash_accounts']['total'][120]))%></td>
+				</tr>
+				<tr>
+					<td class="table_y_axis">Debt</td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['debt_accounts']['total_debt'][0]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['debt_accounts']['total_debt'][6]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['debt_accounts']['total_debt'][12]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['debt_accounts']['total_debt'][24]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['debt_accounts']['total_debt'][60]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['debt_accounts']['total_debt'][120]))%></td>
+				</tr>
+				<tr>
+					<td class="table_y_axis">Net Worth</td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['net_worth'][0]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['net_worth'][6]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['net_worth'][12]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['net_worth'][24]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['net_worth'][60]))%></td>
+					<td><%=numberWithCommas(roundToHundreds(models.at(0).get('data')['net_worth'][120]))%></td>
+				</tr>
 			</tbody>
 		</table>
-
+	</div>
+	<div id="net_worth_tables_right" class="right_case_container">
+		<h3 class="case_name">Case 2</h3>
 	</div>
 
-	<div id="cashflow_health" style="margin-top:40px;">
-		<%if(insolvent_month > 0){ %>
-			<p>
-				Your net income is projected to run negative. If your financial situation doesn&apos;t improve, you will be insolvent in about <%=insolvent_month%> month(s) (i.e. your checking account will hit zero).
-			</p>
-			<p>
-				Your net income is projected to be <strong>$<%=Math.round(data['net_income_raw'][1])%></strong> over the next month. You&apos;ll need to make that much in additional income, cut that much in expenses, or some combination thereof to reach break-even.
-			</p>
-		<%{{'}'}}else if(data['net_income_raw'][1] < 0) {{'{'}}%>
-			You have a short term net income shortfall, but your cash balance is sufficient to fund your expenses until your return to positive net income.
+	<!--div id="net_worth_tables_divider"></div-->
+</script>
+
+<script type="text/template" id="cashflow_template">
+	<div id="cashflow_left" class="left_case_container">
+		<h3 class="case_name">Base Case</h3>
+		<%if(insolvent_left == false){{'{'}} %>
+			<div id="cashflow_left_pie" style="min-width: 485px; height:350px;"></div>
+			<div style="position:relative;top:-20px;">
+				<h4>Total Income: $<%=numberWithCommas(data['income']['total'][1])%></h4>
+				<h4>Total Expenses: $<%=numberWithCommas(expenses_totals['amount'])%></h4>
+				<h4 style="border-top:1px solid gray;width:50%;">Net Income: <span style="color:#4DB870;">$<%=numberWithCommas(data['net_income_raw'][1])%></span></h4>
+			</div>
+			<div id="cashflow_net_income_usage">
+				<strong>You should use your positive net income to:</strong>
+				<br>
+				1) Pay Down Your Credit Card
+				<ul>
+					<li>Pay $350 per month ($50 minimum + $300 extra)</li>
+					<li>Your card will be paid off by October 2013 (see the Debt Summary section for details)</li>
+				</ul>
+				2) Contribute to Your Investment Account
+				<ul>
+					<li>Contribute $350 per month starting in October 2013</li>
+					<li>You can expect to have $X in the account 10 years from now (see the Assets Summary section for details)</li>
+				</ul>
+			</div>
+			<div class="case_section_divider"></div>
+			<div id="survival_period" style="margin-top:20px;">
+				<%if(data['survival_period'] == 'no expenses'){ %>
+					No expenses entered yet
+				<%}else{ %>
+					<h4 style="margin:10px 0;">Survial Without Income</h4>
+					<p style="font-size:16px;">
+						If your income suddenly went to zero, you could survive for <strong>about <%=data['survival_period']%> months</strong>.
+					</p>
+					<table>
+						<thead>
+							<th>&nbsp;</th>
+							<th>Today</th>
+							<th>Jul &apos;13</th>
+							<th>Aug &apos;13</th>
+							<th>Sep &apos;13</th>
+							<th>Oct &apos;13</th>
+							<th>Nov &apos;13</th>
+							<th>Dec &apos;13</th>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Beginning Balance</td>
+								<td>&nbsp;</td>
+								<td>X1</td>
+								<td>...</td>
+								<td>...</td>
+								<td>...</td>
+								<td>...</td>
+								<td>Xn</td>
+							</tr>
+							<tr>
+								<td>- Expenses</td>
+								<td>&nbsp;</td>
+								<td>-E1</td>
+								<td>...</td>
+								<td>...</td>
+								<td>...</td>
+								<td>...</td>
+								<td>-En</td>
+							</tr>
+							<tr>
+								<td>= Ending Balance</td>
+								<td>Y0</td>
+								<td>Y1</td>
+								<td>...</td>
+								<td>...</td>
+								<td>...</td>
+								<td>...</td>
+								<td>Yn</td>
+							</tr>
+						</tbody>
+					</table>
+					<div style="margin-left:20px;">
+						<p style="font-size:12px; margin-top:20px; margin-bottom:0;">
+							This assumes:
+						</p>
+						<ul style="font-size:12px;">
+							<li>You make only the minimum payments on your debt (if applicable)</li>
+							<li>Your current expenses remain constant</li>
+							<li>You don&apos;t borrow money</li>
+							<li>All of your assets are liquid and usable to fund your expenses</li>
+						</ul>
+					</div>				
+				<%}%>
+			</div>
 		<%{{'}'}}else{{'{'}}%>
-			You are not projected to have concerns about insolvency.
+
 		<%{{'}'}}%>
 	</div>
+	<div id="cashflow_right" class="right_case_container">
+		<h3 class="case_name">Case 2</h3>
+		<%if(insolvent_right == false){{'{'}} %>
 
-	<div id="survival_period" style="margin-top:40px;">
-		<%if(data['survival_period'] == 'no expenses'){ %>
-			No expenses entered yet
-		<%}else{ %>
-			Assuming:
-			<ul>
-				<li>Your income suddently went to zero</li>
-				<li>You only make minimum payments on your debt (if applicable)</li>
-				<li>The rest of your expenses stay constant</li>
-				<li>All of your assets are liquid and usable to fund your expenses</li>
-			</ul>
-			You could survive for <strong>about <%=data['survival_period']%> months</strong> without income.
-		<%}%>
+		<%{{'}'}}else{{'{'}}%>
+			<div>
+				<h4>Total Income: $<%=numberWithCommas(data['income']['total'][1])%></h4>
+				<h4>Total Expenses: $<%=numberWithCommas(expenses_totals['amount'])%></h4>
+				<h4 style="border-top:1px solid gray;width:50%;">Net Income: <span style="color:#FF6666;">$<%=numberWithCommas(data['net_income_raw'][1])%></span></h4>
+			</div>
+			<div id="expense_breakdown">
+				<table>
+					<thead>
+						<th>Expense Category</th>
+						<th>Amount</th>
+						<th>% of Total Income</th>
+					</thead>
+					<tbody>
+						<%for(i=0;i<expenses.length;i++){{'{'}} %>
+							<tr>
+								<td><%=expenses[i]['name']%></td>
+								<td>$<%=expenses[i]['amount']%></td>
+								<td><%=expenses[i]['pct']%>%</td>
+							</tr>
+						<% {{'}'}} %>
+							<tr>
+								<td class="table_y_axis">Total Expenses</td>
+								<td><strong>$<%=expenses_totals['amount']%></strong></td>
+								<td><strong><%=expenses_totals['pct']%>%</strong></td>
+							</tr>
+							<tr>
+								<td class="table_y_axis">Net Income</td>
+								<td><strong>$<%=Math.round(data['net_income_raw'][1])%></strong></td>
+								<td><strong><%=Math.round((100.0 - expenses_totals['pct'])*10)/10%>%</strong></td>
+							</tr>
+					</tbody>
+				</table>
+			</div>
+			<div id="cashflow_health" style="margin-top:40px;">
+				<%if(insolvent_month > 0){ %>
+					<p>
+						Your net income is projected to run negative. If your financial situation doesn&apos;t improve, you will be insolvent in about <%=insolvent_month%> month(s) (i.e. your checking account will hit zero).
+					</p>
+					<p>
+						Your net income is projected to be <strong>$<%=Math.round(data['net_income_raw'][1])%></strong> over the next month. You&apos;ll need to make that much in additional income, cut that much in expenses, or some combination thereof to reach break-even.
+					</p>
+				<%{{'}'}}else if(data['net_income_raw'][1] < 0) {{'{'}}%>
+					You have a short term net income shortfall, but your cash balance is sufficient to fund your expenses until your return to positive net income.
+				<%{{'}'}}else{{'{'}}%>
+					You are not projected to have concerns about insolvency.
+				<%{{'}'}}%>
+			</div>
+
+		<%{{'}'}}%>
+	</div>	
+</script>
+
+<script type="text/template" id="debt_summary_template">
+	<div class="left_case_container">
+		<h3 class="case_name">Base Case</h3>
+		<div id="debt_summary_table1">
+			<table>
+				<thead>
+					<th style="text-align:left;">Account</th>
+					<th>Current Balance</th>
+					<th>Current Monthly Payment</th>
+					<th>Interest Rate</th>
+				</thead>
+				<tbody>
+					<% _.each(_.keys(debt_accounts), function(key){{'{'}} %>
+						<tr>
+							<td class="table_y_axis"><%=key%></td>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+						</tr>
+					<%{{'});'}}%>
+						<tr>
+							<td class="table_y_axis">Total</td>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+						</tr>
+				</tbody>
+			</table>
+		</div>
+		<div id="debt_chart" style="text-align:center;">
+			<div><h4>Projected Debt Balances over Time</h4></div>
+			<canvas id="debt_chart_canvas" width="500" height="300" style="display: inline;"></canvas>
+			<div id="debt_chart_legend">
+				<% for (i=0;i<legend_names.length;i++){ %>
+					<div class="legend_item" style="display:inline-block;">
+						<div style="width:20px;height:20px;display:inline-block;background:<%=colors[i]%>">&nbsp;</div>
+						<div style="font-weight:bold;display:inline-block;"><%=legend_names[i]%></div>
+					</div>
+				<% }%>
+			</div>
+		</div>
+		<div id="debt_summary_table2" style="margin:40px 0">
+			<table>
+				<thead>
+					<th style="text-align:left;">Account</th>
+					<th>Expected Payoff Date</th>
+					<th>Interest To Be Paid</th>
+					<th>Principal To Be Paid</th>
+					<th>Total To Be Paid</th>
+				</thead>
+				<tbody>
+					<% _.each(_.keys(debt_accounts), function(key){{'{'}} %>
+						<tr>
+							<td class="table_y_axis"><%=key%></td>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+						</tr>
+					<%{{'});'}}%>
+						<tr>
+							<td class="table_y_axis">Total</td>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+						</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<h4 class="case_name">Extra Payments vs. Minimum Payments Only</h4>
+		<% _.each(_.keys(debt_accounts), function(key){{'{'}} %>
+			<div style="margin-top:40px;">
+			<h4><%=key%></h4>
+				<table>
+					<thead>
+						<th style="text-align:left;">&nbsp;</th>
+						<th>Expected Payoff Date</th>
+						<th>Interest To Be Paid</th>
+						<th>Principal To Be Paid</th>
+						<th>Total To Be Paid</th>
+					</thead>
+					<tbody>
+							<tr>
+								<td class="table_y_axis">Extra Payments</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td class="table_y_axis">Minimum Payments Only</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td class="table_y_axis">Difference</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+					</tbody>
+				</table>
+			</div>
+		<%{{'});'}}%>
+	</div>
+	<div class="right_case_container">
+		<h3 class="case_name">Case 2</h3>
 	</div>
 </script>
+
 
 <script type="text/template" id="debt_summary_table_template">
 	<div>
@@ -561,12 +817,7 @@ var CaseCollection = Backbone.Collection.extend({
 </script>
 
 <script type="text/template" id="debt_chart_legend_template">
-	<% for (i=0;i<names.length;i++){ %>
-		<div class="legend_item" style="display:inline-block;">
-		<div style="width:20px;height:20px;display:inline-block;background:<%=colors[i]%>">&nbsp;</div>
-		<div style="font-weight:bold;display:inline-block;"><%=names[i]%></div>
-	</div>
-	<% }%>
+	
 </script>
 
 <!-- VIEWS -->
@@ -588,12 +839,14 @@ var ParentView = Backbone.View.extend({
 
 					var inputRightView = new InputRightView({el:$("#input_right"), model: self.model});
 
-					var table1view = new Table1View({el:$('#table1'), model: self.model});
-					var chart1view = new Chart1View({el:$('#chart1_legend'), model: self.model});
-					var chart2view = new Chart2View({el:$('#chart2'), model: self.model});
+					//var table1view = new Table1View({el:$('#table1'), model: self.model});
+					var netWorthChartView = new NetWorthChartView({el:$('#net_worth_chart_legend'), model: self.model});
+					var netWorthTablesView = new NetWorthTablesView({el:$('#net_worth_tables'), model: self.model});
+					//var chart2view = new Chart2View({el:$('#chart2'), model: self.model});
 					var cashflowview = new CashflowView({el:$('#cashflow_section'), model: self.model});
-					var debtSummaryTableView = new DebtSummaryTableView({el:$('#debt_summary_table'), model: self.model});
-					var debtGraphView = new DebtGraphView({el:$('#debt_chart_legend'), model: self.model});
+					var debtSummaryView = new DebtSummaryView({el:$('#debt_summary_section'),model: self.model});
+					//var debtSummaryTableView = new DebtSummaryTableView({el:$('#debt_summary_table'), model: self.model});
+					//var debtGraphView = new DebtGraphView({el:$('#debt_chart_legend'), model: self.model});
 				}
 			});
 		{% else %}
@@ -809,6 +1062,7 @@ var InputRightView = Backbone.View.extend({
     }
 });
 
+/*
 var Table1View = Backbone.View.extend({
 	currentValue : 'net_worth',
     initialize: function(){
@@ -830,8 +1084,21 @@ var Table1View = Backbone.View.extend({
         this.render();
     }
 });
+*/
 
-var Chart1View = Backbone.View.extend({
+var NetWorthTablesView = Backbone.View.extend({
+	initialize: function(){
+		_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+        this.render();
+	},
+	render: function(){
+		var template = _.template( $("#net_worth_tables_template").html(), {models:this.model} );
+        this.$el.html( template );
+	}
+});
+
+var NetWorthChartView = Backbone.View.extend({
 	fillColors: ["rgba(151,187,205,0.5)", "rgba(153,230,153, 0.5)"],
 	strokeColors: ["rgba(151,187,205,1)", "rgba(153,230,153,1)"],
 	pointColors: ["rgba(151,187,205,1)", "rgba(153,230,153,1)"],
@@ -875,23 +1142,24 @@ var Chart1View = Backbone.View.extend({
 
 
 
-    	var template = _.template( $("#chart1_legend_template").html(), {names:legend_names, colors:this.strokeColors} );
+    	var template = _.template( $("#net_worth_chart_legend_template").html(), {names:legend_names, colors:this.strokeColors} );
         this.$el.html( template );
 
         //console.log($("#chart1"));
         //console.log($("#chart1").get(0));
 
-        var ctx = $("#chart1_canvas").get(0).getContext("2d");
+        var ctx = $("#net_worth_chart_canvas").get(0).getContext("2d");
         //console.log(this.datasets);
 
-		var Chart1_data = {
+		var Chart_data = {
 			labels: this.labels,
 			datasets : datasets
 		};
-		new Chart(ctx).Line(Chart1_data,{bezierCurve : false});
+		new Chart(ctx).Line(Chart_data,{bezierCurve : false});
     }
 });
 
+/*
 var Chart2View = Backbone.View.extend({
     initialize: function(){
     	_.bindAll(this, 'render');
@@ -902,34 +1170,6 @@ var Chart2View = Backbone.View.extend({
 		var model = this.model.at(0);
 		var income_items = [];
 		var expenses = [];
-		/*
-		var inc_items = model.get('income_items');
-		_.each(_.keys(inc_items), function(key){
-			income_items.push({name:key,y:parseInt(inc_items[key])});
-		});
-		income_items.push({
-            name: 'Total Income',
-            isIntermediateSum: true,
-            color: Highcharts.getOptions().colors[1]
-        });
-		var be_items = model.get('basic_expenses');
-		_.each(_.keys(be_items), function(key){
-			expenses.push({name:key,y:(-1)*parseInt(be_items[key]['value'])});
-		});
-		var me_items = model.get('misc_expenses');
-		_.each(_.keys(me_items), function(key){
-			expenses.push({name:key,y:(-1)*parseInt(me_items[key]['value'])});
-		});
-		var debt_accounts = model.get('debt_accounts');
-		_.each(_.keys(debt_accounts), function(key){
-			expenses.push({name:key,y:(-1)*parseInt(debt_accounts[key]['payment'])});
-		});
-		expenses.push({
-            name: 'Net Income',
-            isSum: true,
-            color: Highcharts.getOptions().colors[1]
-        });
-		*/
 		var inc_items = model.get('data')['income']['items'];
 		_.each(_.keys(inc_items), function(key){
 			income_items.push({name:key,y:inc_items[key][1]});
@@ -996,32 +1236,6 @@ var Chart2View = Backbone.View.extend({
             upColor: Highcharts.getOptions().colors[2],
             color: Highcharts.getOptions().colors[3],
             data: data,
-            /*
-            data: [{
-                name: 'Start',
-                y: 120000
-            }, {
-                name: 'Product Revenue',
-                y: 569000
-            }, {
-                name: 'Service Revenue',
-                y: 231000
-            }, {
-                name: 'Positive Balance',
-                isIntermediateSum: true,
-                color: Highcharts.getOptions().colors[1]
-            }, {
-                name: 'Fixed Costs',
-                y: -342000
-            }, {
-                name: 'Variable Costs',
-                y: -233000
-            }, {
-                name: 'Balance',
-                isSum: true,
-                color: Highcharts.getOptions().colors[1]
-            }],
-            */
             dataLabels: {
                 enabled: true,
                 formatter: function () {
@@ -1038,6 +1252,7 @@ var Chart2View = Backbone.View.extend({
     });
     }
 });
+*/
 
 var CashflowView = Backbone.View.extend({
     initialize: function(){
@@ -1114,8 +1329,121 @@ var CashflowView = Backbone.View.extend({
 		}
 		var expenses_totals = {'amount':expense_amount,'pct':expense_pct};
 
-    	var template = _.template( $("#cashflow_template").html(), {expenses:expenses, expenses_totals:expenses_totals, data:data,insolvent_month:insolvent_month} );
+
+    	var template = _.template( $("#cashflow_template").html(), {expenses:expenses, expenses_totals:expenses_totals, data:data,insolvent_month:insolvent_month, insolvent_left:false,insolvent_right:true} );
         this.$el.html( template );
+
+        //build the pie(s)
+        var pie_data = [];
+        pie_data.push({name: 'Net Income', y: (((100.0 - expenses_totals['pct'])*10)/10), amount:numberWithCommas(data['net_income_raw'][1]), sliced: true, selected: true, color:"#47A3FF"});
+        for(i=0;i<expenses.length;i++) {
+        	pie_data.push({name:expenses[i]['name'], y:expenses[i]['pct'], amount:numberWithCommas(expenses[i]['amount']), color:"#FF6666"});
+		}
+		
+
+
+        $(function () {
+		    $('#cashflow_left_pie').highcharts({
+		        chart: {
+		            plotBackgroundColor: null,
+		            plotBorderWidth: null,
+		            plotShadow: false
+		        },
+		        title: {
+		            text: '<strong>Expenses as a Percentage of Total Income</strong>'
+		        },
+		        tooltip: {
+		    	    pointFormat: 'Amount: <b>${point.amount}</b><br>{series.name}: <b>{point.percentage:.1f}%</b>'
+		        },
+		        plotOptions: {
+		            pie: {
+		                allowPointSelect: true,
+		                cursor: 'pointer',
+		                dataLabels: {
+		                    enabled: true,
+		                    color: '#000000',
+		                    connectorColor: '#000000',
+		                    format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+		                }
+		            }
+		        },
+		        exporting: {
+		        	enabled: false
+		        },
+		        credits: {
+		        	enabled: false
+		        },
+		        series: [{
+		            type: 'pie',
+		            name: '% of Total Income',
+		            data: pie_data
+		        }]
+		    });
+		});
+
+    }
+});
+
+
+var DebtSummaryView = Backbone.View.extend({
+	fillColors: ["rgba(153,230,153, 0.5)","rgba(151,187,205,0.5)"],
+	strokeColors: ["rgba(153,230,153,1)","rgba(151,187,205,1)"],
+	pointColors: ["rgba(153,230,153,1)","rgba(151,187,205,1)"],
+	pointStrokeColors: ["#fff", "#fff"],
+    initialize: function(){
+    	_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+        this.render();
+    },
+    render: function(){
+    	var data = this.model.at(0).get('data');
+
+        var labels_all = Object.keys(data['debt_accounts']['total_debt']);
+    	var labels = [];
+    	for (j=0;j<labels_all.length;j++){
+    		labels.push(j);
+			j+=11;
+		}
+		var datasets = [];
+    	var legend_names = [];
+    	
+    	var debt_accounts = this.model.at(0).get('data')['debt_accounts']['accounts'];
+
+    	self = this;
+    	var counter = 0;
+    	_.each(_.keys(debt_accounts), function(key){
+    		var data_dict = debt_accounts[key]['items']['ending_balance'];
+    		var data_list = []
+    		for (j=0;j<(labels.length * 12);j++){
+    			data_list.push(data_dict[j]);
+    			j+=11;
+    		}
+    		var this_dataset = {
+    			fillColor : self.fillColors[counter],
+    			strokeColor : self.strokeColors[counter],
+    			pointColor : self.pointColors[counter],
+    			pointStrokeColor : self.pointStrokeColors[counter],
+    			data : data_list
+    		};
+    		datasets.push(this_dataset);
+    		legend_names.push(key);
+    		counter += 1;
+    	});
+
+
+    	var template = _.template( $("#debt_summary_template").html(), {data:data, debt_accounts:debt_accounts, legend_names:legend_names, colors: this.fillColors} );
+        this.$el.html( template );
+
+
+    	var ctx = $("#debt_chart_canvas").get(0).getContext("2d");
+        //console.log(this.datasets);
+
+		var Chart1_data = {
+			labels: labels,
+			datasets : datasets
+		};
+		new Chart(ctx).Line(Chart1_data,{bezierCurve : false});
+
     }
 });
 
@@ -1633,25 +1961,28 @@ $(document).ready(function() {
 
 <div id="output" class="hidden">
 	<div class="content_box">
-		<h2>Net Worth</h2>
-		<div id="table1" style="margin-bottom:40px;"></div>
-		<div id="chart1" style="text-align:center;">
+		<div class="output_section_header">
+			<h2>Net Worth</h2>
+		</div>
+		<!--div id="table1" style="margin-bottom:40px;"></div-->
+		<div id="net_worth_chart" style="text-align:center;">
 			<div><h3>Projected Net Worth over Time</h3></div>
-			<canvas id="chart1_canvas" width="800" height="400" style="display: inline;"></canvas>
-			<div id="chart1_legend"></div>
+			<canvas id="net_worth_chart_canvas" width="800" height="400" style="display: inline;"></canvas>
+			<div id="net_worth_chart_legend"></div>
 		</div>
-		<div class="form_section_divider" style="margin-top:80px;"></div>
-		<h2>Cash Flow</h2>
-		<div id="chart2" style="width: 800px; height: 400px; margin: 0 auto;text-align:center;"></div>
+		<div id="net_worth_tables"></div>
+		<!--div class="form_section_divider" style="margin-top:80px;"></div-->
+		<div class="output_section_header">
+			<h2>Cash Flow</h2>
+		</div>
+		<!--div id="chart2" style="width: 800px; height: 400px; margin: 0 auto;text-align:center;"></div-->
 		<div id="cashflow_section"></div>
-		<div class="form_section_divider" style="margin-top:80px;"></div>
-		<h2>Debt Summary</h2>
-		<div id="debt_summary_table"></div>
-		<div id="debt_chart" style="text-align:center;">
-			<div><h3>Projected Debt Balances over Time</h3></div>
-			<canvas id="debt_chart_canvas" width="800" height="400" style="display: inline;"></canvas>
-			<div id="debt_chart_legend"></div>
+		<!--div class="form_section_divider" style="margin-top:80px;"></div-->
+		<div class="output_section_header">
+			<h2>Debt Summary</h2>
 		</div>
+		<div id="debt_summary_section"></div>
+	</div>
 </div>
 
 

@@ -168,16 +168,7 @@ label {
 
 
 
-.content_box {
-    border: 1px solid #B2B2B2;
-    border-radius: 5px 5px 5px 5px;
-    box-shadow: 0 0 4px gray;
-    color: #636363;
-    margin: 40px;
-    min-height: 250px;
-    padding: 20px 30px;
-    min-width: 850px;
-}
+
 
 .scenario_column {
      width: 152px; 
@@ -354,4 +345,68 @@ input.input_percentage {
 
 .custom_input_block {
     margin-bottom: 12px;
+}
+
+.content_box {
+    padding: 10px 0;
+    min-width: 960px;
+    color: #636363;
+}
+.output_section_header {
+    background: #E6F2F5;
+    padding-left: 20px;
+    border-top: 1px solid gray;
+    border-bottom: 1px solid gray;
+    margin: 30px 0;
+}
+
+.left_case_container {
+    float: left;
+    width: 48%;
+    padding-right: 12px;
+    border-right: 1px solid gray;
+    padding-bottom: 40px;
+    padding-left: 20px;
+}
+.right_case_container {
+    float:right;
+    width:47%;
+    padding-bottom: 40px;
+}
+
+#net_worth_tables {
+    margin-top: 60px;
+    overflow: auto;
+}
+.right_case_container table,
+.left_case_container table {
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 12px;
+}
+.right_case_container th,
+.right_case_container td,
+.left_case_container th,
+.left_case_container td {
+    border: 1px solid black;
+    padding: 4px;
+}
+
+
+#cashflow_section {
+    overflow: auto;
+}
+.case_name {
+    text-align:center;
+    text-decoration:underline;
+    margin-bottom:20px;
+}
+
+.case_section_divider {
+    background: none repeat scroll 0 0 #C1C1C1;
+    height: 1px;
+    width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+    margin-top: 20px;
 }

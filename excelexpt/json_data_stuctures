@@ -70,7 +70,26 @@
 	'net_worth': {
 		0: x,
 		1: x+e
-	}
+	},
+	'survival_period': 4,
+	'NI_allocation':[
+		{
+			'type':'debt_accounts',
+			'name':'Credit Card',
+			'minimum_payment':350,
+			'extra_payment':430,
+			'total_payment':880,
+			'start_date':0,
+			'payoff_date':25
+		},
+		{
+			'type':'cash_accounts',
+			'name':'Investment',
+			'contribution':880,
+			'start_date':26,
+			'end_balance':20201
+		}
+	]
 }
 
 {
@@ -141,6 +160,12 @@
 						1: 10000,
 						2: 8000
 					}
+				},
+				'debt_expense_summary':{
+					'total_interest_paid':0,
+					'total_principal_paid':0,
+					'total_debt_expense':0,
+					'payoff_date':''
 				}
 			},
 			'CC': {
@@ -150,6 +175,12 @@
 					'payments':{},
 					'interest':{},
 					'ending_balance':{}
+				},
+				'debt_expense_summary':{
+					'total_interest_paid':0,
+					'total_principal_paid':0,
+					'total_debt_expense':0,
+					'payoff_date':''
 				}
 			}
 		},
@@ -162,15 +193,18 @@
 				0: 2400,
 				1: 2400
 			},
+			'total_interest_paid': 60000,
 			'principal_paid':{
 				0: 600,
 				1: 600
 			},
+			'total_principal_paid': 80000,
 			'total_expense':{
 				0: 3000,
 				1: 3000
 			},
-			
+			'total_debt_expense': 140000,
+			'payoff_date': 59
 		}
 	}
 }

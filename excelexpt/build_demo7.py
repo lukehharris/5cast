@@ -1,3 +1,6 @@
+import math
+
+global_max_months = 121
 
 def build_demo7_data(data):
     
@@ -34,21 +37,14 @@ def build_demo7_data(data):
     
 
     NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
-        #NI_order = [{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
 
-    """
-        print 'NEGATIVE NI'
-        s['debt_accounts']['accounts'].update({'NET INCOME SHORTFALL':{'rate':0.0,'items': {'beginning_balance':{},'payments':{},'interest':{},'ending_balance':{0:0} } } } )
-        s['expenses']['sections']['Debt']['items'].update({'NET INCOME SHORTFALL':{0:0}})
-        for x in range(1,121):
-            s['expenses']['sections']['Debt']['items']['NET INCOME SHORTFALL'][x] = 0
-        s = build_debt_sub_section(s, 'NET INCOME SHORTFALL')
-        s = allocate_NI(s, [{'type':'debt_accounts','name':'NET INCOME SHORTFALL'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}])
-    """
 
     s = calc_survival_period(s)
 
+    s = build_debt_summary(s, min_payment=True)
     s = allocate_NI_2(s, NI_order)
+    s = NI_allocation_introspection(s, NI_order)
+    s = build_debt_summary(s)
     s = calc_net_income_raw(s)
 
         #d.append(s)
@@ -62,23 +58,31 @@ def calc_survival_period(s):
     total_assets = s['cash_accounts']['total'][0]
     #print total_assets
     try:
-        survival_period = round(total_assets / expenses,1)
+        survival_period_unround = total_assets / expenses
+        survival_period = round(survival_period_unround,1)
     except ZeroDivisionError:
         survival_period = 'no expenses'
     #print survival_period
-    s.update({'survival_period':survival_period})
+    s.update({'survival_period':{'months_remaining':survival_period,'months_remaining_rounded':int(math.ceil(survival_period_unround)),'beginning_balance':{0:0},'expenses':{0:0},'ending_balance':{0:0}}})
+    
+    s['survival_period']['ending_balance'][0] = s['cash_accounts']['total'][0]
+    for x in range(1,int(math.ceil(survival_period_unround))+1):
+        s['survival_period']['beginning_balance'][x] = s['survival_period']['ending_balance'][x-1]
+        s['survival_period']['expenses'][x] = -1* expenses
+        s['survival_period']['ending_balance'][x] = s['survival_period']['beginning_balance'][x] + s['survival_period']['expenses'][x]
+
     return s
 
 def calc_net_income_raw(s):
     s.update({'net_income_raw':{0:0}})
-    for x in range(0,121):
+    for x in range(0,global_max_months):
         s['net_income_raw'][x] = s['net_income'][x]
         for k,v in s['expenses']['sections']['Debt']['items'].iteritems():
             if k[-9:] == '_Optional':
                 s['net_income_raw'][x] +=  v[x]
     return s
 
-
+"""
 def allocate_NI(q, NI_order):
     s = q #need this for calculate_totals_for_x() to receive the return value properly
     current_col = 1
@@ -168,11 +172,12 @@ def allocate_NI(q, NI_order):
             raise Exception('Invalid account type: %s' % account_type)
     
     return s
-
+"""
 
 def allocate_NI_2(q, NI_order):
     s = q
     s['cash_accounts']['accounts']['Checking']['items'].update({'net_income':{0:0}})
+    s.update({'NI_allocation':[]})
     for item in NI_order:
         account_type = item['type']
         account_name = item['name']
@@ -180,13 +185,13 @@ def allocate_NI_2(q, NI_order):
         if account_type == 'debt_accounts':
             s['expenses']['sections']['Debt']['items'].update({account_name+'_Optional':{0:0}})
         
-        for x in range(0,121):
+        for x in range(0,global_max_months):
             s['cash_accounts']['accounts']['Checking']['items']['net_income'][x] = 0
             s[account_type]['accounts'][account_name]['items']['net_income'][x] = 0
             if account_type == 'debt_accounts':
                 s['expenses']['sections']['Debt']['items'][account_name+'_Optional'][x] = 0
     
-    for x in range(1,121):
+    for x in range(1,global_max_months):
         s = calculate_totals_for_x(s, x)
 
         if s['net_income'][x] < 0:
@@ -239,13 +244,59 @@ def allocate_NI_2(q, NI_order):
                 else:
                     raise Exception('Invalid account type: %s' % account_type)
         s = calculate_totals_for_x(s, x)
+    #s = calc_NI_allocation_changes(s)
     return s
 
-
+def NI_allocation_introspection(s, NI_order):
+    for item in NI_order:
+        account_type = item['type']
+        account_name = item['name']
+        if account_type == 'debt_accounts':
+            s['NI_allocation'].append({'type':'debt_accounts','name':account_name,'minimum_payment':-1*s[account_type]['accounts'][account_name]['items']['payments'][1],'extra_payment':0,'total_payment':0,'start_date':0,'payoff_date':0})
+            for x in range(1,global_max_months):
+                if s[account_type]['accounts'][account_name]['items']['net_income'][x] == 0:
+                    continue
+                else:
+                    if (-1*s[account_type]['accounts'][account_name]['items']['net_income'][x]) < (-1*s[account_type]['accounts'][account_name]['items']['net_income'][x+1]):
+                        #idea is to skip forward one month to capture the full size of the contribution in case we land on a partial allocation
+                        s['NI_allocation'][-1]['start_date'] = x + 1
+                        s['NI_allocation'][-1]['extra_payment'] = -1*s[account_type]['accounts'][account_name]['items']['net_income'][x+1]
+                        break
+                    else:
+                        s['NI_allocation'][-1]['start_date'] = x
+                        s['NI_allocation'][-1]['extra_payment'] = -1*s[account_type]['accounts'][account_name]['items']['net_income'][x]
+                        break
+            s['NI_allocation'][-1]['total_payment'] = s['NI_allocation'][-1]['minimum_payment'] + s['NI_allocation'][-1]['extra_payment']
+            start_date_found = False
+            for x in range(1,global_max_months):
+                if (-1*s[account_type]['accounts'][account_name]['items']['net_income'][x]) < 1: #instead of "== 0" for imprecision. Also, "net_income" has a negative sign if it was allocated, since it deducts from the balance, so I'm switching it to positive here for clarity
+                    if start_date_found:
+                        s['NI_allocation'][-1]['payoff_date'] = x-1
+                        break
+                else:
+                    start_date_found = True
+        else:
+            s['NI_allocation'].append({'type':'cash_accounts','name':account_name,'contribution':0,'start_date':0,'end_balance':0})
+            for x in range(1,global_max_months):
+                if s[account_type]['accounts'][account_name]['items']['net_income'][x] < 1: #instead of "== 0" for imprecision. "net_income" has a positive sign here
+                    continue
+                else:
+                    if s[account_type]['accounts'][account_name]['items']['net_income'][x] < s[account_type]['accounts'][account_name]['items']['net_income'][x+1]:
+                        #idea is to skip forward one month to capture the full size of the contribution in case we land on a partial allocation
+                        s['NI_allocation'][-1]['start_date'] = x + 1
+                        s['NI_allocation'][-1]['contribution'] = s[account_type]['accounts'][account_name]['items']['net_income'][x+1]
+                        break
+                    else:
+                        s['NI_allocation'][-1]['start_date'] = x
+                        s['NI_allocation'][-1]['contribution'] = s[account_type]['accounts'][account_name]['items']['net_income'][x]
+                        break
+            s['NI_allocation'][-1]['end_balance'] = s[account_type]['accounts'][account_name]['items']['ending_balance'][120]
+    print s['NI_allocation']
+    return s
 
 def calculate_totals(s):
     # income section #
-    for x in range(0,121):
+    for x in range(0,global_max_months):
         s['income']['total'][x] = 0
         for k in s['income']['items']:
             s['income']['total'][x] += s['income']['items'][k][x]
@@ -253,23 +304,23 @@ def calculate_totals(s):
 
     # expense section #
     for name in s['expenses']['sections']:
-        for x in range(0,121):
+        for x in range(0,global_max_months):
             s['expenses']['sections'][name]['total'][x] = 0
             for k in s['expenses']['sections'][name]['items']:
                 s['expenses']['sections'][name]['total'][x] += s['expenses']['sections'][name]['items'][k][x]
 
-    for x in range(0,121):
+    for x in range(0,global_max_months):
         s['expenses']['total'][x] = 0
         for section in s['expenses']['sections']:
             s['expenses']['total'][x] += s['expenses']['sections'][section]['total'][x]
 
     # net income #
-    for x in range(0,121):
+    for x in range(0,global_max_months):
         s['net_income'][x] = s['income']['total'][x] - s['expenses']['total'][x]
 
 
     # assets section #
-    for x in range (0,121):
+    for x in range (0,global_max_months):
         s['cash_accounts']['total'][x] = 0
         for k,v in s['cash_accounts']['accounts'].iteritems():
             s['cash_accounts']['total'][x] += s['cash_accounts']['accounts'][k]['items']['ending_balance'][x]
@@ -277,34 +328,34 @@ def calculate_totals(s):
     """
     ## net income allocation ##
     target_name = 'Checking'
-    for x in range (1,121):
+    for x in range (1,global_max_months):
         s['cash_accounts']['accounts'][target_name]['items']['net_income'][x] = s['net_income'][x]
         s['cash_accounts']['accounts'][target_name]['items']['ending_balance'][x] = s['cash_accounts']['accounts'][target_name]['items']['beginning_balance'][x] - s['cash_accounts']['accounts'][target_name]['items']['withdrawal'][x] + s['cash_accounts']['accounts'][target_name]['items']['interest'][x] + s['cash_accounts']['accounts'][target_name]['items']['net_income'][x]
     """
 
     # debt section #
 
-    for x in range (0,121):
+    for x in range (0,global_max_months):
         s['debt_accounts']['total_debt'][x] = 0
         for k,v in s['debt_accounts']['accounts'].iteritems():
             s['debt_accounts']['total_debt'][x] += s['debt_accounts']['accounts'][k]['items']['ending_balance'][x]
 
-    for x in range(0,121):
+    for x in range(0,global_max_months):
         s['debt_accounts']['debt_expense_summary']['interest_paid'][x] = 0
         for name in s['debt_accounts']['accounts']:
             s['debt_accounts']['debt_expense_summary']['interest_paid'][x] += s['debt_accounts']['accounts'][name]['items']['interest'][x]
 
-    for x in range(0,121):
+    for x in range(0,global_max_months):
         s['debt_accounts']['debt_expense_summary']['principal_paid'][x] = 0
         for name in s['debt_accounts']['accounts']:
             s['debt_accounts']['debt_expense_summary']['principal_paid'][x] += s['debt_accounts']['accounts'][name]['items']['interest'][x] + s['debt_accounts']['accounts'][name]['items']['payments'][x]
         s['debt_accounts']['debt_expense_summary']['principal_paid'][x] = -(s['debt_accounts']['debt_expense_summary']['principal_paid'][x])
 
-    for x in range(0,121):
+    for x in range(0,global_max_months):
         s['debt_accounts']['debt_expense_summary']['total_expense'][x] = s['debt_accounts']['debt_expense_summary']['interest_paid'][x] + s['debt_accounts']['debt_expense_summary']['principal_paid'][x]
 
     # net worth calc #
-    for x in range (0,121):
+    for x in range (0,global_max_months):
         s['net_worth'][x] = s['cash_accounts']['total'][x] - s['debt_accounts']['total_debt'][x]
 
     return s
@@ -434,7 +485,7 @@ def build_income_section(s, income):
         elif input_type == 'custom':
             s = populate_custom_vector(s, 'income', k, v['data'])
 
-    for x in range(0,121):
+    for x in range(0,global_max_months):
         s['income']['total'].update({x:0})
         for k in s['income']['items']:
             s['income']['total'][x] += s['income']['items'][k][x]
@@ -449,10 +500,10 @@ def populate_flatline_vector(s, section, item_name, frequency, value):
         monthly_value = value * (52.0/12.0)
     
     if section == 'income':
-        for x in range(0,121):
+        for x in range(0,global_max_months):
             s[section]['items'][item_name][x] = monthly_value
     elif section == 'Basic' or section == 'Misc' or section == 'Debt':
-        for x in range(0,121):
+        for x in range(0,global_max_months):
             s['expenses']['sections'][section]['items'][item_name][x] = monthly_value
     return s
 
@@ -471,13 +522,13 @@ def populate_pct_change_vector(s, section, item_name, frequency, value, change, 
 
     if section == 'income':
         s[section]['items'][item_name][0] = monthly_value
-        for x in range(1,121):
+        for x in range(1,global_max_months):
             if ((change_frequency == 'year') and (x % (12 * change_periods) == 0)) or ((change_frequency == 'month') and (x % change_periods)):
                 monthly_value = monthly_value * (1 + change_pct)
             s[section]['items'][item_name][x] = monthly_value
     elif section == 'Basic' or section == 'Misc' or section == 'Debt':
         s['expenses']['sections'][section]['items'][item_name][0] = monthly_value
-        for x in range(1,121):
+        for x in range(1,global_max_months):
             if ((change_frequency == 'year') and (x % (12 * change_periods) == 0)) or ((change_frequency == 'month') and (x % change_periods == 0)):
                 monthly_value = monthly_value * (1 + change_pct)
             s['expenses']['sections'][section]['items'][item_name][x] = monthly_value
@@ -498,7 +549,7 @@ def populate_val_change_vector(s, section, item_name, frequency, value, change, 
 
     if section == 'income':
         s[section]['items'][item_name][0] = monthly_value
-        for x in range(1,121):
+        for x in range(1,global_max_months):
             if ((change_frequency == 'year') and (x % (12 * change_periods) == 0)) or ((change_frequency == 'month') and (x % change_periods)):
                 monthly_value = monthly_value + change_val
                 if monthly_value < 0:
@@ -506,7 +557,7 @@ def populate_val_change_vector(s, section, item_name, frequency, value, change, 
             s[section]['items'][item_name][x] = monthly_value
     elif section == 'Basic' or section == 'Misc' or section == 'Debt':
         s['expenses']['sections'][section]['items'][item_name][0] = monthly_value
-        for x in range(1,121):
+        for x in range(1,global_max_months):
             if ((change_frequency == 'year') and (x % (12 * change_periods) == 0)) or ((change_frequency == 'month') and (x % change_periods == 0)):
                 monthly_value = monthly_value + change_val
                 if monthly_value < 0:
@@ -522,10 +573,10 @@ def populate_custom_vector(s, section, item_name, data):
 
     #set whole vector to 0 first, then fill in data as per the given data
     if section == 'income':
-        for x in range(0,121):
+        for x in range(0,global_max_months):
             s[section]['items'][item_name][x] = 0
     elif section == 'Basic' or section == 'Misc' or section == 'Debt':
-        for x in range(0,121):
+        for x in range(0,global_max_months):
             s['expenses']['sections'][section]['items'][item_name][x] = 0
 
     for period in data:
@@ -604,7 +655,7 @@ def build_expense_subsection(s, expense_dict, name):
         elif input_type == 'custom':
             s = populate_custom_vector(s, name, k, v['data'])
 
-    for x in range(0,121):
+    for x in range(0,global_max_months):
         s['expenses']['sections'][name]['total'].update({x:0})
         for k in s['expenses']['sections'][name]['items']:
             s['expenses']['sections'][name]['total'][x] += s['expenses']['sections'][name]['items'][k][x]
@@ -613,7 +664,7 @@ def build_expense_subsection(s, expense_dict, name):
 
 
 def sum_expenses(s):
-    for x in range(0,121):
+    for x in range(0,global_max_months):
         s['expenses']['total'].update({x:0})
         for section in s['expenses']['sections']:
             s['expenses']['total'][x] += s['expenses']['sections'][section]['total'][x]
@@ -622,7 +673,7 @@ def sum_expenses(s):
     
 def calculate_net_income(s):
     s.update({'net_income':{}})
-    for x in range(0,121):
+    for x in range(0,global_max_months):
         net_income = s['income']['total'][x] - s['expenses']['total'][x]
         s['net_income'].update({x:net_income})
 
@@ -658,7 +709,7 @@ def build_cash_sub_section(s, name):
     s['cash_accounts']['accounts'][name]['items']['withdrawal'][0] = 0
     s['cash_accounts']['accounts'][name]['items']['interest'][0] = 0
 
-    for x in range(1,121):
+    for x in range(1,global_max_months):
         prev_ending_balance = s['cash_accounts']['accounts'][name]['items']['ending_balance'][x-1]
         s['cash_accounts']['accounts'][name]['items']['beginning_balance'][x] = prev_ending_balance
         s['cash_accounts']['accounts'][name]['items']['withdrawal'][x] = 0
@@ -675,7 +726,7 @@ def build_cash_sub_section(s, name):
     return s
 
 def build_cash_summary(s):
-    for x in range (0,121):
+    for x in range (0,global_max_months):
         s['cash_accounts']['total'].update({x:0})
         for k,v in s['cash_accounts']['accounts'].iteritems():
             s['cash_accounts']['total'][x] += s['cash_accounts']['accounts'][k]['items']['ending_balance'][x]
@@ -684,7 +735,7 @@ def build_cash_summary(s):
 
 #def build_debt_section(s, debt_balances, rates):
 def build_debt_section(s, debt_accounts):
-    s['debt_accounts'] = {'accounts':{},'total_debt':{},'debt_expense_summary':{}}
+    s['debt_accounts'] = {'accounts':{},'total_debt':{},'debt_expense_summary':{},'debt_expense_summary_min':{}}
     #for k,balance in debt_balances.iteritems():
     for name,data in debt_accounts.iteritems():
         #name = k[:-8]
@@ -700,7 +751,7 @@ def build_debt_sub_section(s, name):
     s['debt_accounts']['accounts'][name]['items']['beginning_balance'][0] = 0
     s['debt_accounts']['accounts'][name]['items']['payments'][0] = 0
     s['debt_accounts']['accounts'][name]['items']['interest'][0] = 0
-    for x in range(1,121):
+    for x in range(1,global_max_months):
         prev_ending_balance = s['debt_accounts']['accounts'][name]['items']['ending_balance'][x-1]
         s['debt_accounts']['accounts'][name]['items']['beginning_balance'][x] = prev_ending_balance
         interest_expense = prev_ending_balance * (rate/12.0)
@@ -717,34 +768,71 @@ def build_debt_sub_section(s, name):
 
     return s
 
-def build_debt_summary(s):
-    s['debt_accounts']['debt_expense_summary'].update({'interest_paid':{},'principal_paid':{},'total_expense':{}})
+def build_debt_summary(s, min_payment=False):
+    #have thsi min_payment switch so when I run this the first time, before net income is allocated, it'll save that earlier version for use in comparison
+    if min_payment:
+        debt_expense_summary = 'debt_expense_summary_min'
+    else:
+        debt_expense_summary = 'debt_expense_summary'
 
-    for x in range (0,121):
+    for account in s['debt_accounts']['accounts']:
+        s['debt_accounts']['accounts'][account].update({debt_expense_summary:{'total_interest_paid':0,'total_principal_paid':0,'total_debt_expense':0,'payoff_date':121}})
+
+        for x in range (1,global_max_months):
+            #print s['debt_accounts']['accounts'][account]['items']['ending_balance'][x]
+            if s['debt_accounts']['accounts'][account]['items']['ending_balance'][x] < 1:
+                s['debt_accounts']['accounts'][account][debt_expense_summary]['payoff_date'] = x
+                #change this into the actual MMM YY string - convert relative to today
+                break
+
+        for x in range(1,global_max_months):
+            s['debt_accounts']['accounts'][account][debt_expense_summary]['total_interest_paid'] += s['debt_accounts']['accounts'][account]['items']['interest'][x]
+            s['debt_accounts']['accounts'][account][debt_expense_summary]['total_principal_paid'] += (s['debt_accounts']['accounts'][account]['items']['beginning_balance'][x] - s['debt_accounts']['accounts'][account]['items']['ending_balance'][x])
+            #print s['debt_accounts']['accounts'][account][debt_expense_summary]['total_principal_paid']
+            s['debt_accounts']['accounts'][account][debt_expense_summary]['total_debt_expense'] += s['debt_accounts']['accounts'][account]['items']['interest'][x] + ((s['debt_accounts']['accounts'][account]['items']['beginning_balance'][x] - s['debt_accounts']['accounts'][account]['items']['ending_balance'][x]))
+
+        """
+        print 'payoff ', s['debt_accounts']['accounts'][account]['debt_expense_summary']['payoff_date']
+        print 'interest ',s['debt_accounts']['accounts'][account]['debt_expense_summary']['total_interest_paid']
+        print 'principal ',s['debt_accounts']['accounts'][account]['debt_expense_summary']['total_principal_paid']
+        print 'total ',s['debt_accounts']['accounts'][account]['debt_expense_summary']['total_debt_expense']
+        print 'dict ',s['debt_accounts']['accounts'][account]['debt_expense_summary']
+        """
+
+    #below is in aggregate
+    s['debt_accounts'][debt_expense_summary].update({'interest_paid':{},'total_interest_paid':0,'principal_paid':{},'total_principal_paid':0,'total_expense':{},'total_debt_expense':0,'payoff_date':0})
+    for x in range (0,global_max_months):
         s['debt_accounts']['total_debt'].update({x:0})
         for k,v in s['debt_accounts']['accounts'].iteritems():
             s['debt_accounts']['total_debt'][x] += s['debt_accounts']['accounts'][k]['items']['ending_balance'][x]
 
-    for x in range(0,121):
-        s['debt_accounts']['debt_expense_summary']['interest_paid'].update({x:0})
-        for name in s['debt_accounts']['accounts']:
-            s['debt_accounts']['debt_expense_summary']['interest_paid'][x] += s['debt_accounts']['accounts'][name]['items']['interest'][x]
+    for account in s['debt_accounts']['accounts']:
+        s['debt_accounts'][debt_expense_summary]['payoff_date'] = max(s['debt_accounts'][debt_expense_summary]['payoff_date'],s['debt_accounts']['accounts'][account][debt_expense_summary]['payoff_date'])
 
-    for x in range(0,121):
-        s['debt_accounts']['debt_expense_summary']['principal_paid'].update({x:0})
+    for x in range(1,global_max_months):
+        s['debt_accounts'][debt_expense_summary]['interest_paid'].update({x:0})
         for name in s['debt_accounts']['accounts']:
-            s['debt_accounts']['debt_expense_summary']['principal_paid'][x] += s['debt_accounts']['accounts'][name]['items']['interest'][x] + s['debt_accounts']['accounts'][name]['items']['payments'][x]
-        s['debt_accounts']['debt_expense_summary']['principal_paid'][x] = -(s['debt_accounts']['debt_expense_summary']['principal_paid'][x])
+            s['debt_accounts'][debt_expense_summary]['interest_paid'][x] += s['debt_accounts']['accounts'][name]['items']['interest'][x]
+            s['debt_accounts'][debt_expense_summary]['total_interest_paid'] += s['debt_accounts']['accounts'][name]['items']['interest'][x]
 
-    for x in range(0,121):
-        s['debt_accounts']['debt_expense_summary']['total_expense'].update({x:0})
-        s['debt_accounts']['debt_expense_summary']['total_expense'][x] = s['debt_accounts']['debt_expense_summary']['interest_paid'][x] + s['debt_accounts']['debt_expense_summary']['principal_paid'][x]
+    for x in range(1,global_max_months):
+        s['debt_accounts'][debt_expense_summary]['principal_paid'].update({x:0})
+        for name in s['debt_accounts']['accounts']:
+            #s['debt_accounts'][debt_expense_summary]['principal_paid'][x] += s['debt_accounts']['accounts'][name]['items']['interest'][x] + s['debt_accounts']['accounts'][name]['items']['payments'][x] 
+            s['debt_accounts'][debt_expense_summary]['principal_paid'][x] += (s['debt_accounts']['accounts'][name]['items']['beginning_balance'][x] - s['debt_accounts']['accounts'][name]['items']['ending_balance'][x])
+        #s['debt_accounts'][debt_expense_summary]['principal_paid'][x] = -(s['debt_accounts'][debt_expense_summary]['principal_paid'][x])
+        s['debt_accounts'][debt_expense_summary]['total_principal_paid'] += s['debt_accounts'][debt_expense_summary]['principal_paid'][x]
+
+    for x in range(1,global_max_months):
+        s['debt_accounts'][debt_expense_summary]['total_expense'].update({x:0})
+        s['debt_accounts'][debt_expense_summary]['total_expense'][x] = s['debt_accounts'][debt_expense_summary]['interest_paid'][x] + s['debt_accounts'][debt_expense_summary]['principal_paid'][x]
+        s['debt_accounts'][debt_expense_summary]['total_debt_expense'] += s['debt_accounts'][debt_expense_summary]['total_expense'][x]
 
     return s
 
 def calculate_net_worth(s):
     s.update({'net_worth':{}})
-    for x in range (0,121):
+    for x in range (0,global_max_months):
         s['net_worth'].update({x:0})
         s['net_worth'][x] = s['cash_accounts']['total'][x] - s['debt_accounts']['total_debt'][x]
 

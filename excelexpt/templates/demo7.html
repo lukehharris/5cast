@@ -524,16 +524,21 @@ var CaseCollection = Backbone.Collection.extend({
 			<div id="cashflow_net_income_usage">
 				<strong>You should use your positive net income to:</strong>
 				<br>
-				1) Pay Down Your Credit Card
-				<ul>
-					<li>Pay $350 per month ($50 minimum + $300 extra)</li>
-					<li>Your card will be paid off by October 2013 (see the Debt Summary section for details)</li>
-				</ul>
-				2) Contribute to Your Investment Account
-				<ul>
-					<li>Contribute $350 per month starting in October 2013</li>
-					<li>You can expect to have $X in the account 10 years from now (see the Assets Summary section for details)</li>
-				</ul>
+				<%for(i=0;i<data['NI_allocation'].length;i++){{'{'}}%>
+					<%if(data['NI_allocation'][i]['type'] == 'debt_accounts'){{'{'}}%>
+						<%=i+1%>) Pay Down Your <%=data['NI_allocation'][i]['name']%> Debt
+						<ul>
+							<li>Pay $<%=numberWithCommas(data['NI_allocation'][i]['total_payment'])%> per month ($<%=numberWithCommas(data['NI_allocation'][i]['minimum_payment'])%> minimum + $<%=numberWithCommas(data['NI_allocation'][i]['extra_payment'])%> extra) starting in <%=data['NI_allocation'][i]['start_date']%></li>
+							<li>This debt will be paid off by <%=data['NI_allocation'][i]['payoff_date']%> (see the Debt Summary section for details)</li>
+						</ul>
+					<%{{'}'}}else{{'{'}}%>
+						<%=i+1%>) Contribute to Your <%=data['NI_allocation'][i]['name']%> Account
+						<ul>
+							<li>Contribute $<%=numberWithCommas(data['NI_allocation'][i]['contribution'])%> per month starting in <%=data['NI_allocation'][i]['start_date']%></li>
+							<li>You can expect to have about $<%=numberWithCommas(data['NI_allocation'][i]['end_balance'])%> in the account 10 years from now (see the Assets Summary section for details)</li>
+						</ul>
+					<%{{'}'}}%>
+				<%{{'}'}}%>
 			</div>
 			<div class="case_section_divider"></div>
 			<div id="survival_period" style="margin-top:20px;">
@@ -542,52 +547,82 @@ var CaseCollection = Backbone.Collection.extend({
 				<%}else{ %>
 					<h4 style="margin:10px 0;">Survial Without Income</h4>
 					<p style="font-size:16px;">
-						If your income suddenly went to zero, you could survive for <strong>about <%=data['survival_period']%> months</strong>.
+						If your income suddenly went to zero, you could survive for <strong>about <%=data['survival_period']['months_remaining'].toFixed(1)%> months</strong>.
 					</p>
-					<table>
-						<thead>
-							<th>&nbsp;</th>
-							<th>Today</th>
-							<th>Jul &apos;13</th>
-							<th>Aug &apos;13</th>
-							<th>Sep &apos;13</th>
-							<th>Oct &apos;13</th>
-							<th>Nov &apos;13</th>
-							<th>Dec &apos;13</th>
-						</thead>
-						<tbody>
-							<tr>
-								<td>Beginning Balance</td>
-								<td>&nbsp;</td>
-								<td>X1</td>
-								<td>...</td>
-								<td>...</td>
-								<td>...</td>
-								<td>...</td>
-								<td>Xn</td>
-							</tr>
-							<tr>
-								<td>- Expenses</td>
-								<td>&nbsp;</td>
-								<td>-E1</td>
-								<td>...</td>
-								<td>...</td>
-								<td>...</td>
-								<td>...</td>
-								<td>-En</td>
-							</tr>
-							<tr>
-								<td>= Ending Balance</td>
-								<td>Y0</td>
-								<td>Y1</td>
-								<td>...</td>
-								<td>...</td>
-								<td>...</td>
-								<td>...</td>
-								<td>Yn</td>
-							</tr>
-						</tbody>
-					</table>
+					<%if(data['survival_period']['months_remaining_rounded'] < 6){{'{'}} %>
+						<table>
+							<thead>
+								<th>&nbsp;</th>
+								<th>Today</th>
+								<%for(i=0;i<data['survival_period']['months_remaining_rounded'];i++){{'{'}}%>
+									<th><%=future_months[i]%></th>
+								<%{{'}'}}%>
+							</thead>
+							<tbody>
+								<tr>
+									<td>Beginning Balance</td>
+									<td>&nbsp;</td>
+									<%for(i=1;i<=data['survival_period']['months_remaining_rounded'];i++){{'{'}}%>
+										<td><%=numberWithCommas(data['survival_period']['beginning_balance'][i])%></td>
+									<%{{'}'}}%>
+								</tr>
+								<tr>
+									<td>- Expenses</td>
+									<td>&nbsp;</td>
+									<%for(i=1;i<=data['survival_period']['months_remaining_rounded'];i++){{'{'}}%>
+										<td><%=numberWithCommas(ata['survival_period']['expenses'][i])%></td>
+									<%{{'}'}}%>
+								</tr>
+								<tr>
+									<td>= Ending Balance</td>
+									<%for(i=0;i<=data['survival_period']['months_remaining_rounded'];i++){{'{'}}%>
+										<td><%=numberWithCommas(data['survival_period']['ending_balance'][i])%></td>
+									<%{{'}'}}%>
+								</tr>
+							</tbody>
+						</table>
+					<%{{'}'}}else if(data['survival_period']['months_remaining_rounded'] >= 6){{'{'}}%>
+						<table>
+							<thead>
+								<th>&nbsp;</th>
+								<th>Today</th>
+								<th><%=future_months[0]%></th>
+								<th>...</th>
+								<th><%=data['survival_period']['months_remaining_rounded']-2%></th>
+								<th><%=data['survival_period']['months_remaining_rounded']-1%></th>
+								<th><%=data['survival_period']['months_remaining_rounded']%></th>
+							</thead>
+							<tbody>
+								<tr>
+									<td>Beginning Balance</td>
+									<td>&nbsp;</td>
+									<td><%=numberWithCommas(data['survival_period']['beginning_balance'][1])%></td>
+									<td>...</td>
+									<td><%=numberWithCommas(data['survival_period']['beginning_balance'][data['survival_period']['months_remaining_rounded']-2])%></td>
+									<td><%=numberWithCommas(data['survival_period']['beginning_balance'][data['survival_period']['months_remaining_rounded']-1])%></td>
+									<td><%=numberWithCommas(data['survival_period']['beginning_balance'][data['survival_period']['months_remaining_rounded']])%></td>
+								</tr>
+								<tr>
+									<td>- Expenses</td>
+									<td>&nbsp;</td>
+									<td><%=numberWithCommas(data['survival_period']['expenses'][1])%></td>
+									<td>...</td>
+									<td><%=numberWithCommas(data['survival_period']['expenses'][data['survival_period']['months_remaining_rounded']-2])%></td>
+									<td><%=numberWithCommas(data['survival_period']['expenses'][data['survival_period']['months_remaining_rounded']-1])%></td>
+									<td><%=numberWithCommas(data['survival_period']['expenses'][data['survival_period']['months_remaining_rounded']])%></td>
+								</tr>
+								<tr>
+									<td>= Ending Balance</td>
+									<td><%=numberWithCommas(data['survival_period']['ending_balance'][0])%></td>
+									<td><%=numberWithCommas(data['survival_period']['ending_balance'][1])%></td>
+									<td>...</td>
+									<td><%=numberWithCommas(data['survival_period']['ending_balance'][data['survival_period']['months_remaining_rounded']-2])%></td>
+									<td><%=numberWithCommas(data['survival_period']['ending_balance'][data['survival_period']['months_remaining_rounded']-1])%></td>
+									<td><%=numberWithCommas(data['survival_period']['ending_balance'][data['survival_period']['months_remaining_rounded']])%></td>
+								</tr>
+							</tbody>
+						</table>
+					<%{{'}'}}%>					
 					<div style="margin-left:20px;">
 						<p style="font-size:12px; margin-top:20px; margin-bottom:0;">
 							This assumes:
@@ -670,23 +705,23 @@ var CaseCollection = Backbone.Collection.extend({
 				<thead>
 					<th style="text-align:left;">Account</th>
 					<th>Current Balance</th>
-					<th>Current Monthly Payment</th>
+					<th>Current Minimum Payment</th>
 					<th>Interest Rate</th>
 				</thead>
 				<tbody>
 					<% _.each(_.keys(debt_accounts), function(key){{'{'}} %>
 						<tr>
 							<td class="table_y_axis"><%=key%></td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
+							<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['items']['ending_balance'][1])%></td>
+							<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['items']['payments'][1])%></td>
+							<td><%=(Math.round(data['debt_accounts']['accounts'][key]['rate'] * 1000)/10).toFixed(1)%>%</td>
 						</tr>
 					<%{{'});'}}%>
 						<tr>
 							<td class="table_y_axis">Total</td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
+							<td><%=numberWithCommas(data['debt_accounts']['total_debt'][1])%></td>
+							<td><%=debt_totals['min_payment']%></td>
+							<td><%=(Math.round(debt_totals['WA_rate'] * 1000)/10).toFixed(1)%>%</td>
 						</tr>
 				</tbody>
 			</table>
@@ -716,18 +751,18 @@ var CaseCollection = Backbone.Collection.extend({
 					<% _.each(_.keys(debt_accounts), function(key){{'{'}} %>
 						<tr>
 							<td class="table_y_axis"><%=key%></td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
+							<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['payoff_date'])%></td>
+							<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_interest_paid'])%></td>
+							<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_principal_paid'])%></td>
+							<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_debt_expense'])%></td>
 						</tr>
 					<%{{'});'}}%>
 						<tr>
 							<td class="table_y_axis">Total</td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
-							<td>&nbsp;</td>
+							<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['payoff_date'])%></td>
+							<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_interest_paid'])%></td>
+							<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_principal_paid'])%></td>
+							<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_debt_expense'])%></td>
 						</tr>
 				</tbody>
 			</table>
@@ -748,29 +783,64 @@ var CaseCollection = Backbone.Collection.extend({
 					<tbody>
 							<tr>
 								<td class="table_y_axis">Extra Payments</td>
-								<td>&nbsp;</td>
-								<td>&nbsp;</td>
-								<td>&nbsp;</td>
-								<td>&nbsp;</td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['payoff_date'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_interest_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_principal_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_debt_expense'])%></td>
 							</tr>
 							<tr>
 								<td class="table_y_axis">Minimum Payments Only</td>
-								<td>&nbsp;</td>
-								<td>&nbsp;</td>
-								<td>&nbsp;</td>
-								<td>&nbsp;</td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary_min']['payoff_date'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary_min']['total_interest_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary_min']['total_principal_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary_min']['total_debt_expense'])%></td>
 							</tr>
 							<tr>
 								<td class="table_y_axis">Difference</td>
-								<td>&nbsp;</td>
-								<td>&nbsp;</td>
-								<td>&nbsp;</td>
-								<td>&nbsp;</td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['payoff_date'] - data['debt_accounts']['accounts'][key]['debt_expense_summary_min']['payoff_date'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_interest_paid'] - data['debt_accounts']['accounts'][key]['debt_expense_summary_min']['total_interest_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_principal_paid'] - data['debt_accounts']['accounts'][key]['debt_expense_summary_min']['total_principal_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_debt_expense'] - data['debt_accounts']['accounts'][key]['debt_expense_summary_min']['total_debt_expense'])%></td>
 							</tr>
 					</tbody>
 				</table>
 			</div>
 		<%{{'});'}}%>
+			<div style="margin-top:40px;">
+			<h4>All Debt</h4>
+				<table>
+					<thead>
+						<th style="text-align:left;">&nbsp;</th>
+						<th>Expected Payoff Date</th>
+						<th>Interest To Be Paid</th>
+						<th>Principal To Be Paid</th>
+						<th>Total To Be Paid</th>
+					</thead>
+					<tbody>
+							<tr>
+								<td class="table_y_axis">Extra Payments</td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['payoff_date'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_interest_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_principal_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_debt_expense'])%></td>
+							</tr>
+							<tr>
+								<td class="table_y_axis">Minimum Payments Only</td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary_min']['payoff_date'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary_min']['total_interest_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary_min']['total_principal_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary_min']['total_debt_expense'])%></td>
+							</tr>
+							<tr>
+								<td class="table_y_axis">Difference</td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['payoff_date'] - data['debt_accounts']['debt_expense_summary_min']['payoff_date'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_interest_paid'] - data['debt_accounts']['debt_expense_summary_min']['total_interest_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_principal_paid'] - data['debt_accounts']['debt_expense_summary_min']['total_principal_paid'])%></td>
+								<td><%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_debt_expense'] - data['debt_accounts']['debt_expense_summary_min']['total_debt_expense'])%></td>
+							</tr>
+					</tbody>
+				</table>
+			</div>
 	</div>
 	<div class="right_case_container">
 		<h3 class="case_name">Case 2</h3>
@@ -1329,8 +1399,9 @@ var CashflowView = Backbone.View.extend({
 		}
 		var expenses_totals = {'amount':expense_amount,'pct':expense_pct};
 
+		var future_months = ['Jul \'13','Aug \'13','Sep \'13','Oct \'13','Nov \'13','Dec \'13'];
 
-    	var template = _.template( $("#cashflow_template").html(), {expenses:expenses, expenses_totals:expenses_totals, data:data,insolvent_month:insolvent_month, insolvent_left:false,insolvent_right:true} );
+    	var template = _.template( $("#cashflow_template").html(), {expenses:expenses, expenses_totals:expenses_totals, data:data,insolvent_month:insolvent_month, insolvent_left:false,insolvent_right:true,future_months:future_months} );
         this.$el.html( template );
 
         //build the pie(s)
@@ -1430,8 +1501,15 @@ var DebtSummaryView = Backbone.View.extend({
     		counter += 1;
     	});
 
+    	var debt_totals = {"min_payment":0,"WA_rate":0.0};
+    	var total_debt_balance = data['debt_accounts']['total_debt'][1];
+    	_.each(_.keys(data['debt_accounts']['accounts']), function(key){
+    		debt_totals['min_payment'] += data['debt_accounts']['accounts'][key]['items']['payments'][1];
+    		debt_totals['WA_rate'] += (data['debt_accounts']['accounts'][key]['items']['ending_balance'][1] / total_debt_balance) * data['debt_accounts']['accounts'][key]['rate'];
+    	});
 
-    	var template = _.template( $("#debt_summary_template").html(), {data:data, debt_accounts:debt_accounts, legend_names:legend_names, colors: this.fillColors} );
+
+    	var template = _.template( $("#debt_summary_template").html(), {data:data, debt_accounts:debt_accounts, debt_totals:debt_totals, legend_names:legend_names, colors: this.fillColors} );
         this.$el.html( template );
 
 

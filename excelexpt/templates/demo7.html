@@ -1486,7 +1486,12 @@ var DebtSummaryView = Backbone.View.extend({
     		var data_dict = debt_accounts[key]['items']['ending_balance'];
     		var data_list = []
     		for (j=0;j<(labels.length * 12);j++){
-    			data_list.push(data_dict[j]);
+    			if(data_dict[j] > 1) {
+    				data_list.push(data_dict[j]);	
+    			} else {
+    				data_list.push(0);
+    			}
+    			
     			j+=11;
     		}
     		var this_dataset = {

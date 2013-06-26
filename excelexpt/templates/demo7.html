@@ -570,7 +570,7 @@ var CaseCollection = Backbone.Collection.extend({
 									<td>- Expenses</td>
 									<td>&nbsp;</td>
 									<%for(i=1;i<=data['survival_period']['months_remaining_rounded'];i++){{'{'}}%>
-										<td><%=numberWithCommas(ata['survival_period']['expenses'][i])%></td>
+										<td><%=numberWithCommas(data['survival_period']['expenses'][i])%></td>
 									<%{{'}'}}%>
 								</tr>
 								<tr>

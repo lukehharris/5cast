@@ -563,7 +563,7 @@ var CaseCollection = Backbone.Collection.extend({
 							<thead>
 								<th>&nbsp;</th>
 								<th>Today</th>
-								<%for(i=0;i<data['survival_period']['months_remaining_rounded'];i++){{'{'}}%>
+								<%for(i=1;i<=data['survival_period']['months_remaining_rounded'];i++){{'{'}}%>
 									<th><%=month_conversion(i)%></th>
 								<%{{'}'}}%>
 							</thead>

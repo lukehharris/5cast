@@ -393,8 +393,22 @@ def demo7():
         scenarios_query = current_user.scenarios.all()
         base_id = None
         other_ids = []
+        new_data = None
         if scenarios_query == []:
             data_exists = False
+            data = {
+                'name':'Base Case',
+                'isBaseCase': True,
+                'income_items': {u'Salary': {u'frequency': u'monthly', u'type': u'flatline', u'value': u'0'}},
+                'basic_expenses': {u'TV/Internet': {u'frequency': u'monthly', u'type': u'flatline', u'value': u'0'}, u'Food': {u'frequency': u'monthly', u'type': u'flatline', u'value': u'0'}, u'Housing': {u'frequency': u'monthly', u'type': u'flatline', u'value': u'0'}, u'Utilities': {u'frequency': u'monthly', u'type': u'flatline', u'value': u'0'}, u'Phone': {u'frequency': u'monthly', u'type': u'flatline', u'value':u'0'}, u'Gym': {u'frequency': u'monthly', u'type': u'flatline', u'value': u'0'}},
+                'misc_expenses': {},
+                'cash_accounts': {u'Checking': {u'rate': u'0', u'balance': u'0'}, u'Savings': {u'rate': u'0', u'balance': u'0'}, u'Investment': {u'rate': u'0', u'balance': u'0'}},
+                'debt_accounts': {u'Credit Card': {u'rate': u'0', u'balance': u'0', u'payment': u'0'}, u'Student': {u'rate': u'0', u'balance': u'0', u'payment': u'0'}}
+            }
+            new_data = build_demo7.build_demo7_data(data)
+            new_data = json.dumps(new_data)
+             
+
         else:
             for scenario in scenarios_query:
                 if scenario.is_base:
@@ -402,12 +416,11 @@ def demo7():
                 else:
                     other_ids.append(scenario.id)
             data_exists = True
-        return render_template('demo7.html',data_exists=data_exists, base_id=base_id, other_ids=other_ids)
+        return render_template('demo7.html',data_exists=data_exists,new_data=new_data, base_id=base_id, other_ids=other_ids)
     else:
         return redirect(url_for('login'))
 
 import build_demo7
-
 
 
 @app.route('/case', methods=['POST']) #this is where new cases are POSTed, or collections are GET..tten
@@ -557,5 +570,5 @@ def load_user(user_id):
 @login_required
 def logout():
     logout_user()
-    return(redirect(url_for('index')))
+    return(redirect(url_for('login')))
 

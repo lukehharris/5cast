@@ -383,12 +383,37 @@ input.input_percentage {
     margin-left: auto;
     margin-right: auto;
     font-size: 12px;
+    /*border-collapse: separate;*/
 }
+
+.right_case_container table thead th,
+.left_case_container table thead th {
+    background-image: linear-gradient(to bottom, #EEEEEE, #DADADA);    
+}
+/*
+.right_case_container table th:first-child,
+.left_case_container table th:first-child {
+    border-top-left-radius: 4px;
+}
+.right_case_container table th:last-child,
+.left_case_container table th:last-child {
+    border-top-right-radius: 4px;
+}
+.right_case_container table tr:last-child td:first-child,
+.left_case_container table tr:last-child td:first-child {
+    border-bottom-left-radius: 4px;
+}
+.right_case_container table tr:last-child td:last-child,
+.left_case_container table tr:last-child td:last-child {
+    border-bottom-right-radius: 4px;
+}
+*/
+
 .right_case_container th,
 .right_case_container td,
 .left_case_container th,
 .left_case_container td {
-    border: 1px solid black;
+    border: 1px solid #CCCCCC;
     padding: 4px;
 }
 

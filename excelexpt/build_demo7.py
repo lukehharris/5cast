@@ -36,13 +36,13 @@ def build_demo7_data(data):
     
     
 
-    NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
+    #NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
 
 
     s = calc_survival_period(s)
 
     s = build_debt_summary(s, min_payment=True)
-    s = allocate_NI_2(s, NI_order)
+    s,NI_order = allocate_NI_2(s)
     s = NI_allocation_introspection(s, NI_order)
     s = build_debt_summary(s)
     s = calc_net_income_raw(s)
@@ -62,6 +62,7 @@ def calc_survival_period(s):
         survival_period = round(survival_period_unround,1)
     except ZeroDivisionError:
         survival_period = 'no expenses'
+        survival_period_unround = 0
     #print survival_period
     s.update({'survival_period':{'months_remaining':survival_period,'months_remaining_rounded':int(math.ceil(survival_period_unround)),'beginning_balance':{0:0},'expenses':{0:0},'ending_balance':{0:0}}})
     
@@ -174,8 +175,21 @@ def allocate_NI(q, NI_order):
     return s
 """
 
-def allocate_NI_2(q, NI_order):
+def allocate_NI_2(q):
     s = q
+    #NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
+
+    #pay down debt accounts, highest rate first, then contribute to "Investment" account
+    debt_accounts_sorted = []
+    for account in s['debt_accounts']['accounts']:
+        debt_accounts_sorted.append({'type':'debt_accounts','name':account,'rate':s['debt_accounts']['accounts'][account]['rate']})
+    from operator import itemgetter
+    debt_accounts_sorted = sorted(debt_accounts_sorted, key=itemgetter('rate'), reverse=True) #sort by highest rate
+    for item,d in enumerate(debt_accounts_sorted):
+        del debt_accounts_sorted[item]['rate']
+    NI_order = debt_accounts_sorted
+    NI_order.append({'type':'cash_accounts','name':'Investment','max_balance':False})
+
     s['cash_accounts']['accounts']['Checking']['items'].update({'net_income':{0:0}})
     s.update({'NI_allocation':[]})
     for item in NI_order:
@@ -245,7 +259,7 @@ def allocate_NI_2(q, NI_order):
                     raise Exception('Invalid account type: %s' % account_type)
         s = calculate_totals_for_x(s, x)
     #s = calc_NI_allocation_changes(s)
-    return s
+    return s, NI_order
 
 def NI_allocation_introspection(s, NI_order):
     for item in NI_order:

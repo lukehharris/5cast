@@ -71,6 +71,7 @@
 		0: x,
 		1: x+e
 	},
+	'insolvent': False,
 	'survival_period': 4,
 	'NI_allocation':[
 		{
@@ -188,6 +189,7 @@
 			0: 3880,
 			1: 3880
 		},
+		'no_debt': False,
 		'debt_expense_summary': {
 			'interest_paid':{
 				0: 2400,

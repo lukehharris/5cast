@@ -34,22 +34,32 @@ def build_demo7_data(data):
     s = calculate_totals(s)
     
     
-    
-
-    #NI_order = [{'type':'debt_accounts','name':'Credit Card'},{'type':'debt_accounts','name':'Student'},{'type':'cash_accounts','name':'Investment','max_balance':False}]
-
-
-    s = calc_survival_period(s)
+    s = calc_survival_period_2(s)
 
     s = build_debt_summary(s, min_payment=True)
+
     s,NI_order = allocate_NI_2(s)
-    s = NI_allocation_introspection(s, NI_order)
+    s = calc_insolvency(s)
+    if s['insolvent'] == True:
+        s = calc_survival_period_2(s, deduction="Net Income")
+    else:
+        s = NI_allocation_introspection(s, NI_order)
+
+    
     s = build_debt_summary(s)
     s = calc_net_income_raw(s)
 
         #d.append(s)
 
     #return d
+    return s
+
+def calc_insolvency(s):
+    # insolvency = assets < 0
+    s.update({'insolvent':False})
+    for x in range(1,global_max_months):
+        if s['cash_accounts']['total'][x] < 0:
+            s['insolvent'] = True
     return s
 
 def calc_survival_period(s):
@@ -72,6 +82,32 @@ def calc_survival_period(s):
         s['survival_period']['expenses'][x] = -1* expenses
         s['survival_period']['ending_balance'][x] = s['survival_period']['beginning_balance'][x] + s['survival_period']['expenses'][x]
 
+    return s
+
+def calc_survival_period_2(s, deduction='Expenses'):
+    s.update({'survival_period':{'months_remaining':0,'months_remaining_rounded':0,'deduction':deduction,'beginning_balance':{0:0},'expenses':{0:0},'ending_balance':{0:s['cash_accounts']['total'][0]}}})
+
+    x = 1
+    while x < 121:
+        s['survival_period']['beginning_balance'][x] = s['survival_period']['ending_balance'][x-1]
+
+        if deduction == 'Expenses':
+            s['survival_period']['expenses'][x] = -1* s['expenses']['total'][x]
+        elif deduction == 'Net Income':
+            s['survival_period']['expenses'][x] = s['net_income'][x]
+
+
+        s['survival_period']['ending_balance'][x] = s['survival_period']['beginning_balance'][x] + s['survival_period']['expenses'][x]
+
+        if s['survival_period']['ending_balance'][x] <= 0:
+            s['survival_period']['months_remaining_rounded'] = x
+            survival_period = (x-1) + ((s['survival_period']['beginning_balance'][x]) / (-1*s['survival_period']['expenses'][x]))
+            s['survival_period']['months_remaining'] = round(survival_period,1)
+            break
+        else:
+            x += 1
+    if x == 121:
+        s['survival_period']['months_remaining'] = ">10"
     return s
 
 def calc_net_income_raw(s):
@@ -522,6 +558,13 @@ def populate_flatline_vector(s, section, item_name, frequency, value):
     return s
 
 def populate_pct_change_vector(s, section, item_name, frequency, value, change, change_frequency, change_direction, change_periods):
+    print item_name
+    print frequency
+    print value
+    print change
+    print change_frequency 
+    print change_direction
+    print change_periods
     monthly_value = 0
     if frequency == 'yearly':
         monthly_value = value / 12.0
@@ -537,7 +580,7 @@ def populate_pct_change_vector(s, section, item_name, frequency, value, change, 
     if section == 'income':
         s[section]['items'][item_name][0] = monthly_value
         for x in range(1,global_max_months):
-            if ((change_frequency == 'year') and (x % (12 * change_periods) == 0)) or ((change_frequency == 'month') and (x % change_periods)):
+            if ((change_frequency == 'year') and (x % (12 * change_periods) == 0)) or ((change_frequency == 'month') and (x % change_periods)==0):
                 monthly_value = monthly_value * (1 + change_pct)
             s[section]['items'][item_name][x] = monthly_value
     elif section == 'Basic' or section == 'Misc' or section == 'Debt':
@@ -754,6 +797,7 @@ def build_debt_section(s, debt_accounts):
     for name,data in debt_accounts.iteritems():
         #name = k[:-8]
         s['debt_accounts']['accounts'].update({name:{'rate':float(data['rate'])/100.0,'items': {'beginning_balance':{},'payments':{},'interest':{},'ending_balance':{0:float(data['balance'])} } } } )
+        
         s = build_debt_sub_section(s, name)
 
     s = build_debt_summary(s)
@@ -841,6 +885,14 @@ def build_debt_summary(s, min_payment=False):
         s['debt_accounts'][debt_expense_summary]['total_expense'].update({x:0})
         s['debt_accounts'][debt_expense_summary]['total_expense'][x] = s['debt_accounts'][debt_expense_summary]['interest_paid'][x] + s['debt_accounts'][debt_expense_summary]['principal_paid'][x]
         s['debt_accounts'][debt_expense_summary]['total_debt_expense'] += s['debt_accounts'][debt_expense_summary]['total_expense'][x]
+
+    no_debt = True
+    for x in range(1,global_max_months):
+        if s['debt_accounts']['total_debt'][x] > 0:
+            no_debt = False
+            break
+    s['debt_accounts'].update({'no_debt':no_debt})
+    print s['debt_accounts']['no_debt']
 
     return s
 

@@ -5,15 +5,21 @@ html, body {
 .header {
     background: #F7F7F7;
     box-shadow: 0 0 12px gray;
-    margin-top: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1;
 }
 .header > h1 {
 	display: inline-block;
 	font-weight: normal;
-	margin-left: 20px;
+	margin: 10px 0 0 10px;
 	font-size: 24pt;
-	position: relative;
-	top: 16px;
+}
+.header #back_to_input,
+.header #back_to_output {
+    margin-bottom: 10px;
 }
 .header_menu {
 	 float: right;
@@ -207,7 +213,6 @@ input.input_percentage {
 #table2 table td,
 #debt_summary_table table td,
 #expense_breakdown table td {
-    border: 1px solid black;
     padding: 5px 10px;
 }
 .table_y_axis {

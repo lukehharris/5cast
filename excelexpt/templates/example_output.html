@@ -1,8 +1,18 @@
-{% extends "base.html" %}
+<!doctype html>
+<html>
+<head>
+	<title>{% block title %}5cast{% endblock %}</title>
+	
+	<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
 
-{% block title %}5cast{% endblock %}
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
 
-{% block extra_headers %}
+	<script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+	
+	<link href="http://netdna.bootstrapcdn.com/font-awesome/3.0/css/font-awesome.css" rel="stylesheet">
+
+
 <link href="/static/styles2.css" rel="stylesheet">
 <script src="/static/underscore-min.js"></script>
 <script src="/static/backbone-min.js"></script>
@@ -2521,18 +2531,20 @@ $(document).ready(function() {
 
 </script>
 
-{% endblock %}
+</head>
+<body>
+	<div class="header">
+		<h1>5cast</h1>
+	</div>
 
-{% block main %}
 
-
-<div id="input" style="margin:30px;margin-top:90px;width:960px;">
+<div id="input" style="margin:30px;margin-top:90px;width:960px;" class="hidden">
 	<div id="input_left" style="float:left;width:700px;"></div>
 	<div id="input_right" style="float:right;width:200px;"></div>
 	
 </div>
 
-<div id="output" style="margin-top:90px;" class="hidden">
+<div id="output" style="margin-top:90px;">
 	<div class="content_box">
 		<div class="output_section_header" style="margin-top:0px;">
 			<h2>Net Worth</h2>
@@ -2568,4 +2580,6 @@ $(document).ready(function() {
 	</div>
 </div>
 
-{% endblock %}
+
+</body>
+</html>

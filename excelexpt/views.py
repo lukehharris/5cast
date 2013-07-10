@@ -108,7 +108,6 @@ def submit_demo2():
 
     return redirect(url_for('demo2_output'))
     
-
 @app.route('/demo2_output')
 def demo2_output():
     if current_user.is_anonymous():
@@ -285,8 +284,6 @@ def submit_demo3():
 
     return redirect(url_for('demo3_output_detail'))
 
-
-
 @app.route('/demo3_output')
 def demo3_output():
     if current_user.is_anonymous():
@@ -316,7 +313,6 @@ def demo3_output():
     #return render_template('demo3_output.html', s=scenarios_query[1].data)
     return render_template('demo3_output.html', s=scenarios,Chart1_data_pts=Chart1_data_pts,Chart1_labels=Chart1_labels)
 
-
 @app.route('/demo3_output_detail')
 def demo3_output_detail():
     if current_user.is_anonymous():
@@ -326,7 +322,6 @@ def demo3_output_detail():
     for scenario in scenarios_query:
         scenarios.append(scenario.data)
     return render_template('demo3_output_detail.html', s=scenarios)
-
 
 
 @app.route('/demo4')
@@ -366,7 +361,6 @@ def demo5():
         return render_template('demo5.html',data_exists=data_exists, base_id=base_id, other_ids=other_ids)
     else:
         return redirect(url_for('login'))
-
 
 @app.route('/demo6')
 def demo6():
@@ -502,6 +496,25 @@ def case2(id_input):
     
 
 
+@app.route('/example_output')
+def example_output():
+    email = 'example'
+    password = 'example'
+    user = util_fxns.authenticate(email, password)
+    print user
+    login_user(user)
+
+    scenarios_query = user.scenarios.all()
+    base_id = None
+    other_ids = []
+    new_data = None
+    for scenario in scenarios_query:
+        if scenario.is_base:
+            base_id = scenario.id
+        else:
+            other_ids.append(scenario.id)
+    data_exists = True
+    return render_template('example_output.html',data_exists=data_exists,new_data=new_data, base_id=base_id, other_ids=other_ids)
 
 
 

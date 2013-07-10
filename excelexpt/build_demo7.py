@@ -88,7 +88,10 @@ def calc_survival_period_2(s, deduction='Expenses'):
 
         if s['survival_period']['ending_balance'][x] <= 0:
             s['survival_period']['months_remaining_rounded'] = x
-            survival_period = (x-1) + ((s['survival_period']['beginning_balance'][x]) / (-1*s['survival_period']['expenses'][x]))
+            try:
+                survival_period = (x-1) + ((s['survival_period']['beginning_balance'][x]) / (-1*s['survival_period']['expenses'][x]))
+            except ZeroDivisionError:
+                survival_period = 0
             s['survival_period']['months_remaining'] = round(survival_period,1)
             break
         else:

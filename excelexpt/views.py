@@ -13,7 +13,8 @@ from xlwt.Utils import rowcol_to_cell
 
 @app.route('/')
 def index():
-    return render_template('test_temp.html')
+    #return render_template('test_temp.html')
+    return "Under Construction"
 
 @app.route('/demo')
 def demo():

@@ -482,7 +482,7 @@ var CaseCollection = Backbone.Collection.extend({
 		<h3 class="case_name">Base Case</h3>
 		<%if(data['insolvent'] == false){{'{'}} %>
 			<%if(data['net_income'][1] >= 0){{'{'}}%>
-				<div id="cashflow_left_pie" style="min-width: 485px; height:350px;"></div>
+				<div id="cashflow_left_pie" style="min-width: 470px; height:350px;"></div>
 				<div style="position:relative;top:-20px;">
 					<h4>Total Income: $<%=numberWithCommas(data['income']['total'][1])%></h4>
 					<h4>Total Expenses: $<%=numberWithCommas(expenses_totals['amount'])%></h4>

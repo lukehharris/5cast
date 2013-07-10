@@ -22,14 +22,14 @@
 	}
 	function month_conversion(month_number){
 		var months = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
-		var years = [' \'13',' \'14',' \'15',' \'16',' \'17',' \'18',' \'19',' \'20',' \'21',' \'22',' \'23'];
+		//var years = [' \'13',' \'14',' \'15',' \'16',' \'17',' \'18',' \'19',' \'20',' \'21',' \'22',' \'23'];
 		var month = months[(month_number-1)%12];
-		var year = years[Math.floor((month_number+5)/12)];
+		//var year = years[Math.floor((month_number+5)/12)];
+		var year = ' \'' + (13 + Math.floor((month_number+5)/12));
 		return month + year;
 	}
-		
-	
 </script>
+
 <!-- MODELS -->
 <script type="text/javascript">
 var Case = Backbone.Model.extend({
@@ -63,7 +63,7 @@ var CaseCollection = Backbone.Collection.extend({
 	<div id="input_accordion" class="accordion">
 		<div class="accordion-group" id="income_items_accordion_group">
 			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#input_accordion" href="#collapseOne">
+				<a class="accordion-toggle" data-toggle="collapse" data-target="#collapseOne">
 					Income
 				</a>
 			</div>
@@ -75,7 +75,7 @@ var CaseCollection = Backbone.Collection.extend({
 		</div>
 		<div class="accordion-group" id="expense_items_accordion_group">
 			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#input_accordion" href="#collapseTwo">
+				<a class="accordion-toggle" data-toggle="collapse" data-target="#collapseTwo">
 					Expenses
 				</a>
 			</div>
@@ -87,7 +87,7 @@ var CaseCollection = Backbone.Collection.extend({
 		</div>
 		<div class="accordion-group" id="cash_accounts_accordion_group">
 			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#input_accordion" href="#collapseThree">
+				<a class="accordion-toggle" data-toggle="collapse" data-target="#collapseThree">
 					Assets
 				</a>
 			</div>
@@ -99,7 +99,7 @@ var CaseCollection = Backbone.Collection.extend({
 		</div>
 		<div class="accordion-group" id="debt_accounts_accordion_group">
 			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#input_accordion" href="#collapseFour">
+				<a class="accordion-toggle" data-toggle="collapse" data-target="#collapseFour">
 					Debt
 				</a>
 			</div>
@@ -499,11 +499,13 @@ var CaseCollection = Backbone.Collection.extend({
 								<li>This debt will be paid off by <%=month_conversion(data['NI_allocation'][i]['payoff_date'])%> (see the Debt Summary section for details)</li>
 							</ul>
 						<%{{'}'}}else{{'{'}}%>
-							<h5><%=i+1%>) Contribute to Your <%=data['NI_allocation'][i]['name']%> Account</h5>
-							<ul>
-								<li>Contribute $<%=numberWithCommas(data['NI_allocation'][i]['contribution'])%> per month starting in <%=month_conversion(data['NI_allocation'][i]['start_date'])%></li>
-								<li>You can expect to have about $<%=numberWithCommas(roundToHundreds(data['NI_allocation'][i]['end_balance']))%> in the account 10 years from now (see the Assets Summary section for details)</li>
-							</ul>
+							<% if(data['NI_allocation'][i]['contribution'] > 0){{'{'}}%>
+								<h5><%=i+1%>) Contribute to Your <%=data['NI_allocation'][i]['name']%> Account</h5>
+								<ul>
+									<li>Contribute $<%=numberWithCommas(data['NI_allocation'][i]['contribution'])%> per month starting in <%=month_conversion(data['NI_allocation'][i]['start_date'])%></li>
+									<li>You can expect to have about $<%=numberWithCommas(roundToHundreds(data['NI_allocation'][i]['end_balance']))%> in the account 10 years from now (see the Assets Summary section for details)</li>
+								</ul>
+							<%{{'}'}}%>
 						<%{{'}'}}%>
 					<%{{'}'}}%>
 				</div>
@@ -962,18 +964,20 @@ var CaseCollection = Backbone.Collection.extend({
 						<th>Interest Rate</th>
 					</thead>
 					<tbody>
-						<% _.each(_.keys(debt_accounts), function(key){{'{'}} %>
-							<tr>
-								<td class="table_y_axis"><%=key%></td>
-								<td>$<%=numberWithCommas(data['debt_accounts']['accounts'][key]['items']['ending_balance'][1])%></td>
-								<td>$<%=numberWithCommas(-1*data['debt_accounts']['accounts'][key]['items']['payments'][1])%></td>
-								<td><%=(Math.round(data['debt_accounts']['accounts'][key]['rate'] * 1000)/10).toFixed(1)%>%</td>
-							</tr>
+						<% _.each(_.keys(data['debt_accounts']['accounts']), function(key){{'{'}} %>
+							<%if(data['debt_accounts']['accounts'][key]['items']['ending_balance'][0] > 0 ){{'{'}}%>
+								<tr>
+									<td class="table_y_axis"><%=key%></td>
+									<td>$<%=numberWithCommas(data['debt_accounts']['accounts'][key]['items']['ending_balance'][0])%></td>
+									<td>$<%=numberWithCommas(-1*data['debt_accounts']['accounts'][key]['items']['payments'][1])%></td>
+									<td><%=(Math.round(data['debt_accounts']['accounts'][key]['rate'] * 1000)/10).toFixed(1)%>%</td>
+								</tr>
+							<%{{'}'}}%>
 						<%{{'});'}}%>
-						<%if(_.keys(data['debt_accounts']['accounts']).length >=2){{'{'}}%>
+						<%if(_.keys(debt_accounts).length >=2){{'{'}}%>
 							<tr>
 								<td class="table_y_axis">Total</td>
-								<td>$<%=numberWithCommas(data['debt_accounts']['total_debt'][1])%></td>
+								<td>$<%=numberWithCommas(data['debt_accounts']['total_debt'][0])%></td>
 								<td>$<%=numberWithCommas(-1*debt_totals['min_payment'])%></td>
 								<td><%=(Math.round(debt_totals['WA_rate'] * 1000)/10).toFixed(1)%>%</td>
 							</tr>
@@ -981,54 +985,56 @@ var CaseCollection = Backbone.Collection.extend({
 					</tbody>
 				</table>
 			</div>
-			<div id="debt_chart" style="text-align:center;margin-top:40px;">
-				<div><h4>Projected Debt Balances over Time</h4></div>
-				<div id="debt_chart_div" style="width:500px;"></div>
-				
-			</div>
-			<div id="debt_summary_table2" style="margin:40px 0">
-				<table>
-					<thead>
-						<th style="text-align:left;">Account</th>
-						<th>Expected Payoff Date</th>
-						<th>Interest To Be Paid</th>
-						<th>Principal To Be Paid</th>
-						<th>Total To Be Paid</th>
-					</thead>
-					<tbody>
-						<% _.each(_.keys(debt_accounts), function(key){{'{'}} %>
-							<tr>
-								<td class="table_y_axis"><%=key%></td>
-								<td>
-									<%=month_conversion(data['debt_accounts']['accounts'][key]['debt_expense_summary']['payoff_date'])%> 
-									<br>
-									(<%=data['debt_accounts']['accounts'][key]['debt_expense_summary']['payoff_date']%> months)
-								</td>
-								<td>$<%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_interest_paid'])%></td>
-								<td>$<%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_principal_paid'])%></td>
-								<td>$<%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_debt_expense'])%></td>
-							</tr>
-						<%{{'});'}}%>
-						<%if(_.keys(data['debt_accounts']['accounts']).length >=2){{'{'}}%>
-							<tr>
-								<td class="table_y_axis">Total</td>
-								<td>
-								<%=month_conversion(data['debt_accounts']['debt_expense_summary']['payoff_date'])%> 
-								<br>
-								(<%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['payoff_date'])%> months)
-								</td>
-								<td>$<%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_interest_paid'])%></td>
-								<td>$<%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_principal_paid'])%></td>
-								<td>$<%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_debt_expense'])%></td>
-							</tr>
-						<%{{'}'}}%>
-					</tbody>
-				</table>
-			</div>
-
+			
 			<%if(data['insolvent'] == false) {{'{'}}%>
+				<div id="debt_chart" style="text-align:center;margin-top:40px;">
+					<div><h4>Projected Debt Balances over Time</h4></div>
+					<div id="debt_chart_div" style="width:470px;"></div>
+					
+				</div>
+				<div id="debt_summary_table2" style="margin:40px 0">
+					<table>
+						<thead>
+							<th style="text-align:left;">Account</th>
+							<th>Expected Payoff Date</th>
+							<th>Interest To Be Paid</th>
+							<th>Principal To Be Paid</th>
+							<th>Total To Be Paid</th>
+						</thead>
+						<tbody>
+							<% _.each(_.keys(data['debt_accounts']['accounts']), function(key){{'{'}} %>
+								<tr>
+									<td class="table_y_axis"><%=key%></td>
+									<td>
+										<%=month_conversion(data['debt_accounts']['accounts'][key]['debt_expense_summary']['payoff_date'])%> 
+										<br>
+										(<%=data['debt_accounts']['accounts'][key]['debt_expense_summary']['payoff_date']%> months)
+									</td>
+									<td>$<%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_interest_paid'])%></td>
+									<td>$<%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_principal_paid'])%></td>
+									<td>$<%=numberWithCommas(data['debt_accounts']['accounts'][key]['debt_expense_summary']['total_debt_expense'])%></td>
+								</tr>
+							<%{{'});'}}%>
+							<%if(_.keys(data['debt_accounts']['accounts']).length >=2){{'{'}}%>
+								<tr>
+									<td class="table_y_axis">Total</td>
+									<td>
+									<%=month_conversion(data['debt_accounts']['debt_expense_summary']['payoff_date'])%> 
+									<br>
+									(<%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['payoff_date'])%> months)
+									</td>
+									<td>$<%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_interest_paid'])%></td>
+									<td>$<%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_principal_paid'])%></td>
+									<td>$<%=numberWithCommas(data['debt_accounts']['debt_expense_summary']['total_debt_expense'])%></td>
+								</tr>
+							<%{{'}'}}%>
+						</tbody>
+					</table>
+				</div>
+
+			
 				<h4 class="case_name">Extra Payments vs. Minimum Payments Only</h4>
-				<% _.each(_.keys(debt_accounts), function(key){{'{'}} %>
+				<% _.each(_.keys(data['debt_accounts']['accounts']), function(key){{'{'}} %>
 					<div style="margin-top:40px;">
 					<h4><%=key%></h4>
 						<table>
@@ -1118,6 +1124,10 @@ var CaseCollection = Backbone.Collection.extend({
 						</table>
 					</div>
 				<%{{'}'}}%>
+			<%{{'}'}}else{{'{'}}%>
+				<p style="margin-top:40px;font-size:16px;">
+					<strong>You are projected to be insolvent. For projections about your debt to be meaningful, you must first resolve your cash flow problem.</strong>
+				</p>
 			<%{{'}'}}%>
 		<%{{'}'}}%>
 	</div>
@@ -1126,47 +1136,44 @@ var CaseCollection = Backbone.Collection.extend({
 	</div>
 </script>
 
-
-<script type="text/template" id="debt_summary_table_template">
-	<div>
-		<table>
-			<thead>
-				<th style="text-align:left;">Account</th>
-				<th>Today</th>
-				<th>6 mon</th>
-				<th>1 yr</th>
-				<th>2 yr</th>
-				<th>5 yr</th>
-				<th>10 yr</th>
-			</thead>
-			<tbody>
-				<% _.each(_.keys(debt_accounts), function(key){{'{'}} %>
-					<tr>
-						<td class="table_y_axis"><%=key%></td>
-						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][0])) %></td>
-						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][6])) %></td>
-						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][12])) %></td>
-						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][24])) %></td>
-						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][60])) %></td>
-						<td><%=numberWithCommas(roundToHundreds(debt_accounts[key]['items']['ending_balance'][120])) %></td>
-					</tr>
-				<%{{'});'}}%>
-					<tr>
-						<td class="table_y_axis">Total</td>
-						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][0]))%></td>
-						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][6]))%></td>
-						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][12]))%></td>
-						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][24]))%></td>
-						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][60]))%></td>
-						<td><%=numberWithCommas(roundToHundreds(data['debt_accounts']['total_debt'][120]))%></td>
-					</tr>
-			</tbody>
-		</table>
+<script type="text/template" id="asset_summary_template">
+	<div class="left_case_container">
+		<h3 class="case_name"><%=data['name']%></h3>
+		<div id="asset_summary_table1">
+			<table>
+				<thead>
+					<th style="text-align:left;">Account</th>
+					<th>Current Balance</th>
+					<th>Expected Return</th>
+				</thead>
+				<tbody>
+					<% _.each(_.keys(data['cash_accounts']['accounts']), function(key){{'{'}} %>
+						<%if(data['cash_accounts']['accounts'][key]['items']['ending_balance'][0] > 0 ){{'{'}}%>
+							<tr>
+								<td class="table_y_axis"><%=key%></td>
+								<td>$<%=numberWithCommas(data['cash_accounts']['accounts'][key]['items']['ending_balance'][0])%></td>
+								<td><%=(Math.round(data['cash_accounts']['accounts'][key]['rate'] * 1000)/10).toFixed(1)%>%</td>
+							</tr>
+						<%{{'}'}}%>
+					<%{{'});'}}%>
+					<%if(_.keys(cash_accounts).length >=2){{'{'}}%>
+						<tr>
+							<td class="table_y_axis">Total</td>
+							<td>$<%=numberWithCommas(data['cash_accounts']['total'][0])%></td>
+							<td><%=(Math.round(WA_rate * 1000)/10).toFixed(1)%>%</td>
+						</tr>
+					<%{{'}'}}%>
+				</tbody>
+			</table>
+		</div>
+		<div id="asset_chart" style="text-align:center;margin-top:40px;">
+			<div><h4>Projected Asset Balances over Time</h4></div>
+			<div id="asset_chart_div" style="width:470px;"></div>
+		</div>
 	</div>
-</script>
-
-<script type="text/template" id="debt_chart_legend_template">
-	
+	<div class="right_case_container">
+		<h3 class="case_name">Case 2</h3>
+	</div>
 </script>
 
 
@@ -1191,11 +1198,9 @@ var ParentView = Backbone.View.extend({
 
 					var netWorthChartView = new NetWorthChartView({el:$('#net_worth_chart_legend'), model: self.model});
 					var netWorthTablesView = new NetWorthTablesView({el:$('#net_worth_tables'), model: self.model});
-					//var chart2view = new Chart2View({el:$('#chart2'), model: self.model});
 					var cashflowview = new CashflowView({el:$('#cashflow_section'), model: self.model});
 					var debtSummaryView = new DebtSummaryView({el:$('#debt_summary_section'),model: self.model});
-					//var debtSummaryTableView = new DebtSummaryTableView({el:$('#debt_summary_table'), model: self.model});
-					//var debtGraphView = new DebtGraphView({el:$('#debt_chart_legend'), model: self.model});
+					var assetSummaryView = new AssetSummaryView({el:$('#asset_summary_section'),model: self.model});
 				}
 			});
 		{% else %}
@@ -1216,6 +1221,7 @@ var ParentView = Backbone.View.extend({
 			var netWorthTablesView = new NetWorthTablesView({el:$('#net_worth_tables'), model: self.model});
 			var cashflowview = new CashflowView({el:$('#cashflow_section'), model: self.model});
 			var debtSummaryView = new DebtSummaryView({el:$('#debt_summary_section'),model: self.model});
+			var assetSummaryView = new AssetSummaryView({el:$('#asset_summary_section'),model: self.model});
     	{% endif %}
     },
     render: function(){
@@ -1502,7 +1508,6 @@ var InputRightView = Backbone.View.extend({
     }
 });
 
-
 var NetWorthTablesView = Backbone.View.extend({
 	initialize: function(){
 		_.bindAll(this, 'render');
@@ -1514,68 +1519,6 @@ var NetWorthTablesView = Backbone.View.extend({
         this.$el.html( template );
 	}
 });
-/*
-var NetWorthChartView_OLD = Backbone.View.extend({
-	fillColors: ["rgba(151,187,205,0.5)", "rgba(153,230,153, 0.5)"],
-	strokeColors: ["rgba(151,187,205,1)", "rgba(153,230,153,1)"],
-	pointColors: ["rgba(151,187,205,1)", "rgba(153,230,153,1)"],
-	pointStrokeColors: ["#fff", "#fff"],
-    initialize: function(){
-    	var labels_all = Object.keys(this.model.at(0).get('data')['net_worth']);
-    	var labels = [];
-    	for (j=0;j<labels_all.length;j++){
-    		labels.push(j);
-			j+=11;
-		}
-		this.labels = labels;
-    	
-    	_.bindAll(this, 'render');
-		this.listenTo(this.model, 'add change destroy', this.render);
-        this.render();
-    },
-    render: function(){
-    	var datasets = [];
-    	var legend_names = [];
-    	
-    	//console.log(this.model);
-    	//console.log(this.model.length);
-    	for (i=0;i<this.model.length;i++){
-    		var data_dict = this.model.at(i).get('data')['net_worth'];
-    		var data_list = []
-    		for (j=0;j<(this.labels.length * 12);j++){
-    			data_list.push(data_dict[j]);
-    			j+=11;
-    		}
-    		var this_dataset = {
-    			fillColor : this.fillColors[i],
-    			strokeColor : this.strokeColors[i],
-    			pointColor : this.pointColors[i],
-    			pointStrokeColor : this.pointStrokeColors[i],
-    			data : data_list
-    		};
-    		datasets.push(this_dataset);
-    		legend_names.push(this.model.at(i).get('name'));
-    	}
-
-
-
-    	var template = _.template( $("#net_worth_chart_legend_template").html(), {names:legend_names, colors:this.strokeColors} );
-        this.$el.html( template );
-
-        //console.log($("#chart1"));
-        //console.log($("#chart1").get(0));
-
-        var ctx = $("#net_worth_chart_canvas").get(0).getContext("2d");
-        //console.log(this.datasets);
-
-		var Chart_data = {
-			labels: this.labels,
-			datasets : datasets
-		};
-		new Chart(ctx).Line(Chart_data,{bezierCurve : false});
-    }
-});
-*/
 var NetWorthChartView = Backbone.View.extend({
 	initialize: function(){
 		_.bindAll(this, 'render');
@@ -1674,103 +1617,6 @@ var NetWorthChartView = Backbone.View.extend({
 	    });
 	}
 });
-
-
-
-/*
-var Chart2View = Backbone.View.extend({
-    initialize: function(){
-    	_.bindAll(this, 'render');
-		this.listenTo(this.model, 'add change destroy', this.render);
-        this.render();
-    },
-    render: function(){
-		var model = this.model.at(0);
-		var income_items = [];
-		var expenses = [];
-		var inc_items = model.get('data')['income']['items'];
-		_.each(_.keys(inc_items), function(key){
-			income_items.push({name:key,y:inc_items[key][1]});
-		});
-		income_items.push({
-            name: 'Total Income',
-            isIntermediateSum: true,
-            color: Highcharts.getOptions().colors[1]
-        });
-		var be_items = model.get('data')['expenses']['sections']['Basic']['items'];
-		_.each(_.keys(be_items), function(key){
-			expenses.push({name:key,y:(-1)*be_items[key][1]});
-		});
-		var me_items = model.get('data')['expenses']['sections']['Misc']['items'];
-		_.each(_.keys(me_items), function(key){
-			expenses.push({name:key,y:(-1)*me_items[key][1]});
-		});
-		var de_items = model.get('data')['expenses']['sections']['Debt']['items'];
-		_.each(_.keys(de_items), function(key){
-			if(key.slice(-9,key.length)!='_Optional'){
-				expenses.push({name:key,y:(-1)*de_items[key][1]});
-			}
-		});
-		expenses.push({
-            name: 'Net Income',
-            isSum: true,
-            color: Highcharts.getOptions().colors[1]
-        });
-
-
-        //console.log(income_items);
-        //console.log(expenses);
-        var data = income_items.concat(expenses);
-        //console.log(data);
-
-    	this.$el.highcharts({
-        chart: {
-            type: 'waterfall'
-        },
-        title: {
-            text: 'Monthly Net Income Breakdown'
-        },
-        xAxis: {
-            type: 'category'
-        },
-        yAxis: {
-            title: {
-                text: 'USD'
-            }
-        },
-        legend: {
-            enabled: false
-        },
-        exporting: {
-        	enabled: false
-        },
-        credits: {
-        	enabled: false
-        },
-        tooltip: {
-            pointFormat: '<b>${point.y:,.0f}</b> USD'
-        },
-        series: [{
-            upColor: Highcharts.getOptions().colors[2],
-            color: Highcharts.getOptions().colors[3],
-            data: data,
-            dataLabels: {
-                enabled: true,
-                formatter: function () {
-                    //return Highcharts.numberFormat(this.y / 1000, 0, ',') + 'k';
-                    return Highcharts.numberFormat(this.y, 0, ',');
-                },
-                style: {
-                    color: '#FFFFFF',
-                    fontWeight: 'bold'
-                }
-            },
-            pointPadding: 0
-        }]
-    });
-    }
-});
-*/
 
 var CashflowView = Backbone.View.extend({
     initialize: function(){
@@ -1910,7 +1756,6 @@ var CashflowView = Backbone.View.extend({
     }
 });
 
-
 var DebtSummaryView = Backbone.View.extend({
 	/*
 	fillColors: ["rgba(153,230,153, 0.5)","rgba(151,187,205,0.5)"],
@@ -1934,44 +1779,11 @@ var DebtSummaryView = Backbone.View.extend({
     render: function(){
     	var data = this.model.at(0).get('data');
     	var debt_accounts = this.model.at(0).get('data')['debt_accounts']['accounts'];
-    	/*
-        var labels_all = Object.keys(data['debt_accounts']['total_debt']);
-    	var labels = [];
-    	for (j=0;j<labels_all.length;j++){
-    		labels.push(j);
-			j+=11;
-		}
-		var datasets = [];
-    	var legend_names = [];
-    	
-    	
-
-    	self = this;
-    	var counter = 0;
-    	_.each(_.keys(debt_accounts), function(key){
-    		var data_dict = debt_accounts[key]['items']['ending_balance'];
-    		var data_list = []
-    		for (j=0;j<(labels.length * 12);j++){
-    			if(data_dict[j] > 1) {
-    				data_list.push(data_dict[j]);	
-    			} else {
-    				data_list.push(0);
-    			}
-    			
-    			j+=11;
+    	_.each(_.keys(debt_accounts),function(key){
+    		if(data['debt_accounts']['accounts'][key]['items']['ending_balance'][0] == 0){
+    			delete debt_accounts[key];
     		}
-    		var this_dataset = {
-    			fillColor : self.fillColors[counter],
-    			strokeColor : self.strokeColors[counter],
-    			pointColor : self.pointColors[counter],
-    			pointStrokeColor : self.pointStrokeColors[counter],
-    			data : data_list
-    		};
-    		datasets.push(this_dataset);
-    		legend_names.push(key);
-    		counter += 1;
     	});
-		*/
 
     	var debt_totals = {"min_payment":0,"WA_rate":0.0};
     	var total_debt_balance = data['debt_accounts']['total_debt'][1];
@@ -2085,6 +1897,127 @@ var DebtSummaryView = Backbone.View.extend({
     }
 });
 
+var AssetSummaryView = Backbone.View.extend({
+    initialize: function(){
+    	_.bindAll(this, 'render');
+		this.listenTo(this.model, 'add change destroy', this.render);
+		
+        var labels_all = _.keys(this.model.at(0).get('data')['net_worth']);
+    	var labels = ["Today"];
+    	for (j=1;j<labels_all.length;j++){
+    		labels.push(month_conversion(j));		
+    	}
+		this.labels = labels;
+		
+		this.render();
+    },
+    render: function(){
+    	var data = this.model.at(0).get('data');
+    	var cash_accounts = this.model.at(0).get('data')['cash_accounts']['accounts'];
+    	_.each(_.keys(cash_accounts),function(key){
+    		if(data['cash_accounts']['accounts'][key]['items']['ending_balance'][0] == 0){
+    			delete cash_accounts[key];
+    		}
+    	});
+
+    	var WA_rate = 0;
+    	_.each(_.keys(data['cash_accounts']['accounts']), function(key){
+    		WA_rate += (data['cash_accounts']['accounts'][key]['items']['ending_balance'][1] / data['cash_accounts']['accounts']['total']) * data['cash_accounts']['accounts'][key]['rate'];
+    	});
+    	if(isNaN(WA_rate)){WA_rate = 0.0;}
+
+    	var template = _.template( $("#asset_summary_template").html(), {data:data, cash_accounts:cash_accounts, WA_rate:WA_rate} );
+        this.$el.html( template );
+
+        var self = this;
+		var datasets_left = [];
+    	_.each(_.keys(cash_accounts), function(key){
+    		var data_dict = cash_accounts[key]['items']['ending_balance'];
+    		var data_list = []
+    		for (j=0;j<self.labels.length;j++){
+    			if(data_dict[j] > 1) {
+    				data_list.push(data_dict[j]);	
+    			} else {
+    				data_list.push(0);
+    			}
+    		}
+    		var this_dataset = {
+    			name: key,
+    			data: data_list
+    		}
+    		datasets_left.push(this_dataset);
+    	});
+        
+		$(function () {
+	        $('#asset_chart_div').highcharts({
+	            chart: {
+	                type: 'area'
+	            },
+	            colors: ["rgba(151,187,205,0.5)", "rgba(153,230,153, 0.5)"],
+	            title: {
+	            	text: false
+	            },
+	            xAxis: {
+	                labels: {
+	                	formatter: function(){
+	                		return self.labels[this.value];
+	                	}
+	                }
+	            },
+	            yAxis: {
+	                title: {
+	                    text: '$USD'
+	                },
+	                labels: {
+	                    formatter: function() {
+	                        return this.value / 1000 +'k';
+	                    }
+	                }
+	            },
+	            tooltip: {
+					shared: true,	            	
+	            	formatter: function(){
+	            		var s = '<b>'+self.labels[this.x]+'</b><br>';
+	            		var total_assets = 0;
+	            		$.each(this.points, function(i, point) {
+		                    //s += '<br/>'+ point.series.name +': '+ point.y +'m';
+		                    s += point.series.name+' Projected Balance: <b>$'+numberWithCommas(roundToHundreds(point.y))+'</b><br>';
+		                    total_assets += point.y;
+		                });
+		                s+= 'Total Assets Projected Balance: <b>$'+numberWithCommas(roundToHundreds(total_assets))+'</b>';
+	            		return s;
+	            	}
+	                //pointFormat: '{series.name} Projected Net Worth: <b>${point.y:,.0f}</b>',
+	                
+	            },
+	            plotOptions: {
+	                area: {
+	                    //pointStart: 0,
+	                    marker: {
+	                        enabled: false,
+	                        symbol: 'circle',
+	                        radius: 2,
+	                        states: {
+	                            hover: {
+	                                enabled: true
+	                            }
+	                        }
+	                    }
+	                }
+	            },
+	            exporting: {
+		        	enabled: false
+		        },
+		        credits: {
+		        	enabled: false
+		        },
+	            series: datasets_left
+	        });
+	    });
+    }
+});
+
+/*
 var DebtSummaryTableView = Backbone.View.extend({
     initialize: function(){
     	_.bindAll(this, 'render');
@@ -2162,7 +2095,7 @@ var DebtGraphView = Backbone.View.extend({
 		new Chart(ctx).Line(Chart1_data,{bezierCurve : false});
     }
 });
-
+*/
 </script>
 
 <script type="text/javascript">
@@ -2189,14 +2122,26 @@ $(document).ready(function() {
 
 	$('#back_to_output').live('click',function(){
 		$('#input').addClass('hidden');
+		$('#cases').addClass('hidden');
 		$('#output').removeClass('hidden');
 		$(this).addClass('hidden');
 		$('#back_to_input').removeClass('hidden');
+		$('#show_cases').removeClass('hidden');
 	});
 	$('#back_to_input').live('click',function(){
 		$('#output').addClass('hidden');
+		$('#cases').addClass('hidden');
 		$('#input').removeClass('hidden');
 		$(this).addClass('hidden');
+		$('#back_to_output').removeClass('hidden');
+		$('#show_cases').removeClass('hidden');
+	});
+	$('#show_cases').live('click',function(){
+		$('#input').addClass('hidden');
+		$('#output').addClass('hidden');
+		$('#cases').removeClass('hidden');
+		$(this).addClass('hidden');
+		$('#back_to_input').removeClass('hidden');
 		$('#back_to_output').removeClass('hidden');
 	});
 
@@ -2620,8 +2565,15 @@ $(document).ready(function() {
 			<h2>Debt Summary</h2>
 		</div>
 		<div id="debt_summary_section"></div>
+		<div class="output_section_header">
+			<h2>Asset Summary</h2>
+		</div>
+		<div id="asset_summary_section"></div>
 	</div>
 </div>
 
+<div id="cases" style="margin-top:90px;" class="hidden">
+	cases
+</div>
 
 {% endblock %}

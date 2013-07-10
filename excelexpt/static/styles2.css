@@ -17,9 +17,9 @@ html, body {
 	margin: 10px 0 0 10px;
 	font-size: 24pt;
 }
-.header #back_to_input,
-.header #back_to_output {
+#toggle_button_div a {
     margin-bottom: 10px;
+    margin-right: 10px;
 }
 .header_menu {
 	 float: right;
@@ -243,6 +243,10 @@ input.input_percentage {
     position: relative;
     left: -16px;
 }
+.accordion-heading {
+    background-image: linear-gradient(to bottom, #EEEEEE, #DADADA);
+}
+
 /*
 #input_accordion .collapsed {
     box-shadow: 0 0 4px gray;
@@ -439,4 +443,14 @@ input.input_percentage {
     margin-right: auto;
     margin-left: auto;
     margin-top: 20px;
+}
+
+#debt_summary_section,
+#asset_summary_section {
+    overflow: auto;
+}
+
+.new_field {
+    margin-top: 10px;
+    margin-bottom: 40px;
 }

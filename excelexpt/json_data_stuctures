@@ -63,7 +63,12 @@
 }
 	
 {
+	'name': 'Base Case',
 	'net_income': {
+		0: 3880,
+		1: 3880
+	},
+	'net_income_raw': {
 		0: 3880,
 		1: 3880
 	},

@@ -14,30 +14,19 @@ def build_demo7_data(data):
         debt_expenses[name] = {'type':'flatline','frequency':'monthly','value':value['payment']}
  
     s = build_expense_section(s, data['basic_expenses'], debt_expenses, data['misc_expenses'])
-    
     s = calculate_net_income(s)
-    """
-    cash_balances = {}
-    ca_rates = {}
-    for name,value in data['cash_accounts'].iteritems():
-        cash_balances[name] = value['balance']
-        ca_rates[name] = value['rate']
-    """
-    #s = build_cash_section(s, cash_balances, ca_rates)
+    s = calc_net_income_raw(s)
     s = build_cash_section(s, data['cash_accounts'])
-    
-    #s = build_debt_section(s, debt_balances[scenario], rates[scenario])
+    print 'cp 1'
     s = build_debt_section(s, data['debt_accounts'])
-
     s = calculate_net_worth(s) 
-
     s = calculate_totals(s)
-    
     
     s = calc_survival_period_2(s)
 
-    s = build_debt_summary(s, min_payment=True)
-
+    print 'cp 2'
+    s,iterations = build_debt_summary(s, min_payment=True)
+    print 'cp 3'
     s,NI_order = allocate_NI_2(s)
     s = calc_insolvency(s)
     if s['insolvent'] == True:
@@ -45,13 +34,11 @@ def build_demo7_data(data):
     else:
         s = NI_allocation_introspection(s, NI_order)
 
-    
-    s = build_debt_summary(s)
-    s = calc_net_income_raw(s)
+    print 'cp 4'
+    s, iterations = build_debt_summary(s, min_payment=False, iterations=iterations)
+    print 'cp 5'
 
-        #d.append(s)
 
-    #return d
     return s
 
 def calc_insolvency(s):
@@ -218,7 +205,8 @@ def allocate_NI_2(q):
     #pay down debt accounts, highest rate first, then contribute to "Investment" account
     debt_accounts_sorted = []
     for account in s['debt_accounts']['accounts']:
-        debt_accounts_sorted.append({'type':'debt_accounts','name':account,'rate':s['debt_accounts']['accounts'][account]['rate']})
+        if s['debt_accounts']['accounts'][account]['items']['ending_balance'][0] > 0:
+            debt_accounts_sorted.append({'type':'debt_accounts','name':account,'rate':s['debt_accounts']['accounts'][account]['rate']})
     from operator import itemgetter
     debt_accounts_sorted = sorted(debt_accounts_sorted, key=itemgetter('rate'), reverse=True) #sort by highest rate
     for item,d in enumerate(debt_accounts_sorted):
@@ -558,13 +546,6 @@ def populate_flatline_vector(s, section, item_name, frequency, value):
     return s
 
 def populate_pct_change_vector(s, section, item_name, frequency, value, change, change_frequency, change_direction, change_periods):
-    print item_name
-    print frequency
-    print value
-    print change
-    print change_frequency 
-    print change_direction
-    print change_periods
     monthly_value = 0
     if frequency == 'yearly':
         monthly_value = value / 12.0
@@ -719,7 +700,6 @@ def build_expense_subsection(s, expense_dict, name):
 
     return s
 
-
 def sum_expenses(s):
     for x in range(0,global_max_months):
         s['expenses']['total'].update({x:0})
@@ -736,7 +716,6 @@ def calculate_net_income(s):
 
     return s
 
-#def build_cash_section(s, cash_balances, rates):
 def build_cash_section(s, cash_accounts):
     s['cash_accounts'] = {'accounts':{},'total':{}}
     #print cash_balances
@@ -750,17 +729,7 @@ def build_cash_section(s, cash_accounts):
     return s
 
 def build_cash_sub_section(s, name):
-    """
-    if name == 'Checking':
-        #s['cash_accounts']['accounts'][name]['items'].update({'net_income':{0:''}})
-        s['cash_accounts']['accounts'][name]['items'].update({'net_income':{0:0}})
-    """
-    
     rate = s['cash_accounts']['accounts'][name]['rate']
-    
-    #s['cash_accounts']['accounts'][name]['items']['beginning_balance'][0] = ''
-    #s['cash_accounts']['accounts'][name]['items']['withdrawal'][0] = ''
-    #s['cash_accounts']['accounts'][name]['items']['interest'][0] = ''
     
     s['cash_accounts']['accounts'][name]['items']['beginning_balance'][0] = 0
     s['cash_accounts']['accounts'][name]['items']['withdrawal'][0] = 0
@@ -772,13 +741,6 @@ def build_cash_sub_section(s, name):
         s['cash_accounts']['accounts'][name]['items']['withdrawal'][x] = 0
         s['cash_accounts']['accounts'][name]['items']['interest'][x] = prev_ending_balance * (rate/12.0)
 
-        """
-        if name == 'Checking':
-            s['cash_accounts']['accounts'][name]['items']['net_income'][x] = s['net_income'][x]
-            s['cash_accounts']['accounts'][name]['items']['ending_balance'][x] = s['cash_accounts']['accounts'][name]['items']['beginning_balance'][x] - s['cash_accounts']['accounts'][name]['items']['withdrawal'][x] + s['cash_accounts']['accounts'][name]['items']['interest'][x] + s['cash_accounts']['accounts'][name]['items']['net_income'][x]
-        else:
-            s['cash_accounts']['accounts'][name]['items']['ending_balance'][x] = s['cash_accounts']['accounts'][name]['items']['beginning_balance'][x] - s['cash_accounts']['accounts'][name]['items']['withdrawal'][x] + s['cash_accounts']['accounts'][name]['items']['interest'][x]
-        """
         s['cash_accounts']['accounts'][name]['items']['ending_balance'][x] = s['cash_accounts']['accounts'][name]['items']['beginning_balance'][x] - s['cash_accounts']['accounts'][name]['items']['withdrawal'][x] + s['cash_accounts']['accounts'][name]['items']['interest'][x]
     return s
 
@@ -790,7 +752,6 @@ def build_cash_summary(s):
 
     return s
 
-#def build_debt_section(s, debt_balances, rates):
 def build_debt_section(s, debt_accounts):
     s['debt_accounts'] = {'accounts':{},'total_debt':{},'debt_expense_summary':{},'debt_expense_summary_min':{}}
     #for k,balance in debt_balances.iteritems():
@@ -800,7 +761,28 @@ def build_debt_section(s, debt_accounts):
         
         s = build_debt_sub_section(s, name)
 
-    s = build_debt_summary(s)
+    #s,iterations = build_debt_summary(s)
+
+    #calculate totals, but don't want to call 'build_debt_summary' because it does a lot of other shit now, so just copied in these parts
+    s['debt_accounts']['debt_expense_summary'].update({'interest_paid':{},'principal_paid':{},'total_expense':{}})
+    for x in range (0,global_max_months):
+        s['debt_accounts']['total_debt'].update({x:0})
+        for k,v in s['debt_accounts']['accounts'].iteritems():
+            s['debt_accounts']['total_debt'][x] += s['debt_accounts']['accounts'][k]['items']['ending_balance'][x]
+
+    for x in range(1,global_max_months):
+        s['debt_accounts']['debt_expense_summary']['interest_paid'].update({x:0})
+        for name in s['debt_accounts']['accounts']:
+            s['debt_accounts']['debt_expense_summary']['interest_paid'][x] += s['debt_accounts']['accounts'][name]['items']['interest'][x]
+
+    for x in range(1,global_max_months):
+        s['debt_accounts']['debt_expense_summary']['principal_paid'].update({x:0})
+        for name in s['debt_accounts']['accounts']:
+            s['debt_accounts']['debt_expense_summary']['principal_paid'][x] += (s['debt_accounts']['accounts'][name]['items']['beginning_balance'][x] - s['debt_accounts']['accounts'][name]['items']['ending_balance'][x])
+
+    for x in range(1,global_max_months):
+        s['debt_accounts']['debt_expense_summary']['total_expense'].update({x:0})
+        s['debt_accounts']['debt_expense_summary']['total_expense'][x] = s['debt_accounts']['debt_expense_summary']['interest_paid'][x] + s['debt_accounts']['debt_expense_summary']['principal_paid'][x]
 
     return s
 
@@ -826,7 +808,7 @@ def build_debt_sub_section(s, name):
 
     return s
 
-def build_debt_summary(s, min_payment=False):
+def build_debt_summary(s, min_payment=False, iterations=global_max_months):
     #have thsi min_payment switch so when I run this the first time, before net income is allocated, it'll save that earlier version for use in comparison
     if min_payment:
         debt_expense_summary = 'debt_expense_summary_min'
@@ -834,32 +816,32 @@ def build_debt_summary(s, min_payment=False):
         debt_expense_summary = 'debt_expense_summary'
 
     for account in s['debt_accounts']['accounts']:
-        s['debt_accounts']['accounts'][account].update({debt_expense_summary:{'total_interest_paid':0,'total_principal_paid':0,'total_debt_expense':0,'payoff_date':121}})
+        try:
+            payoff_date = s['debt_accounts']['accounts'][account][debt_expense_summary]['payoff_date']
+        except KeyError:
+            payoff_date = 0
+        
+        s['debt_accounts']['accounts'][account].update({debt_expense_summary:{'total_interest_paid':0,'total_principal_paid':0,'total_debt_expense':0,'payoff_date':payoff_date}})
 
-        for x in range (1,global_max_months):
-            #print s['debt_accounts']['accounts'][account]['items']['ending_balance'][x]
-            if s['debt_accounts']['accounts'][account]['items']['ending_balance'][x] < 1:
+        for x in range (1,iterations):
+            if s['debt_accounts']['accounts'][account]['items']['ending_balance'][x] < 1: #wont ever be true on the recall because it stops one short of getting to zero
                 s['debt_accounts']['accounts'][account][debt_expense_summary]['payoff_date'] = x
-                #change this into the actual MMM YY string - convert relative to today
                 break
+        if s['debt_accounts']['accounts'][account][debt_expense_summary]['payoff_date'] == 0: #ie not paid off in 10 years
+            #project it out until it's paid off, recall this whole function with the new number of iterations, and once that finishes just return s so the rest of this doesn't run again
+            s = project_debt_further(s, account, debt_expense_summary, min_payment)
+            #print 'YES', account
+            return s, s['debt_accounts']['accounts'][account][debt_expense_summary]['payoff_date']
 
-        for x in range(1,global_max_months):
+        for x in range(1,iterations):
             s['debt_accounts']['accounts'][account][debt_expense_summary]['total_interest_paid'] += s['debt_accounts']['accounts'][account]['items']['interest'][x]
             s['debt_accounts']['accounts'][account][debt_expense_summary]['total_principal_paid'] += (s['debt_accounts']['accounts'][account]['items']['beginning_balance'][x] - s['debt_accounts']['accounts'][account]['items']['ending_balance'][x])
             #print s['debt_accounts']['accounts'][account][debt_expense_summary]['total_principal_paid']
             s['debt_accounts']['accounts'][account][debt_expense_summary]['total_debt_expense'] += s['debt_accounts']['accounts'][account]['items']['interest'][x] + ((s['debt_accounts']['accounts'][account]['items']['beginning_balance'][x] - s['debt_accounts']['accounts'][account]['items']['ending_balance'][x]))
-
-        """
-        print 'payoff ', s['debt_accounts']['accounts'][account]['debt_expense_summary']['payoff_date']
-        print 'interest ',s['debt_accounts']['accounts'][account]['debt_expense_summary']['total_interest_paid']
-        print 'principal ',s['debt_accounts']['accounts'][account]['debt_expense_summary']['total_principal_paid']
-        print 'total ',s['debt_accounts']['accounts'][account]['debt_expense_summary']['total_debt_expense']
-        print 'dict ',s['debt_accounts']['accounts'][account]['debt_expense_summary']
-        """
-
+        print account, payoff_date, debt_expense_summary
     #below is in aggregate
     s['debt_accounts'][debt_expense_summary].update({'interest_paid':{},'total_interest_paid':0,'principal_paid':{},'total_principal_paid':0,'total_expense':{},'total_debt_expense':0,'payoff_date':0})
-    for x in range (0,global_max_months):
+    for x in range (0,iterations):
         s['debt_accounts']['total_debt'].update({x:0})
         for k,v in s['debt_accounts']['accounts'].iteritems():
             s['debt_accounts']['total_debt'][x] += s['debt_accounts']['accounts'][k]['items']['ending_balance'][x]
@@ -867,13 +849,13 @@ def build_debt_summary(s, min_payment=False):
     for account in s['debt_accounts']['accounts']:
         s['debt_accounts'][debt_expense_summary]['payoff_date'] = max(s['debt_accounts'][debt_expense_summary]['payoff_date'],s['debt_accounts']['accounts'][account][debt_expense_summary]['payoff_date'])
 
-    for x in range(1,global_max_months):
+    for x in range(1,iterations):
         s['debt_accounts'][debt_expense_summary]['interest_paid'].update({x:0})
         for name in s['debt_accounts']['accounts']:
             s['debt_accounts'][debt_expense_summary]['interest_paid'][x] += s['debt_accounts']['accounts'][name]['items']['interest'][x]
             s['debt_accounts'][debt_expense_summary]['total_interest_paid'] += s['debt_accounts']['accounts'][name]['items']['interest'][x]
 
-    for x in range(1,global_max_months):
+    for x in range(1,iterations):
         s['debt_accounts'][debt_expense_summary]['principal_paid'].update({x:0})
         for name in s['debt_accounts']['accounts']:
             #s['debt_accounts'][debt_expense_summary]['principal_paid'][x] += s['debt_accounts']['accounts'][name]['items']['interest'][x] + s['debt_accounts']['accounts'][name]['items']['payments'][x] 
@@ -881,20 +863,68 @@ def build_debt_summary(s, min_payment=False):
         #s['debt_accounts'][debt_expense_summary]['principal_paid'][x] = -(s['debt_accounts'][debt_expense_summary]['principal_paid'][x])
         s['debt_accounts'][debt_expense_summary]['total_principal_paid'] += s['debt_accounts'][debt_expense_summary]['principal_paid'][x]
 
-    for x in range(1,global_max_months):
+    for x in range(1,iterations):
         s['debt_accounts'][debt_expense_summary]['total_expense'].update({x:0})
         s['debt_accounts'][debt_expense_summary]['total_expense'][x] = s['debt_accounts'][debt_expense_summary]['interest_paid'][x] + s['debt_accounts'][debt_expense_summary]['principal_paid'][x]
         s['debt_accounts'][debt_expense_summary]['total_debt_expense'] += s['debt_accounts'][debt_expense_summary]['total_expense'][x]
 
     no_debt = True
-    for x in range(1,global_max_months):
+    for x in range(0,iterations):
         if s['debt_accounts']['total_debt'][x] > 0:
             no_debt = False
             break
     s['debt_accounts'].update({'no_debt':no_debt})
-    print s['debt_accounts']['no_debt']
+
+    return s, iterations
+
+def project_debt_further(s, name, debt_expense_summary, min_payment): # name = debt account name
+    rate = s['debt_accounts']['accounts'][name]['rate']
+    x = 121
+    
+    debt_expense_period_x = s['expenses']['sections']['Debt']['items'][name][120] + (s['net_income_raw'][120] if s['net_income_raw'][120] > 0 else 0)
+
+    while True:
+        #print x
+        prev_ending_balance = s['debt_accounts']['accounts'][name]['items']['ending_balance'][x-1]
+        s['debt_accounts']['accounts'][name]['items']['beginning_balance'][x] = prev_ending_balance
+        interest_expense = prev_ending_balance * (rate/12.0)
+        s['debt_accounts']['accounts'][name]['items']['interest'][x] = interest_expense
+        
+        remaining_due = prev_ending_balance + interest_expense
+        if debt_expense_period_x >= remaining_due:
+            s['debt_accounts']['accounts'][name]['items']['payments'][x] = (-1) * remaining_due
+            #s['expenses']['sections']['Debt']['items'][name][x] = remaining_due
+        else:
+            s['debt_accounts']['accounts'][name]['items']['payments'][x] = (-1) * debt_expense_period_x
+        
+        s['debt_accounts']['accounts'][name]['items']['ending_balance'][x] = s['debt_accounts']['accounts'][name]['items']['beginning_balance'][x] + s['debt_accounts']['accounts'][name]['items']['payments'][x] + s['debt_accounts']['accounts'][name]['items']['interest'][x]
+
+        if s['debt_accounts']['accounts'][name]['items']['ending_balance'][x] < 1:
+            s['debt_accounts']['accounts'][name][debt_expense_summary]['payoff_date'] = x
+            if min_payment == False: # just so it doesn't reach this part before s['NI_allocation'] is actually created
+                for idx,item in enumerate(s['NI_allocation']):
+                    print item['name'], name
+                    if item['name'] == name:
+                        s['NI_allocation'][idx]['payoff_date'] = x
+                        print 'YEP'
+            break
+        x += 1
+      
+    for account in s['debt_accounts']['accounts']:
+        if name == account:
+            continue      
+        else:
+            for y in range(121,x+1):
+                s['debt_accounts']['accounts'][account]['items']['beginning_balance'][y] = 0
+                s['debt_accounts']['accounts'][account]['items']['interest'][y] = 0
+                s['debt_accounts']['accounts'][account]['items']['payments'][y] = 0
+                s['debt_accounts']['accounts'][account]['items']['ending_balance'][y] = 0
+
+
+    s,iterations = build_debt_summary(s, min_payment=min_payment, iterations=s['debt_accounts']['accounts'][name][debt_expense_summary]['payoff_date'])
 
     return s
+
 
 def calculate_net_worth(s):
     s.update({'net_worth':{}})

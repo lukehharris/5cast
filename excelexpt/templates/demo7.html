@@ -1798,9 +1798,12 @@ var CaseCollection = Backbone.Collection.extend({
 	<%_.each(cases,function(this_case){{'{'}} %>
 		<%if(this_case['name'] != 'Base Case'){{'{'}} %>
 			<a class="btn btn-danger delete_scenario" data-id="<%=this_case['id']%>">Delete Case</a>
+			<%=this_case['name'] %><a class="btn btn-info save_case" data-id="<%=this_case['id']%>">Save Case</a>
+			<br>
+		<%{{'}'}}else{{'{'}}%>
+			<%=this_case['name'] %>
+			<br>
 		<%{{'}'}}%>
-		<%=this_case['name'] %>
-		<br>
 	<%{{'})'}}%>
 	
 	<a id="new_scenario" class="btn btn-info">Create New Case</a>
@@ -1809,7 +1812,7 @@ var CaseCollection = Backbone.Collection.extend({
 <script type="text/template" id="active_case_template">
 	<select id="active_case">
 		<%_.each(cases,function(this_case){{'{'}}%>
-			<option name="<%=this_case['name']%>"><%=this_case['name']%></option>	
+			<option name="<%=this_case['name']%>"><%=this_case['name']%></option>
 		<%{{'})'}}%>
 	</select>
 </script>
@@ -3059,14 +3062,14 @@ var ActiveCaseView = Backbone.View.extend({
 	setActiveCase: function(){
 		console.log('yep');
 		console.log($('#active_case').val());
-		/*
+		
 		var this_model = false;
 		this.model.each(function(model){
 			if(model.get('isActive')==true){
 				this_model = model;
 			}
 		});
-		*/
+		
 	}
 })
 
@@ -3505,6 +3508,12 @@ $(document).ready(function() {
 		$cid = $(this).attr('data-id');
 		//console.log($cid);
 		caseCollection.get($cid).destroy({success:function(){console.log('destroyed')}});
+	});
+
+	$('.save_case').live('click',function(){
+		$id = $(this).attr('data-id');
+		var this_model = caseCollection.get($id);
+		this_model.save();
 	});
 
 

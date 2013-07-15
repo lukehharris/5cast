@@ -24,9 +24,7 @@ def build_demo7_data(data):
     
     s = calc_survival_period_2(s)
 
-    print 'cp 2'
     s,iterations = build_debt_summary(s, min_payment=True)
-    print 'cp 3'
     s,NI_order = allocate_NI_2(s)
     s = calc_insolvency(s)
     if s['insolvent'] == True:
@@ -34,10 +32,7 @@ def build_demo7_data(data):
     else:
         s = NI_allocation_introspection(s, NI_order)
 
-    print 'cp 4'
     s, iterations = build_debt_summary(s, min_payment=False, iterations=iterations)
-    print 'cp 5'
-
 
     return s
 

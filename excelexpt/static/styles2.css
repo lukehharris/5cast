@@ -244,7 +244,8 @@ input.input_percentage {
     left: -16px;
 }
 .accordion-heading {
-    background-image: linear-gradient(to bottom, #EEEEEE, #DADADA);
+    background: linear-gradient(to bottom, #EEEEEE 0%,#DADADA 100%);
+    /*background-image: linear-gradient(to bottom, #EEEEEE, #DADADA);*/
 }
 
 /*
@@ -371,7 +372,7 @@ input.input_percentage {
 
 .left_case_container {
     float: left;
-    width: 48%;
+    width: 47%;
     padding-right: 12px;
     border-right: 1px solid gray;
     padding-bottom: 40px;
@@ -381,6 +382,7 @@ input.input_percentage {
     float:right;
     width:47%;
     padding-bottom: 40px;
+    padding-right: 14px;
 }
 
 #net_worth_tables {
@@ -397,7 +399,8 @@ input.input_percentage {
 
 .right_case_container table thead th,
 .left_case_container table thead th {
-    background-image: linear-gradient(to bottom, #EEEEEE, #DADADA);    
+    background: linear-gradient(to bottom, #EEEEEE 0%,#DADADA 100%);
+    /*background-image: linear-gradient(to bottom, #EEEEEE, #DADADA);    */
 }
 /*
 .right_case_container table th:first-child,
@@ -453,4 +456,8 @@ input.input_percentage {
 .new_field {
     margin-top: 10px;
     margin-bottom: 40px;
+}
+
+#active_case_div {
+    display: inline-block;
 }

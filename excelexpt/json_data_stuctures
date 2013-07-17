@@ -15,8 +15,7 @@
 			1: 3800
 			}
 		}
-
-	
+	}
 }
 
 {
@@ -60,42 +59,6 @@
 			1: 3880
 		}
 	}	
-}
-	
-{
-	'name': 'Base Case',
-	'net_income': {
-		0: 3880,
-		1: 3880
-	},
-	'net_income_raw': {
-		0: 3880,
-		1: 3880
-	},
-	'net_worth': {
-		0: x,
-		1: x+e
-	},
-	'insolvent': False,
-	'survival_period': 4,
-	'NI_allocation':[
-		{
-			'type':'debt_accounts',
-			'name':'Credit Card',
-			'minimum_payment':350,
-			'extra_payment':430,
-			'total_payment':880,
-			'start_date':0,
-			'payoff_date':25
-		},
-		{
-			'type':'cash_accounts',
-			'name':'Investment',
-			'contribution':880,
-			'start_date':26,
-			'end_balance':20201
-		}
-	]
 }
 
 {
@@ -216,7 +179,38 @@
 	}
 }
 
-
-
-
-
+{
+	'name': 'Base Case',
+	'net_income': {
+		0: 3880,
+		1: 3880
+	},
+	'net_income_raw': {
+		0: 3880,
+		1: 3880
+	},
+	'net_worth': {
+		0: x,
+		1: x+e
+	},
+	'insolvent': False,
+	'survival_period': 4,
+	'NI_allocation':[
+		{
+			'type':'debt_accounts',
+			'name':'Credit Card',
+			'minimum_payment':350,
+			'extra_payment':430,
+			'total_payment':880,
+			'start_date':0,
+			'payoff_date':25
+		},
+		{
+			'type':'cash_accounts',
+			'name':'Investment',
+			'contribution':880,
+			'start_date':26,
+			'end_balance':20201
+		}
+	]
+}

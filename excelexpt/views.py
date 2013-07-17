@@ -402,8 +402,6 @@ def demo7():
             }
             new_data = build_demo7.build_demo7_data(data)
             new_data = json.dumps(new_data)
-             
-
         else:
             for scenario in scenarios_query:
                 if scenario.is_base:
@@ -516,24 +514,6 @@ def example_output():
             other_ids.append(scenario.id)
     data_exists = True
     return render_template('example_output.html',data_exists=data_exists,new_data=new_data, base_id=base_id, other_ids=other_ids)
-
-
-
-@app.route('/president')
-def president():
-    return render_template('president.html')
-
-@app.route('/cannon', methods=['GET', 'POST'])
-def cannon():
-    return render_template('cannon.html')
-
-@app.route('/cannon/cad', methods=['GET', 'POST'])
-def cad():
-    return send_from_directory('static/cannon/','Brian Coffey - Pneumatic Cannon Provisional Patent Figures.pdf',as_attachment=True)
-
-@app.route('/cannon/patent', methods=['GET', 'POST'])
-def patent():
-    return send_from_directory('static/cannon/','Brian Coffey - Pneumatic Cannon Provisional Patent.pdf',as_attachment=True)
 
 
 @app.route('/login', methods=['GET', 'POST'])

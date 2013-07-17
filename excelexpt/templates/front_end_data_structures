@@ -4,15 +4,33 @@ debt_accounts : {'Student':{'payment':'','balance':'','rate':''},'Credit Card':{
 cash_accounts : {'Checking':{'balance':'','rate':''},'Savings':{'balance':'','rate':''},'Investment':{'balance':'','rate':''}},
 
 
-
-
-OLD:
-basic_expenses : {'Housing':'','Utilities':'','TV/Internet':'','Phone':'','Gym':'','Food':''},
-
-NEW:
 basic_expenses : {
 	'Housing':{'type':'flatline','frequency':'monthly','value':1600},
 	'Utilities':{'type':'pct_change','frequency':'monthly','change':0.03,'change_frequency':'year','change_direction':'increases','change_periods':1,'value':1600},
 	'TV/Internet':{'type':'val_change','frequency':'monthly','change':10,'change_frequency':3, 'value':1600},
 	'Phone':{'type':'custom','data': [ {'value':40,'frequency':'monthly','start_mo':6,'start_yr':2013,'end_mo':8,'end_yr':2013},{'value':85,'frequency':'monthly','start_mo':9,'start_yr':2013,'end_mo':6,'end_yr':2023}] },
 },
+
+
+mods: {
+	'mod_45':{ //needed in case of editing or deleting a mod
+		mod_type: add/change/delete,
+		mod_data: {
+			input_section: 'basic_expenses',
+			input_name: 'Housing',
+			input_data: {
+				{'type':'flatline','frequency':'monthly','value':1600}
+			}
+		}
+	},
+	'mod_46':{ 
+		mod_type: add/change/delete,
+		mod_data: {
+			input_section: 'basic_expenses',
+			input_name: 'Utilities',
+			input_data: {
+				{'type':'flatline','frequency':'monthly','value':1600}
+			}
+		}
+	}
+}

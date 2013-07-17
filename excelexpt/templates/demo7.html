@@ -22,9 +22,7 @@
 	}
 	function month_conversion(month_number){
 		var months = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
-		//var years = [' \'13',' \'14',' \'15',' \'16',' \'17',' \'18',' \'19',' \'20',' \'21',' \'22',' \'23'];
 		var month = months[(month_number-1)%12];
-		//var year = years[Math.floor((month_number+5)/12)];
 		var year = ' \'' + (13 + Math.floor((month_number+5)/12));
 		return month + year;
 	}

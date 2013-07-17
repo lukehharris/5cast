@@ -57,6 +57,7 @@ var Case = Backbone.Model.extend({
 		cash_accounts : {'Checking':{'balance':'','rate':''},'Savings':{'balance':'','rate':''},'Investment':{'balance':'','rate':''}},
 		isBaseCase: false,
 		isActive: false, //this indicates which case gets shown alongside base case
+		mods: {}, //used to specify changes to base case in defining secondary cases
 		data : null //this is where the full model output is stored
 	},
 	urlRoot: '/case'
@@ -1795,24 +1796,109 @@ var CaseCollection = Backbone.Collection.extend({
 </script>
 
 <script type="text/template" id="cases_template">
+	<h2 style="text-decoration:underline">Scenarios</h2>
+
+
+	<div id="input_accordion" class="accordion">
+		<%_.each(cases,function(this_case){{'{'}} %>
+			<div class="accordion-group" id="income_items_accordion_group">
+				<div class="accordion-heading">
+					<a class="accordion-toggle" data-toggle="collapse" data-target="#collapse<%=this_case.cid%>">
+						<%=this_case.get('name')%>
+					</a>
+				</div>
+				<div id="collapse<%=this_case.id%>" class="accordion-body collapse in">
+					<div class="accordion-inner">
+						<a class="btn btn-danger delete_scenario" data-id="<%=this_case.cid%>">Delete Case</a>
+						<a class="btn btn-info save_case" data-id="<%=this_case.cid%>">Save Scenario</a>
+						<a class="btn btn-success" href="#add_mod_<%=this_case.cid%>" data-toggle="modal">Add Modification</a>
+					</div>
+				</div>
+			</div>
+		<%{{'})'}}%>
+	</div>
+	<div style="display:block;">
+		<a id="new_scenario" class="btn btn-info">Create New Scenario</a>
+	</div>
+	<div style="display:block;">
+		<a id="save_input_data_cases" class="btn btn-info" style="font-size:16pt;margin-top:20px; ">Save Data</a>
+	</div>
+
 	<%_.each(cases,function(this_case){{'{'}} %>
-		<%if(this_case['name'] != 'Base Case'){{'{'}} %>
-			<a class="btn btn-danger delete_scenario" data-id="<%=this_case['id']%>">Delete Case</a>
-			<%=this_case['name'] %><a class="btn btn-info save_case" data-id="<%=this_case['id']%>">Save Case</a>
-			<br>
-		<%{{'}'}}else{{'{'}}%>
-			<%=this_case['name'] %>
-			<br>
-		<%{{'}'}}%>
+		<div id="add_mod_<%=this_case.cid%>" class="modal hide fade" tabindex="-1" data-focus-on="input:first">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				<h3><%=this_case.get('name')%>: Choose Item to Modify...</h3>
+			</div>
+			<div class="modal-body">
+				<h4>Income</h4>
+				<ul>
+					<%_.each(_.keys(this_case.get('income_items')),function(key){{'{'}} %>
+					<li>
+						<button id="delete_case_item" class="close" data-id="<%=this_case.cid%>" data-section="income_items" data-name="<%=key%>" title="Delete This Item">&times;</button>
+						<a class="modify_case_item" data-id="<%=this_case.cid%>" data-section="income_items" data-name="<%=key%>" title="Select This Item"><%=key%></a>
+					</li>
+					<%{{'})'}}%>
+				</ul>
+				<div>
+					<a id="new_in" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Income Source</a>
+				</div>
+
+				<h4>Expenses</h4>
+				<ul>
+					<%_.each(_.keys(this_case.get('basic_expenses')),function(key){{'{'}} %>
+					<li>
+						<button id="delete_case_item" class="close" data-section="basic_expenses" data-name="<%=key%>" title="Delete This Item">&times;</button>
+						<a class="modify_case_item" data-id="<%=this_case.cid%>" data-section="basic_expenses" data-name="<%=key%>" title="Select This Item"><%=key%></a>
+					</li>
+					<%{{'})'}}%>
+				</ul>
+				<div>
+					<a id="new_be" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Expense</a>
+				</div>
+
+				<h4>Debt</h4>
+				<ul>
+					<%_.each(_.keys(this_case.get('debt_accounts')),function(key){{'{'}} %>
+					<li>
+						<button id="delete_case_item" class="close" data-section="debt_accounts" data-name="<%=key%>" title="Delete This Item">&times;</button>
+						<a class="modify_case_item" data-id="<%=this_case.cid%>" data-section="debt_accounts" data-name="<%=key%>" title="Select This Item"><%=key%></a>
+					</li>
+					<%{{'})'}}%>
+				</ul>
+				<div>
+					<a id="new_da" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Debt Account</a>
+				</div>
+
+				<h4>Assets</h4>
+				<ul>
+					<%_.each(_.keys(this_case.get('cash_accounts')),function(key){{'{'}} %>
+					<li>
+						<button id="delete_case_item" class="close" data-section="cash_accounts" data-name="<%=key%>" title="Delete This Item">&times;</button>
+						<a class="modify_case_item" data-id="<%=this_case.cid%>" data-section="cash_accounts" data-name="<%=key%>" title="Select This Item"><%=key%></a>
+					</li>
+					<%{{'})'}}%>
+				</ul>
+				<div>
+					<a id="new_ca" class="btn btn-info new_field"><i class="icon-plus"></i>Add New Asset</a>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+			</div>
+		</div>
 	<%{{'})'}}%>
-	
-	<a id="new_scenario" class="btn btn-info">Create New Case</a>
+
+	<div id="mod_modal" class="modal hide fade" tabindex="-1" data-focus-on="input:first">
+
+	</div>
+
 </script>
 
 <script type="text/template" id="active_case_template">
 	<select id="active_case">
 		<%_.each(cases,function(this_case){{'{'}}%>
-			<option name="<%=this_case['name']%>"><%=this_case['name']%></option>
+			<option name="<%=this_case['name']%>" <%if(this_case['is_active']){{'{'}}%>selected="selected"<%{{'}'}}%> ><%=this_case['name']%></option>
 		<%{{'})'}}%>
 	</select>
 </script>
@@ -2084,14 +2170,36 @@ var CasesView = Backbone.View.extend({
 		this.render();
 	},
 	render: function(){
-		var cases = [];
+		var base_model = this.model.at(0);
+		var income_items = base_model.get('income_items');
+		var basic_expenses = base_model.get('basic_expenses');
+		var misc_expenses = base_model.get('misc_expenses');
+		var debt_accounts = base_model.get('debt_accounts');
+		var cash_accounts = base_model.get('cash_accounts');
 
+		var cases = [];
 		this.model.each(function(model){
-			cases.push({'name':model.get('name'),'id':model.cid});
+			if(model.get('name')!='Base Case'){
+				model.set({
+					'income_items':income_items,
+					'basic_expenses':basic_expenses,
+					'misc_expenses':misc_expenses,
+					'debt_accounts':debt_accounts,
+					'cash_accounts':cash_accounts
+				},{silent:true});
+				//overwrite the above with mods
+				/*
+				_.each(_.keys(model.get('mods')),function(mod_id){
+					console.log(mod_id);
+				});
+				*/
+				console.log(model);
+				cases.push(model);
+			}
 		});
-			
-		//});
-		var template = _.template( $("#cases_template").html(), {model:this.model.at(0), cases:cases} );
+		//console.log(cases);
+
+		var template = _.template( $("#cases_template").html(), {cases:cases} );
     	this.$el.html( template );
 	}
 });
@@ -3049,7 +3157,11 @@ var ActiveCaseView = Backbone.View.extend({
 		var cases = [];
 		this.model.each(function(model){
 			if(model.get('isBaseCase')!=true){
-				cases.push({name:model.get('name'),id:model.cid});
+				var is_active = false;
+				if(model.get('isActive')==true){
+					is_active = true;
+				}
+				cases.push({name:model.get('name'),id:model.cid,is_active:is_active});
 			}
 		});
 
@@ -3060,16 +3172,16 @@ var ActiveCaseView = Backbone.View.extend({
 		"change #active_case": "setActiveCase"
 	},
 	setActiveCase: function(){
-		console.log('yep');
-		console.log($('#active_case').val());
-		
-		var this_model = false;
+		//optimization: make sure "change" isn't triggered until after the whole loop runs
+		var chosen_case_name = $('#active_case').val();
 		this.model.each(function(model){
-			if(model.get('isActive')==true){
-				this_model = model;
+			if(model.get('isActive') == true){
+				model.set('isActive',false);
+			}
+			else if(model.get('name') == chosen_case_name){
+				model.set('isActive',true);	
 			}
 		});
-		
 	}
 })
 
@@ -3516,6 +3628,171 @@ $(document).ready(function() {
 		this_model.save();
 	});
 
+	$('.modify_case_item').live('click',function(){
+		$model_id = $(this).attr('data-id');
+		var model = caseCollection.get($model_id);
+		var case_name = model.get('name');
+		$section = $(this).attr('data-section');
+		var section = model.get($section);
+		$name = $(this).attr('data-name');
+		var input_data = section[$name];
+		var input_type = input_data['type'];
+
+		var context_body = '<div class="input_item"> \
+					 \
+				<div class="dropdown change_input_type"> \
+					<a class="dropdown-toggle" data-toggle="dropdown" href=""><i class="icon-cog" title="Change Input Type"></i></a> \
+					<ul class="dropdown-menu" role="menu" data-id="<%=model.cid%>" data-name="<%=key%>" data-section="'+$section+'"> \
+					   	<li role="presentation"><a href="#" role="menuitem" id="it_flatline">Flatline</a></li> \
+					   	<li role="presentation"><a href="#" role="menuitem" id="it_pct_change">Increase by %</a></li> \
+					   	<li role="presentation"><a href="#" role="menuitem" id="it_val_change">Increase by $</a></li> \
+					   	<li role="presentation"><a href="#" role="menuitem" id="it_custom">Custom</a></li> \
+					</ul> \
+				</div> \
+					\
+				<div class="input_item_sub input_sub_'+$model_id+'" data-section="'+$section+'" data-name="'+$name+'" data-input-type="'+input_type+'" >';
+
+
+		if(input_type == 'flatline'){
+			var monthly_selected = '';
+			var weekly_selected = '';
+			if(input_data['frequency'] == 'monthly'){
+				monthly_selected = 'selected';
+			}else if(input_data['frequency'] == 'weekly'){
+				weekly_selected = 'selected';
+			}
+			context_body += '$<input type="text" name="value" value="'+input_data["value"]+'">\
+						<select class="input_period" name="frequency">\
+							<option value="monthly" '+monthly_selected+'>Monthly</option>\
+							<option value="weekly" '+weekly_selected+'>Weekly</option>\
+						</select>';
+		}else if(input_type == 'pct_change'){
+			var yearly_selected = '';
+			var monthly_selected = '';
+			var weekly_selected = '';
+			if(input_data['frequency'] == 'yearly'){
+				yearly_selected = 'selected';
+			}else if(input_data['frequency'] == 'monthly'){
+				monthly_selected = 'selected';
+			}else if(input_data['frequency'] == 'weekly'){
+				weekly_selected = 'selected';
+			}
+
+			var increases_selected = '';
+			var decreases_selected = '';
+			if(input_data['change_direction'] == 'increases'){
+				increases = 'selected';
+			}else if(input_data['change_direction'] == 'decreases'){
+				decreases = 'selected';
+			}
+
+			var cf_year_selected = '';
+			var cf_month_selected = '';
+			if(input_data['change_frequency'] == 'year'){
+				cf_year_selected = 'selected';
+			}else if(input_data['change_frequency'] == 'month'){
+				cf_month_selected = 'selected';
+			}
+
+			context_body += '$<input type="text" name="value" value="'+input_data["value"]+'">\
+			<select class="input_period" name="frequency">\
+				<option value="yearly" '+yearly_selected+'>Yearly</option>\
+				<option value="monthly" '+monthly_selected+'>Monthly</option>\
+				<option value="weekly" '+weekly_selected+'>Weekly</option>\
+			</select>\
+			<br>\
+			and \
+			<select class="input_period" name="change_direction" style="margin:8px 4px;">\
+				<option value="increases" '+increases_selected+'>Increases</option>\
+				<option value="decreases" '+decreases_selected+'>Decreases</option>\
+			</select>\
+			 by\
+			<input type="text" name="change" value="'+input_data["change"]+'" style="width:40px; margin:8px 0 8px 4px;">%\
+			every  \
+			<input type="text" name="change_periods" value="'+input_data["change_periods"]+'%>" style="width:20px;">\
+			<select class="input_period" name="change_frequency">\
+				<option value="year" '+cf_year_selected+'>year(s)</option>\
+				<option value="month" '+cf_month_selected+'>month(s)</option>\
+			</select>';
+		}
+			/*
+		else if(input_type == 'val_change'){
+			$<input type="text" name="value" value="<%=model.get('income_items')[key]['value']%>">
+			<select class="input_period" name="frequency">
+				<option value="yearly" <%if (model.get('income_items')[key]['frequency'] == 'yearly') {{'{'}}%>selected<%{{'}'}}%>>Yearly</option>
+				<option value="monthly" <%if (model.get('income_items')[key]['frequency'] == 'monthly') {{'{'}}%>selected<%{{'}'}}%>>Monthly</option>
+				<option value="weekly" <%if (model.get('income_items')[key]['frequency'] == 'weekly') {{'{'}}%>selected<%{{'}'}}%>>Weekly</option>
+			</select>
+			<br>
+			and 
+			<select class="input_period" name="change_direction" style="margin:8px 0;">
+				<option value="increases" <%if (model.get('income_items')[key]['change_direction'] == 'increases') {{'{'}}%>selected<%{{'}'}}%>>Increases</option>
+				<option value="decreases" <%if (model.get('income_items')[key]['change_direction'] == 'decreases') {{'{'}}%>selected<%{{'}'}}%>>Decreases</option>
+			</select>
+			 by
+			$<input type="text" name="change" value="<%=model.get('income_items')[key]['change']%>" style="width:60px;">
+			every  
+			<input type="text" name="change_periods" value="<%=model.get('income_items')[key]['change_periods']%>" style="width:20px;">
+			<select class="input_period" name="change_frequency">
+				<option value="year" <%if (model.get('income_items')[key]['change_frequency'] == 'year') {{'{'}}%>selected<%{{'}'}}%>>year(s)</option>
+				<option value="month" <%if (model.get('income_items')[key]['change_frequency'] == 'month') {{'{'}}%>selected<%{{'}'}}%>>month(s)</option>
+			</select>
+		}else if(input_type == 'custom'){
+			<% for (x=0;x<model.get('income_items')[key]['data'].length;x++){{'{'}} %>
+			<div class="custom_input_block">
+				$<input type="text" name="value" value="<%=model.get('income_items')[key]['data'][x]['value']%>"> 
+				<select class="input_period" name="frequency">
+					<option value="monthly" <%if (model.get('income_items')[key]['data'][x]['frequency'] == 'monthly') {{'{'}}%>selected<%{{'}'}}%>>Monthly</option>
+					<option value="weekly" <%if (model.get('income_items')[key]['data'][x]['frequency'] == 'weekly') {{'{'}}%>selected<%{{'}'}}%>>Weekly</option>
+				</select>
+				<br>
+				<span style="position:relative;top:4px;">from</span>
+				<select class="input_period" name="start_mo" style="width:60px;margin-top:8px;">
+					<%for(i=1;i<=12;i++){{'{'}} %>
+						<option value="<%=i%>" <%if(i==model.get('income_items')[key]['data'][x]['start_mo']){{'{'}}%>selected<%{{'}'}} %>><%=i%></option>
+					<%{{'}'}}%>
+				</select> 
+				<select class="input_period" name="start_yr" style="width:76px;margin-top:8px;">
+					<%for(i=2013;i<=2023;i++){{'{'}} %>
+						<option value="<%=i%>" <%if(i==model.get('income_items')[key]['data'][x]['start_yr']){{'{'}}%>selected<%{{'}'}} %>><%=i%></option>
+					<%{{'}'}}%>
+				</select>
+				<span style="position:relative;top:4px;">through</span>
+				<select class="input_period" name="end_mo" style="width:60px;margin-top:8px;">
+					<%for(i=1;i<=12;i++){{'{'}} %>
+						<option value="<%=i%>" <%if(i==model.get('income_items')[key]['data'][x]['end_mo']){{'{'}}%>selected<%{{'}'}} %>><%=i%></option>
+					<%{{'}'}}%>
+				</select> 
+				<select class="input_period" name="end_yr" style="width:76px;margin-top:8px;">
+					<%for(i=2013;i<=2023;i++){{'{'}} %>
+						<option value="<%=i%>" <%if(i==model.get('income_items')[key]['data'][x]['end_yr']){{'{'}}%>selected<%{{'}'}} %>><%=i%></option>
+					<%{{'}'}}%>
+				</select>
+			</div>
+			<%{{'}'}}%>
+			<a class="btn btn-info" id="new_custom_input_block" href="#">Add Another Period</a>
+		}
+		*/
+
+		context_body += '</div></div>';
+
+		var context =  '<div class="modal-header"> \
+							<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button> \
+							<h3>'+case_name+': Editing "'+$name+'"</h3> \
+						</div> \
+						<div class="modal-body"> \
+							'+context_body+'\
+						</div> \
+						<div class="modal-footer"> \
+							<button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button> \
+							<button class="btn btn-primary save_mod">Save Modification</button> \
+						</div>';
+
+		$('#mod_modal').html(context);
+
+		//open the modal
+		$('#mod_modal').modal('toggle');
+	});
 
 });
 
